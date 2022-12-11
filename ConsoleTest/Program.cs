@@ -21,19 +21,37 @@ using HttpClientHandler httpClientHandler = new HttpClientHandler()
     UseCookies = false,
 };
 using HttpClient httpClient = new HttpClient(httpClientHandler, false);
-//using var res = await httpClient.GetAsync("http://ip-api.com/json");
-//string res_content = await res.Content.ReadAsStringAsync();
-//using var res2 = await httpClient.GetAsync("https://youtube.com/c/MuseVi%E1%BB%87tNam");
-//string res2_content = await res2.Content.ReadAsStringAsync();
+
 
 {
-    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://ip-api.com/json");
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
+    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+    string content = await httpResponseMessage.Content.ReadAsStringAsync();
+}
+
+{
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
+    httpRequestMessage.Headers.Add("Accept", "application/json");
+    httpRequestMessage.Content = new StringContent("Test post");
+    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+    string content = await httpResponseMessage.Content.ReadAsStringAsync();
+}
+
+{
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://youtube.com/c/MuseVi%E1%BB%87tNam");
+    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+    string content = await httpResponseMessage.Content.ReadAsStringAsync();
+}
+
+{
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://httpbin.org/post");
     httpRequestMessage.Headers.Add("Accept", "application/json");
     httpRequestMessage.Headers.Add("Cookie", "GeoIP=VN:35:Da_Lat:11.94:108.42:v4; enwikimwuser-sessionId=78f68a694551e47537e4; WMF-Last-Access=06-Dec-2022; WMF-Last-Access-Global=06-Dec-2022; enwikiwmE-sessionTickLastTickTime=1670355455366; enwikiwmE-sessionTickTickCount=14");
     httpRequestMessage.Content = new StringContent("Test post");
-    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage,HttpCompletionOption.ResponseHeadersRead);
+    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
     string content = await httpResponseMessage.Content.ReadAsStringAsync();
 }
+
 
 Console.ReadLine();
 httpProxyServer.StopListen();

@@ -14,72 +14,13 @@ using TqkLibrary.Proxy.ProxyServers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public class LocalHttpProxySource : IProxySource, IHttpProxy
+    public partial class LocalHttpProxySource : IProxySource, IHttpProxy
     {
         public bool IsSupportUdp => false;
 
         public bool IsSupportTransferHttps { get; set; } = true;
 
         public bool IsSupportIpv6 { get; } = true;
-
-        class HttpSessionSource : ISessionSource
-        {
-            readonly TcpClient tcpClient;
-            readonly string host;
-            public HttpSessionSource(TcpClient tcpClient)
-            {
-                this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
-            }
-            public HttpSessionSource(TcpClient tcpClient, string host)
-            {
-                this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
-                this.host = host;
-            }
-            ~HttpSessionSource()
-            {
-                this.tcpClient.Dispose();
-            }
-            public void Dispose()
-            {
-                this.tcpClient.Dispose();
-                GC.SuppressFinalize(this);
-            }
-
-            public Stream GetStream()
-            {
-                if (string.IsNullOrWhiteSpace(host))
-                {
-                    return this.tcpClient.GetStream();
-                }
-                else
-                {
-                    var stream = new SslStream(
-                        this.tcpClient.GetStream(),
-                        false, 
-                        null, 
-                        null);
-                    try
-                    {
-                        stream.AuthenticateAsClient(host);
-                        return stream;
-                    }
-                    catch (AuthenticationException)
-                    {
-                        stream.Close();
-                        return null;
-                    }
-                }
-            }
-            bool RemoteCertificateValidationCallback(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
-            {
-                return false;
-            }
-            X509Certificate LocalCertificateSelectionCallback(object sender, string targetHost, X509CertificateCollection localCertificates, X509Certificate? remoteCertificate, string[] acceptableIssuers)
-            {
-                return null;
-            }
-        }
-
 
         public Task<ISessionSource> InitSessionAsync(IPAddress iPAddress, ProtocolType protocolType)
         {

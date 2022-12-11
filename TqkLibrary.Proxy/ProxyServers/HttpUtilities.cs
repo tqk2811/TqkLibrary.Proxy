@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
@@ -17,14 +18,14 @@ namespace TqkLibrary.Proxy.ProxyServers
         public string Method { get; set; }
         public string Version { get; set; }
         public bool IsKeepAlive { get; set; } = false;
-        public int ContentLength { get; set; }
+        public int ContentLength { get; set; } = 0;
 
         public AuthenticationHeaderValue ProxyAuthorization { get; set; }
     }
 
     internal static class HttpUtilities
     {
-        static readonly Regex regex_httpMethod = new Regex("([A-z]+) (.*?) HTTP/[0-9.]{3}");
+        static readonly Regex regex_httpRequestMethod = new Regex("([A-z]+) (.*?) HTTP\\/([0-9\\.]{3})$");
 
         internal static HeaderParse Parse(this IEnumerable<string> lines)
         {
@@ -38,14 +39,14 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (string.IsNullOrWhiteSpace(headerParse.Method))
                 {
                     //first line
-                    Match match = regex_httpMethod.Match(line);
+                    Match match = regex_httpRequestMethod.Match(line);
                     if (match.Success)
                     {
                         if (Uri.TryCreate(match.Groups[2].Value, UriKind.RelativeOrAbsolute, out Uri _uri))
                         {
                             headerParse.Uri = _uri;
                             headerParse.Method = match.Groups[1].Value;
-                            headerParse.Version = match.Groups[2].Value;
+                            headerParse.Version = match.Groups[3].Value;
                         }
                         else throw new InvalidOperationException();
                     }
@@ -74,15 +75,27 @@ namespace TqkLibrary.Proxy.ProxyServers
             return headerParse;
         }
 
-        internal static async Task<List<string>> ReadHeader(this StreamReader streamReader)
+        internal static int GetContentLength(this IEnumerable<string> lines)
+        {
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("content-length: ", StringComparison.OrdinalIgnoreCase))
+                {
+                    return int.Parse(line.Substring(16).Trim());
+                }
+            }
+            return 0;
+        }
+
+        internal static async Task<List<string>> ReadHeader(this StreamHeaderReader streamHeaderReader, CancellationToken cancellationToken = default)
         {
             List<string> lines = new List<string>();
             while (true)
             {
-                if (streamReader.EndOfStream)
-                    break;
+                //if (streamReader.EndOfStream)
+                //    break;
 
-                string line = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                string line = await streamHeaderReader.ReadLineAsync().ConfigureAwait(false);
 
                 if (string.IsNullOrWhiteSpace(line))
                 {

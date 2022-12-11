@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TqkLibrary.Proxy
+namespace TqkLibrary.Proxy.StreamHeplers
 {
     internal class StreamTransferHelper
     {
@@ -18,8 +18,8 @@ namespace TqkLibrary.Proxy
         readonly byte[] _secondBuffer = new byte[BUFFER_SIZE];
         public StreamTransferHelper(Stream first, Stream second)
         {
-            this._first = first ?? throw new ArgumentNullException(nameof(first));
-            this._second = second ?? throw new ArgumentNullException(nameof(second));
+            _first = first ?? throw new ArgumentNullException(nameof(first));
+            _second = second ?? throw new ArgumentNullException(nameof(second));
         }
 
         public Task WaitUntilDisconnect(CancellationToken cancellationToken = default)
@@ -43,7 +43,7 @@ namespace TqkLibrary.Proxy
                     else return;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 #if DEBUG
                 Console.WriteLine($"{ex.GetType().FullName}: {ex.Message}");

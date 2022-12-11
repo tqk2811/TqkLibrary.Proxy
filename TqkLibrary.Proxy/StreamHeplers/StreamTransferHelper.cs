@@ -21,7 +21,18 @@ namespace TqkLibrary.Proxy.StreamHeplers
             _first = first ?? throw new ArgumentNullException(nameof(first));
             _second = second ?? throw new ArgumentNullException(nameof(second));
         }
+#if DEBUG
+        string _firstName = string.Empty;
+        string _secondName = string.Empty;
 
+        public StreamTransferHelper DebugName(string firstName, string secondName)
+        {
+            this._firstName = firstName ?? string.Empty;
+            this._secondName = secondName ?? string.Empty;
+            return this;
+        }
+
+#endif
         public Task WaitUntilDisconnect(CancellationToken cancellationToken = default)
         {
             Task task_first = FirstToSecond(cancellationToken);
@@ -37,7 +48,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 {
                     int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
 #if DEBUG
-                    Console.WriteLine($"_first.ReadAsync: {byte_read}bytes");
+                    Console.WriteLine($"[{_firstName} >> {_secondName}] {byte_read} bytes");
 #endif
                     if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
                     else return;
@@ -58,7 +69,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 {
                     int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
 #if DEBUG
-                    Console.WriteLine($"_second.ReadAsync: {byte_read}bytes");
+                    Console.WriteLine($"[{_firstName} << {_secondName}] {byte_read} bytes");
 #endif
                     if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
                     else return;
@@ -71,5 +82,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
 #endif
             }
         }
+
+
     }
 }

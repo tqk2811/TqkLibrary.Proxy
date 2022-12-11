@@ -24,6 +24,12 @@ using HttpClient httpClient = new HttpClient(httpClientHandler, false);
 
 
 {
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://26.64.24.5/get");
+    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+    string content = await httpResponseMessage.Content.ReadAsStringAsync();
+}
+
+{
     using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
     using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
     string content = await httpResponseMessage.Content.ReadAsStringAsync();
@@ -38,7 +44,7 @@ using HttpClient httpClient = new HttpClient(httpClientHandler, false);
 }
 
 {
-    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://youtube.com/c/MuseVi%E1%BB%87tNam");
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://www.youtube.com/c/MuseVi%E1%BB%87tNam");
     using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
     string content = await httpResponseMessage.Content.ReadAsStringAsync();
 }

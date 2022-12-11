@@ -30,9 +30,8 @@ namespace TqkLibrary.Proxy.ProxySources
             throw new NotSupportedException();
         }
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address, bool isTransferHttps = false)
+        public async Task<ISessionSource> InitSessionAsync(Uri address)
         {
-            if (isTransferHttps) throw new NotSupportedException($"HttpProxy not support transfer https");
             if (address == null) throw new ArgumentNullException(nameof(address));
             return null;
         }

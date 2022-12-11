@@ -8,9 +8,19 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
+/* Unmerged change from project 'TqkLibrary.Proxy (net6.0)'
+Before:
+using TqkLibrary.Proxy.StreamHeplers;
+After:
+using TqkLibrary;
+using TqkLibrary.Proxy;
+using TqkLibrary.Proxy;
+using TqkLibrary.Proxy.StreamHeplers;
+*/
 using TqkLibrary.Proxy.StreamHeplers;
 
-namespace TqkLibrary.Proxy.ProxyServers
+namespace TqkLibrary.Proxy
 {
     internal class HeaderParse
     {
@@ -87,7 +97,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             return 0;
         }
 
-        internal static async Task<List<string>> ReadHeader(this StreamHeaderReader streamHeaderReader, CancellationToken cancellationToken = default)
+        internal static async Task<List<string>> ReadHeader(this Stream stream, CancellationToken cancellationToken = default)
         {
             List<string> lines = new List<string>();
             while (true)
@@ -95,7 +105,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //if (streamReader.EndOfStream)
                 //    break;
 
-                string line = await streamHeaderReader.ReadLineAsync().ConfigureAwait(false);
+                string line = await stream.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 
                 if (string.IsNullOrWhiteSpace(line))
                 {

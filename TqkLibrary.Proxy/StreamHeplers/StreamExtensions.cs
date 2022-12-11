@@ -6,9 +6,13 @@ using System.Threading.Tasks;
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal static class Extensions
+    internal static class StreamExtensions
     {
-        internal static async Task TransferAsync(this Stream from, Stream to, long size, int bufferSize = 4096, CancellationToken cancellationToken = default)
+        internal static async Task TransferAsync(this Stream from, 
+            Stream to, 
+            long size, 
+            int bufferSize = 4096,
+            CancellationToken cancellationToken = default)
         {
             if (size <= 0) return;
             if (from == null) throw new ArgumentNullException(nameof(from));
@@ -20,11 +24,55 @@ namespace TqkLibrary.Proxy.StreamHeplers
             byte[] buffer = new byte[bufferSize];
             do
             {
-                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead)).ConfigureAwait(false);
-                await to.WriteAsync(buffer, 0, byte_read).ConfigureAwait(false);
+                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken).ConfigureAwait(false);
+                await to.WriteAsync(buffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
                 totalRead += byte_read;
             }
             while (totalRead < size);
+        }
+
+        internal static Task WriteAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
+        {
+            byte[] buffer = Encoding.ASCII.GetBytes(text);
+            return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+        }
+        internal static Task WriteLineAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
+        {
+            byte[] buffer = Encoding.ASCII.GetBytes(text + "\r\n");
+            return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+        }
+
+        static readonly byte[] line_break = new byte[] { 13, 10 };
+        internal static Task WriteLineAsync(this Stream stream, CancellationToken cancellationToken = default)
+        {
+            return stream.WriteAsync(line_break, 0, line_break.Length, cancellationToken);
+        }
+
+
+
+
+        internal static async Task<string> ReadLineAsync(this Stream stream, CancellationToken cancellationToken = default)
+        {
+            using MemoryStream memoryStream = new MemoryStream();
+            byte[] buffer = new byte[1];
+            int totalRead = 0;
+            while (true)
+            {
+                int byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                if (byte_read == 0) throw new InvalidOperationException();
+                totalRead += byte_read;
+
+                if (totalRead > 40 * 1024) throw new InvalidOperationException();
+
+                if (buffer[0] == 13)
+                {
+                    byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    if (byte_read == 0) throw new InvalidOperationException();
+                    if (buffer[0] == 10) return Encoding.ASCII.GetString(memoryStream.ToArray());
+                    else throw new InvalidOperationException();
+                }
+                else memoryStream.WriteByte(buffer[0]);
+            }
         }
     }
 }

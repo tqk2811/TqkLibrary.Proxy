@@ -27,7 +27,7 @@ namespace TqkLibrary.Proxy.ProxySources
             throw new NotImplementedException();
         }
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address, bool isTransferHttps = false)
+        public async Task<ISessionSource> InitSessionAsync(Uri address)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 

@@ -32,9 +32,8 @@ namespace TqkLibrary.Proxy.Interfaces
         /// For Http-proxy/Https-proxy
         /// </summary>
         /// <param name="address"></param>
-        /// <param name="isTransferHttps">only for https-proxy using CONNECT</param>
         /// <returns></returns>
-        Task<ISessionSource> InitSessionAsync(Uri address, bool isTransferHttps = false);
+        Task<ISessionSource> InitSessionAsync(Uri address);
     }
     /*
      *Sock4/Sock5 => IP

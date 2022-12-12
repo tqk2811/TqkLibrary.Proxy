@@ -74,12 +74,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             lock (tcpListener)
             {
-                if (asyncResult is not null)
-                {
-                    using var client = this.tcpListener.EndAcceptTcpClient(asyncResult);
-                    asyncResult = null;
-                    this.tcpListener.Stop();
-                }
+                try { this.tcpListener.Stop(); } catch { }
             }
         }
 

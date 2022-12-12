@@ -5,7 +5,9 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TqkLibrary.Proxy", "TqkLibrary.Proxy\TqkLibrary.Proxy.csproj", "{7F426B6B-9FF4-49A6-A04F-F2B548ED68D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProxy", "TestProxy\TestProxy.csproj", "{DE676026-74A6-46B6-8A3F-55D53645AE6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

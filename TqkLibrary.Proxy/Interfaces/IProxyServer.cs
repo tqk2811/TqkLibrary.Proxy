@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Interfaces
 {
-    public interface IProxyServer
+    public interface IProxyServer: IDisposable
     {
         void StartListen();
         void StopListen();

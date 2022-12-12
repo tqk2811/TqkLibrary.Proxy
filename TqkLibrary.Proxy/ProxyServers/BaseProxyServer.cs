@@ -24,8 +24,19 @@ namespace TqkLibrary.Proxy.ProxyServers
             this.tcpListener = new TcpListener(iPEndPoint);
             this.IPEndPoint = iPEndPoint;
         }
-
-
+        ~BaseProxyServer()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        void Dispose(bool disposing)
+        {
+            StopListen();
+        }
         public void ShutdownCurrentConnection()
         {
             throw new NotImplementedException();
@@ -63,12 +74,16 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             lock (tcpListener)
             {
-                this.tcpListener.EndAcceptTcpClient(asyncResult);
-                asyncResult = null;
-                this.tcpListener.Stop();
+                if (asyncResult is not null)
+                {
+                    using var client = this.tcpListener.EndAcceptTcpClient(asyncResult);
+                    asyncResult = null;
+                    this.tcpListener.Stop();
+                }
             }
         }
 
         protected abstract Task ProxyWork(TcpClient tcpClient);
+
     }
 }

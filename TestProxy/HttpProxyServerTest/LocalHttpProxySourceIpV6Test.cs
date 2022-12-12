@@ -12,14 +12,14 @@ using Newtonsoft.Json;
 namespace TestProxy.HttpProxyServerTest
 {
     [TestClass]
-    public class LocalHttpProxySourceTest
+    public class LocalHttpProxySourceIpV6Test
     {
         static readonly IProxySource proxySource;
 
         static readonly HttpClientHandler httpClientHandler;
         static readonly HttpClient httpClient;
 
-        static LocalHttpProxySourceTest()
+        static LocalHttpProxySourceIpV6Test()
         {
             proxySource = new LocalHttpProxySource();
 
@@ -27,7 +27,7 @@ namespace TestProxy.HttpProxyServerTest
             {
                 Proxy = new WebProxy()
                 {
-                    Address = new Uri($"http://{Singleton.Address0}"),
+                    Address = new Uri($"http://{Singleton.AddressIpv6_0}"),
                 },
                 UseCookies = false,
             };
@@ -37,7 +37,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), proxySource);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), proxySource);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
@@ -50,7 +50,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpGetTwoTimes()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), proxySource);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), proxySource);
             httpProxyServer.StartListen();
 
             {
@@ -74,7 +74,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), proxySource);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), proxySource);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
@@ -91,7 +91,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), proxySource);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), proxySource);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://httpbin.org/get");
@@ -104,7 +104,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), proxySource);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), proxySource);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://httpbin.org/post");

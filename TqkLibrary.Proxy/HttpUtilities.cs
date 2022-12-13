@@ -76,22 +76,26 @@ namespace TqkLibrary.Proxy
                     {
                         headerParse.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
                     }
-                    else if (line.StartsWith("content-length: ", StringComparison.OrdinalIgnoreCase))
+                    else if (line.StartsWith(content_length, StringComparison.OrdinalIgnoreCase))
                     {
-                        headerParse.ContentLength = int.Parse(line.Substring(16).Trim());
+                        headerParse.ContentLength = int.Parse(line.Substring(content_length.Length).Trim());
                     }
                 }
             }
             return headerParse;
         }
 
+        const string content_length = "content-length: ";
         internal static int GetContentLength(this IEnumerable<string> lines)
         {
             foreach (var line in lines)
             {
-                if (line.StartsWith("content-length: ", StringComparison.OrdinalIgnoreCase))
+                if (line.StartsWith(content_length, StringComparison.OrdinalIgnoreCase))
                 {
-                    return int.Parse(line.Substring(16).Trim());
+                    if (int.TryParse(line.Substring(content_length.Length).Trim(), out int result))
+                    {
+                        return result;
+                    }
                 }
             }
             return 0;
@@ -114,6 +118,8 @@ namespace TqkLibrary.Proxy
                 else
                 {
                     lines.Add(line);
+                    if (lines.Sum(x => x.Length) > Singleton.HeaderMaxLength)
+                        throw new InvalidDataException("Header too long");
                 }
             }
             return lines;

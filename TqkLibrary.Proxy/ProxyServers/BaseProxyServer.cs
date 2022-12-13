@@ -58,7 +58,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 lock (tcpListener)
                 {
                     TcpClient tcpClient = this.tcpListener.EndAcceptTcpClient(ar);
-                    ProxyWork(tcpClient);//run in task
+                    _ = PreProxyWork(tcpClient);//run in task
                     asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
                 }
             }
@@ -78,7 +78,16 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
         }
 
-        protected abstract Task ProxyWork(TcpClient tcpClient);
+
+        private async Task PreProxyWork(TcpClient tcpClient)
+        {
+            using (tcpClient)
+            {
+                using NetworkStream networkStream = tcpClient.GetStream();
+                await ProxyWork(networkStream, tcpClient.Client.RemoteEndPoint);
+            }
+        }
+        protected abstract Task ProxyWork(Stream stream, EndPoint remoteEndPoint);
 
     }
 }

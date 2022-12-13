@@ -31,103 +31,89 @@ namespace TqkLibrary.Proxy.ProxyServers
             this.Credentials = credentials;
         }
 
-        protected override async Task ProxyWork(TcpClient client_TcpClient)
+        protected override async Task ProxyWork(Stream stream, EndPoint remoteEndPoint)
         {
-            using (client_TcpClient)
+            bool client_isKeepAlive = false;
+            bool should_continue = false;
+            do
             {
-                using NetworkStream client_NetworkStream = client_TcpClient.GetStream();
-
-                bool client_isKeepAlive = false;
-                do
-                {
-                    List<string> client_HeaderLines = await client_NetworkStream.ReadHeader();
+                should_continue = false;
+                List<string> client_HeaderLines = await stream.ReadHeader();
 #if DEBUG
-                    client_HeaderLines.ForEach(x => Console.WriteLine($"{client_TcpClient.Client.RemoteEndPoint} >> {x}"));
+                client_HeaderLines.ForEach(x => Console.WriteLine($"{remoteEndPoint} >> {x}"));
 #endif
-                    HeaderParse client_HeaderParse = client_HeaderLines.Parse();
+                HeaderParse client_HeaderParse = client_HeaderLines.Parse();
 
-                    //Check Proxy-Authorization
-                    if (Credentials != null)
+                //Check Proxy-Authorization
+                if (Credentials != null)
+                {
+                    if (client_HeaderParse.ProxyAuthorization == null)
                     {
-                        if (client_HeaderParse.ProxyAuthorization == null)
-                        {
-                            await WriteResponse(client_TcpClient, client_NetworkStream, "407 Proxy Authentication Required");
-                            return;
-                        }
-                        else
-                        {
-
-                        }
-                    }
-
-                    client_isKeepAlive = client_HeaderParse.IsKeepAlive;
-
-                    bool result;
-                    if ("CONNECT".Equals(client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
-                    {
-                        result = await HttpsTransfer(
-                            client_TcpClient,
-                            client_NetworkStream,
-                            client_HeaderParse);
+                        //await stream.WriteLineAsync($"HTTP/1.1 401 Unauthorized").ConfigureAwait(false);
+                        //await stream.WriteLineAsync($"Content-Length: 0").ConfigureAwait(false);
+                        //await stream.WriteLineAsync("Proxy-Authentication-Info: Basic").ConfigureAwait(false);
+                        //await stream.WriteLineAsync().ConfigureAwait(false);
+                        //client_isKeepAlive = true;
+                        //continue;
+                        await WriteResponse(remoteEndPoint, stream, "407 Proxy Authentication Required");
+                        return;
                     }
                     else
                     {
-                        result = await HttpTransfer(
-                            client_TcpClient,
-                            client_NetworkStream,
-                            client_HeaderLines,
-                            client_HeaderParse);
-                    }
-                    //False is disconnect all
-                    //True is hold connect from client, disconnect target
-                    if (!result)
-                    {
-                        break;
-                    }
 
-
-                    if (client_TcpClient.Connected)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        break;
                     }
                 }
-                while (client_isKeepAlive);
+
+                client_isKeepAlive = client_HeaderParse.IsKeepAlive;
+
+                if ("CONNECT".Equals(client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
+                {
+                    should_continue = await HttpsTransfer(
+                        remoteEndPoint,
+                        stream,
+                        client_HeaderParse);
+                }
+                else
+                {
+                    should_continue = await HttpTransfer(
+                        remoteEndPoint,
+                        stream,
+                        client_HeaderLines,
+                        client_HeaderParse);
+                }
             }
+            while (client_isKeepAlive || should_continue);
         }
 
 
         async Task<bool> HttpsTransfer(
-            TcpClient client_TcpClient,
-            NetworkStream client_NetworkStream,
+            EndPoint remoteEndPoint,
+            Stream stream,
             HeaderParse client_HeaderParse)
         {
             using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
             if (sessionSource == null)
             {
-                await WriteResponse(client_TcpClient, client_NetworkStream, "408 Request Timeout");
+                await WriteResponse(remoteEndPoint, stream, "408 Request Timeout");
                 return false;
             }
             else
             {
-                await WriteResponse(client_TcpClient, client_NetworkStream, "200 Connection established");
+                await WriteResponse(remoteEndPoint, stream, "200 Connection established");
             }
 
             using var remote_stream = sessionSource.GetStream();
-            await new StreamTransferHelper(client_NetworkStream, remote_stream)
+            await new StreamTransferHelper(stream, remote_stream)
 #if DEBUG
-                .DebugName(client_TcpClient.Client.RemoteEndPoint.ToString(), client_HeaderParse.Uri.ToString())
+                .DebugName(remoteEndPoint.ToString(), client_HeaderParse.Uri.ToString())
 #endif
                 .WaitUntilDisconnect().ConfigureAwait(false);
             return true;
         }
 
         async Task<bool> HttpTransfer(
-            TcpClient client_TcpClient,
-            NetworkStream client_NetworkStream,
+            EndPoint remoteEndPoint,
+            Stream stream,
             List<string> client_HeaderLines,
             HeaderParse client_HeaderParse)
         {
@@ -160,9 +146,9 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
             //Transfer content from client to target if have
-            await client_NetworkStream.TransferAsync(target_Stream, client_HeaderParse.ContentLength).ConfigureAwait(false);
+            await stream.TransferAsync(target_Stream, client_HeaderParse.ContentLength).ConfigureAwait(false);
 #if DEBUG
-            Console.WriteLine($"[{client_TcpClient.Client.RemoteEndPoint} >> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
+            Console.WriteLine($"[{remoteEndPoint} >> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
 #endif
             await target_Stream.FlushAsync().ConfigureAwait(false);
 
@@ -173,26 +159,26 @@ namespace TqkLibrary.Proxy.ProxyServers
             int ContentLength = target_response_HeaderLines.GetContentLength();
             foreach (var line in target_response_HeaderLines)
             {
-                await client_NetworkStream.WriteLineAsync(line).ConfigureAwait(false);
+                await stream.WriteLineAsync(line).ConfigureAwait(false);
 #if DEBUG
                 Console.WriteLine($"{client_HeaderParse.Uri.Host} >> {line}");
 #endif
             }
-            await client_NetworkStream.WriteLineAsync().ConfigureAwait(false);
+            await stream.WriteLineAsync().ConfigureAwait(false);
 
 
             //Transfer content from target to client if have
-            await target_Stream.TransferAsync(client_NetworkStream, ContentLength).ConfigureAwait(false);
+            await target_Stream.TransferAsync(stream, ContentLength).ConfigureAwait(false);
 #if DEBUG
-            Console.WriteLine($"[{client_TcpClient.Client.RemoteEndPoint} << {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
+            Console.WriteLine($"[{remoteEndPoint} << {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 #endif
-            await client_NetworkStream.FlushAsync().ConfigureAwait(false);
+            await stream.FlushAsync().ConfigureAwait(false);
 
             return true;
         }
 
 
-        async Task WriteResponse(TcpClient tcpClient, Stream stream, string code_and_message, string content_message = null)
+        async Task WriteResponse(EndPoint remoteEndPoint, Stream stream, string code_and_message, string content_message = null)
         {
             int contentLength = 0;
             byte[] content = null;
@@ -203,8 +189,8 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
 #if DEBUG
-            Console.WriteLine($"{tcpClient.Client.RemoteEndPoint} << HTTP/1.1 {code_and_message}");
-            Console.WriteLine($"{tcpClient.Client.RemoteEndPoint} << Content-Length: {contentLength}");
+            Console.WriteLine($"{remoteEndPoint} << HTTP/1.1 {code_and_message}");
+            Console.WriteLine($"{remoteEndPoint} << Content-Length: {contentLength}");
 #endif
             await stream.WriteLineAsync($"HTTP/1.1 {code_and_message}").ConfigureAwait(false);
             await stream.WriteLineAsync($"Content-Length: {contentLength}").ConfigureAwait(false);

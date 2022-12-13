@@ -62,7 +62,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 if (byte_read == 0) throw new InvalidOperationException();
                 totalRead += byte_read;
 
-                if (totalRead > 40 * 1024) throw new InvalidOperationException();
+                if (totalRead > Singleton.HeaderMaxLength) throw new InvalidOperationException();
 
                 if (buffer[0] == 13)
                 {

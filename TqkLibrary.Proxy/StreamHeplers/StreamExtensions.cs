@@ -30,6 +30,25 @@ namespace TqkLibrary.Proxy.StreamHeplers
             }
             while (totalRead < size);
         }
+        internal static async Task ReadContentAsync(this Stream from,
+            long size,
+            int bufferSize = 4096,
+            CancellationToken cancellationToken = default)
+        {
+            if (size <= 0) return;
+            if (from == null) throw new ArgumentNullException(nameof(from));
+            if (!from.CanRead) throw new InvalidOperationException($"{nameof(from)} must be {nameof(Stream.CanRead)}");
+
+            long totalRead = 0;
+            byte[] buffer = new byte[bufferSize];
+            do
+            {
+                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken).ConfigureAwait(false);
+                totalRead += byte_read;
+            }
+            while (totalRead < size);
+        }
+
 
         internal static Task WriteAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
         {
@@ -59,7 +78,13 @@ namespace TqkLibrary.Proxy.StreamHeplers
             while (true)
             {
                 int byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-                if (byte_read == 0) throw new InvalidOperationException();
+                if (byte_read == 0)
+                {
+                    if (totalRead == 0) 
+                        return string.Empty;
+                    else 
+                        throw new InvalidOperationException();
+                }
                 totalRead += byte_read;
 
                 if (totalRead > Singleton.HeaderMaxLength) throw new InvalidOperationException();
@@ -67,9 +92,13 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 if (buffer[0] == 13)
                 {
                     byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-                    if (byte_read == 0) throw new InvalidOperationException();
-                    if (buffer[0] == 10) return Encoding.ASCII.GetString(memoryStream.ToArray());
-                    else throw new InvalidOperationException();
+
+                    if (byte_read == 0) 
+                        throw new InvalidOperationException();
+                    if (buffer[0] == 10) 
+                        return Encoding.ASCII.GetString(memoryStream.ToArray());
+                    else 
+                        throw new InvalidOperationException();
                 }
                 else memoryStream.WriteByte(buffer[0]);
             }

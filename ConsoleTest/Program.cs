@@ -6,7 +6,8 @@ using System.IO;
 using System.Net.Http.Headers;
 using TqkLibrary.Proxy.Interfaces;
 
-const string address = "127.0.0.1:13566";
+//const string address = "127.0.0.1:13566";
+const string address = "[::1]:13566";
 IProxySource proxySource = new LocalHttpProxySource();
 
 
@@ -15,7 +16,7 @@ NetworkCredential networkCredential = new NetworkCredential("admin", "admin");
 credentialCache.Add(new Uri($"http://{address}"), "Basic", networkCredential);
 
 
-HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource/*, networkCredential*/);
+HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource, networkCredential);
 httpProxyServer.StartListen();
 
 using HttpClientHandler httpClientHandler = new HttpClientHandler()
@@ -23,15 +24,9 @@ using HttpClientHandler httpClientHandler = new HttpClientHandler()
     Proxy = new WebProxy()
     {
         Address = new Uri($"http://{address}"),
-        Credentials = networkCredential,
-        UseDefaultCredentials = false,
-        BypassProxyOnLocal = false,
     },
     UseProxy = true,
     UseCookies = false,
-    PreAuthenticate = true,
-    UseDefaultCredentials = false,
-    Credentials = networkCredential,
     DefaultProxyCredentials = networkCredential,
     
 };
@@ -44,11 +39,11 @@ using HttpClient httpClient = new HttpClient(httpClientHandler, false);
 //    string content = await httpResponseMessage.Content.ReadAsStringAsync();
 //}
 
-{
-    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
-    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
-    string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
-}
+//{
+//    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
+//    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+//    string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+//}
 
 {
     using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");

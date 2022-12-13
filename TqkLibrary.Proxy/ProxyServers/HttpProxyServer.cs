@@ -25,8 +25,8 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
         public bool AllowHttps { get; set; } = true;
-        public ICredentials Credentials { get; }
-        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, ICredentials credentials = null) : base(iPEndPoint, proxySource)
+        public NetworkCredential Credentials { get; }
+        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, NetworkCredential credentials = null) : base(iPEndPoint, proxySource)
         {
             this.Credentials = credentials;
         }
@@ -49,18 +49,42 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     if (client_HeaderParse.ProxyAuthorization == null)
                     {
-                        //await stream.WriteLineAsync($"HTTP/1.1 401 Unauthorized").ConfigureAwait(false);
-                        //await stream.WriteLineAsync($"Content-Length: 0").ConfigureAwait(false);
-                        //await stream.WriteLineAsync("Proxy-Authentication-Info: Basic").ConfigureAwait(false);
-                        //await stream.WriteLineAsync().ConfigureAwait(false);
-                        //client_isKeepAlive = true;
-                        //continue;
-                        await WriteResponse(remoteEndPoint, stream, "407 Proxy Authentication Required");
-                        return;
+                        //must read content if post,...
+                        await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
+                        await WriteResponse407(remoteEndPoint, stream).ConfigureAwait(false);
+                        //should_continue = true;//ipv6 should continue
+                        continue;
                     }
                     else
                     {
+                        switch (client_HeaderParse.ProxyAuthorization.Scheme)
+                        {
+                            case "Basic":
+                                {
+                                    string parameter = Encoding.UTF8.GetString(Convert.FromBase64String(client_HeaderParse.ProxyAuthorization.Parameter));
+                                    string[] split = parameter.Split(':');
+                                    if (split.Length == 2)
+                                    {
+                                        if (!split[0].Equals(Credentials.UserName, StringComparison.OrdinalIgnoreCase) ||
+                                            !split[1].Equals(Credentials.Password, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            //must read content if post,...
+                                            await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
+                                            await WriteResponse407(remoteEndPoint, stream).ConfigureAwait(false);
+                                            //should_continue = true;//ipv6 should continue
+                                            continue;
+                                        }
+                                        //else work
+                                    }
+                                    break;
+                                }
 
+                            default:
+                                //must read content if post,...
+                                await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
+                                await WriteResponse(remoteEndPoint, stream, "400 Bad Request");
+                                return;
+                        }
                     }
                 }
 
@@ -82,7 +106,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                         client_HeaderParse);
                 }
             }
-            while (client_isKeepAlive || should_continue);
+            while ((client_isKeepAlive || should_continue));
         }
 
 
@@ -177,6 +201,17 @@ namespace TqkLibrary.Proxy.ProxyServers
             return true;
         }
 
+        async Task WriteResponse407(EndPoint remoteEndPoint, Stream stream)
+        {
+#if DEBUG
+            Console.WriteLine($"{remoteEndPoint} << HTTP/1.1 407 Proxy Authentication Required");
+            Console.WriteLine($"{remoteEndPoint} << Proxy-Authenticate: Basic Scheme='Data'");
+#endif
+            await stream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required").ConfigureAwait(false);
+            await stream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'").ConfigureAwait(false);
+            await stream.WriteLineAsync().ConfigureAwait(false);
+            await stream.FlushAsync().ConfigureAwait(false);
+        }
 
         async Task WriteResponse(EndPoint remoteEndPoint, Stream stream, string code_and_message, string content_message = null)
         {

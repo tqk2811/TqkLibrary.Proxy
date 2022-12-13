@@ -62,19 +62,31 @@ namespace TqkLibrary.Proxy
                     }
                     else throw new InvalidOperationException();
                 }
-                else if (headerParse.ProxyAuthorization == null && AuthenticationHeaderValue.TryParse(line, out var _authenticationHeaderValue))
-                {
-                    //+ Proxy-Authorization
-                    if ("Proxy-Authorization".Equals(_authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
-                    {
-                        headerParse.ProxyAuthorization = _authenticationHeaderValue;
-                    }
-                }
+                //else if (headerParse.ProxyAuthorization == null && AuthenticationHeaderValue.TryParse(line, out var _authenticationHeaderValue))
+                //{
+                //    //+ Proxy-Authorization
+
+                //    //Proxy-Authorization: Basic <base64>
+                //    if ("Proxy-Authorization".Equals(_authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
+                //    {
+                //        headerParse.ProxyAuthorization = _authenticationHeaderValue;
+                //    }
+                //}
                 else
                 {
                     if (line.StartsWith("connection: ", StringComparison.OrdinalIgnoreCase))
                     {
                         headerParse.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (headerParse.ProxyAuthorization is null && line.StartsWith(proxy_authorization, StringComparison.OrdinalIgnoreCase))
+                    {
+                        //https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
+                        string value = line.Substring(proxy_authorization.Length).Trim(' ');
+                        int index = value.IndexOf(' ');
+                        if (index > 0)
+                        {
+                            headerParse.ProxyAuthorization = new AuthenticationHeaderValue(value.Substring(0, index), value.Substring(index + 1));
+                        }
                     }
                     else if (line.StartsWith(content_length, StringComparison.OrdinalIgnoreCase))
                     {
@@ -84,7 +96,7 @@ namespace TqkLibrary.Proxy
             }
             return headerParse;
         }
-
+        const string proxy_authorization = "Proxy-Authorization: ";
         const string content_length = "content-length: ";
         internal static int GetContentLength(this IEnumerable<string> lines)
         {

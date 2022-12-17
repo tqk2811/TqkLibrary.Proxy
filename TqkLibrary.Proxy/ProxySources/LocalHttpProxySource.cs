@@ -29,6 +29,8 @@ namespace TqkLibrary.Proxy.ProxySources
             switch (address.HostNameType)
             {
                 case UriHostNameType.Dns://http://host/abc/def
+                case UriHostNameType.IPv4:
+                case UriHostNameType.IPv6:
                     {
                         TcpClient remote = new TcpClient();
                         try
@@ -42,10 +44,6 @@ namespace TqkLibrary.Proxy.ProxySources
                             return null;
                         }
                     }
-                case UriHostNameType.IPv4:
-                case UriHostNameType.IPv6:
-                    throw new InvalidOperationException($"{address.HostNameType} not support in {nameof(InitSessionAsync)}(Uri), " +
-                        $"use {nameof(InitSessionAsync)}(IPEndPoint, ProtocolType) instead");
 
                 default:
                     throw new NotSupportedException();

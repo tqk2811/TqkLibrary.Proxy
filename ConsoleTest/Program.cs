@@ -6,6 +6,12 @@ using System.IO;
 using System.Net.Http.Headers;
 using TqkLibrary.Proxy.Interfaces;
 
+Uri uri0 = new Uri("http://127.0.0.1:13566");
+Uri uri1 = new Uri("http://[::1]:13566");
+Uri uri2 = new Uri("httpbin.org:80");//must ->http://httpbin.org:80
+Uri uri3 = new Uri("http://httpbin.org");
+Uri uri4 = new Uri("http://httpbin.org:8080");
+
 //const string address = "127.0.0.1:13566";
 const string address = "[::1]:13566";
 IProxySource proxySource = new LocalHttpProxySource();
@@ -28,13 +34,13 @@ using HttpClientHandler httpClientHandler = new HttpClientHandler()
     UseProxy = true,
     UseCookies = false,
     DefaultProxyCredentials = networkCredential,
-    
+
 };
 using HttpClient httpClient = new HttpClient(httpClientHandler, false);
 
-
 //{
-//    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://26.64.24.5/get");
+//    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://35.168.106.184/get");
+//    httpRequestMessage.Headers.Host = "httpbin.org";
 //    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
 //    string content = await httpResponseMessage.Content.ReadAsStringAsync();
 //}
@@ -45,16 +51,16 @@ using HttpClient httpClient = new HttpClient(httpClientHandler, false);
 //    string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
 //}
 
-{
-    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
-    httpRequestMessage.Headers.Add("Accept", "application/json");
-    httpRequestMessage.Content = new StringContent("Test post");
-    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
-    string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
-}
+//{
+//    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
+//    httpRequestMessage.Headers.Add("Accept", "application/json");
+//    httpRequestMessage.Content = new StringContent("Test post");
+//    using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
+//    string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+//}
 
 {
-    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://www.youtube.com/c/MuseVi%E1%BB%87tNam");
+    using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://tqk2811.github.io/TqkLibrary.Proxy/Test.txt");
     using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
     string content = await httpResponseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
 }

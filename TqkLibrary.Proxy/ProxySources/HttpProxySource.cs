@@ -26,12 +26,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public bool IsSupportIpv6 => true;
 
-        public Task<ISessionSource> InitSessionAsync(IPAddress iPAddress, ProtocolType protocolType)
-        {
-            throw new NotSupportedException();
-        }
-
-        public async Task<ISessionSource> InitSessionAsync(Uri address)
+        public async Task<ISessionSource> InitSessionAsync(Uri address, string host = null)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
             return null;

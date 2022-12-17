@@ -28,6 +28,7 @@ namespace TqkLibrary.Proxy
         public string Method { get; set; }
         public string Version { get; set; }
         public bool IsKeepAlive { get; set; } = false;
+        public string Host { get; set; }
         public int ContentLength { get; set; } = 0;
 
         public AuthenticationHeaderValue ProxyAuthorization { get; set; }
@@ -35,7 +36,7 @@ namespace TqkLibrary.Proxy
 
     internal static class HttpUtilities
     {
-        static readonly Regex regex_httpRequestMethod = new Regex("([A-z]+) (.*?) HTTP\\/([0-9\\.]{3})$");
+        static readonly Regex regex_httpRequestMethod = new Regex("([A-z]+) ([A-z]+:\\/\\/|)(.*?) HTTP\\/([0-9\\.]{3})$");
 
         internal static HeaderParse Parse(this IEnumerable<string> lines)
         {
@@ -52,31 +53,37 @@ namespace TqkLibrary.Proxy
                     Match match = regex_httpRequestMethod.Match(line);
                     if (match.Success)
                     {
-                        if (Uri.TryCreate(match.Groups[2].Value, UriKind.RelativeOrAbsolute, out Uri _uri))
+                        //Uri uri0 = new Uri("http://127.0.0.1:13566");
+                        //Uri uri1 = new Uri("http://[::1]:13566");
+                        //Uri uri2 = new Uri("httpbin.org:80");//must ->http://httpbin.org:80
+                        //Uri uri3 = new Uri("http://httpbin.org");
+                        //Uri uri4 = new Uri("http://httpbin.org:8080");
+                        //Uri uri5 = new Uri("wss://httpbin.org:8080/abc");
+                        string scheme = match.Groups[2].Value.TrimEnd(':', '/');
+                        if (string.IsNullOrWhiteSpace(scheme))
+                        {
+                            if (match.Groups[3].Value.EndsWith(":443")) scheme = "https";
+                            else scheme = "http";
+                        }
+                        if (Uri.TryCreate($"{scheme}://{match.Groups[3].Value}", UriKind.RelativeOrAbsolute, out Uri _uri))
                         {
                             headerParse.Uri = _uri;
                             headerParse.Method = match.Groups[1].Value;
-                            headerParse.Version = match.Groups[3].Value;
+                            headerParse.Version = match.Groups[4].Value;
                         }
                         else throw new InvalidOperationException();
                     }
                     else throw new InvalidOperationException();
                 }
-                //else if (headerParse.ProxyAuthorization == null && AuthenticationHeaderValue.TryParse(line, out var _authenticationHeaderValue))
-                //{
-                //    //+ Proxy-Authorization
-
-                //    //Proxy-Authorization: Basic <base64>
-                //    if ("Proxy-Authorization".Equals(_authenticationHeaderValue.Scheme, StringComparison.OrdinalIgnoreCase))
-                //    {
-                //        headerParse.ProxyAuthorization = _authenticationHeaderValue;
-                //    }
-                //}
                 else
                 {
                     if (line.StartsWith("connection: ", StringComparison.OrdinalIgnoreCase))
                     {
                         headerParse.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (string.IsNullOrWhiteSpace(headerParse.Host) && line.StartsWith(host, StringComparison.OrdinalIgnoreCase))
+                    {
+                        headerParse.Host = line.Substring(host.Length);
                     }
                     else if (headerParse.ProxyAuthorization is null && line.StartsWith(proxy_authorization, StringComparison.OrdinalIgnoreCase))
                     {
@@ -98,6 +105,7 @@ namespace TqkLibrary.Proxy
         }
         const string proxy_authorization = "Proxy-Authorization: ";
         const string content_length = "content-length: ";
+        const string host = "Host: ";
         internal static int GetContentLength(this IEnumerable<string> lines)
         {
             foreach (var line in lines)

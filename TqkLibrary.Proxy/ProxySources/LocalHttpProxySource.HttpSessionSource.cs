@@ -20,11 +20,7 @@ namespace TqkLibrary.Proxy.ProxySources
         {
             readonly TcpClient tcpClient;
             readonly string host;
-            public HttpSessionSource(TcpClient tcpClient)
-            {
-                this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
-            }
-            public HttpSessionSource(TcpClient tcpClient, string host)
+            public HttpSessionSource(TcpClient tcpClient, string host = null)
             {
                 this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
                 this.host = host;
@@ -66,17 +62,17 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
             bool RemoteCertificateValidationCallback(
-                object sender, 
-                X509Certificate certificate, 
-                X509Chain chain, 
+                object sender,
+                X509Certificate certificate,
+                X509Chain chain,
                 SslPolicyErrors sslPolicyErrors)
             {
                 return false;
             }
             X509Certificate LocalCertificateSelectionCallback(
-                object sender, 
+                object sender,
                 string targetHost,
-                X509CertificateCollection localCertificates, 
+                X509CertificateCollection localCertificates,
                 X509Certificate remoteCertificate,
                 string[] acceptableIssuers)
             {

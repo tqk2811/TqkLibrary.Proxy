@@ -21,19 +21,14 @@ namespace TqkLibrary.Proxy.Interfaces
 
         bool IsSupportIpv6 { get; }
 
+
         /// <summary>
-        /// For sock4/sock5 or https proxy with ip:port (only tcp)
-        /// </summary>
-        /// <param name="iPAddress">ipv4/ipv6, ipv6 only for sock5</param>
-        /// <param name="protocolType">only tcp/udp, udp only for sock5</param>
-        /// <returns></returns>
-        Task<ISessionSource> InitSessionAsync(IPAddress iPAddress, ProtocolType protocolType);
-        /// <summary>
-        /// For Http-proxy/Https-proxy
+        /// 
         /// </summary>
         /// <param name="address"></param>
+        /// <param name="host">Host for SslStream</param>
         /// <returns></returns>
-        Task<ISessionSource> InitSessionAsync(Uri address);
+        Task<ISessionSource> InitSessionAsync(Uri address, string host = null);
     }
     /*
      *Sock4/Sock5 => IP

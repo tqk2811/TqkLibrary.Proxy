@@ -118,6 +118,8 @@ namespace TqkLibrary.Proxy.ProxyServers
             using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
             if (sessionSource == null)
             {
+                //must read content if post,...
+                await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
                 await WriteResponse(remoteEndPoint, stream, "408 Request Timeout");
                 return false;
             }
@@ -143,6 +145,11 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             //raw http header request
             using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
+            if (sessionSource is null)
+            {
+                await WriteResponse(remoteEndPoint, stream, "408 Request Timeout");
+                return false;
+            }
             using Stream target_Stream = sessionSource.GetStream();
 
 

@@ -23,9 +23,6 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         public bool IsSupportUdp => false;
-
-        public bool IsSupportTransferHttps => true;
-
         public bool IsSupportIpv6 => true;
 
         public async Task<ISessionSource> InitSessionAsync(Uri address, string host = null)

@@ -17,10 +17,7 @@ namespace TqkLibrary.Proxy.ProxySources
     public partial class LocalHttpProxySource : IProxySource, IHttpProxy
     {
         public bool IsSupportUdp => false;
-
-        public bool IsSupportTransferHttps { get; } = true;
-
-        public bool IsSupportIpv6 { get; } = true;
+        public bool IsSupportIpv6 => true;
 
         public async Task<ISessionSource> InitSessionAsync(Uri address, string host = null)
         {

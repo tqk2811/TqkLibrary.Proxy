@@ -22,7 +22,7 @@ using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy
 {
-    internal class HeaderParse
+    internal class HeaderRequestParse
     {
         public Uri Uri { get; set; }
         public string Method { get; set; }
@@ -34,20 +34,35 @@ namespace TqkLibrary.Proxy
         public AuthenticationHeaderValue ProxyAuthorization { get; set; }
     }
 
+    internal class HeaderResponseParse
+    {
+        public string Version { get; set; }
+        public int StatusCode { get; set; }
+        public HttpStatusCode HttpStatusCode { get { return (HttpStatusCode)StatusCode; } }
+        public string StatusMessage { get; set; }
+        public bool IsKeepAlive { get; set; } = false;
+        public int ContentLength { get; set; } = 0;
+    }
+
+
     internal static class HttpUtilities
     {
-        static readonly Regex regex_httpRequestMethod = new Regex("([A-z]+) ([A-z]+:\\/\\/|)(.*?) HTTP\\/([0-9\\.]{3})$");
+        static readonly Regex regex_httpRequestMethod = new Regex("^([A-z]+) ([A-z]+:\\/\\/|)(.*?) HTTP\\/([0-9\\.]{3})$");
+        static readonly Regex regex_httpResponseStatus = new Regex("^HTTP\\/([0-9\\.]{3}) (\\d{3}) (.*?)$");
+        const string proxy_authorization = "Proxy-Authorization: ";
+        const string content_length = "content-length: ";
+        const string host = "Host: ";
 
-        internal static HeaderParse Parse(this IEnumerable<string> lines)
+        internal static HeaderRequestParse ParseRequest(this IEnumerable<string> lines)
         {
-            HeaderParse headerParse = new HeaderParse();
+            HeaderRequestParse headerRequestParse = new HeaderRequestParse();
             foreach (var line in lines)
             {
                 //Proxy just care
                 //+ first line
                 //+ Proxy-Authorization
                 //+ ContentLength
-                if (string.IsNullOrWhiteSpace(headerParse.Method))
+                if (string.IsNullOrWhiteSpace(headerRequestParse.Method))
                 {
                     //first line
                     Match match = regex_httpRequestMethod.Match(line);
@@ -67,9 +82,9 @@ namespace TqkLibrary.Proxy
                         }
                         if (Uri.TryCreate($"{scheme}://{match.Groups[3].Value}", UriKind.RelativeOrAbsolute, out Uri _uri))
                         {
-                            headerParse.Uri = _uri;
-                            headerParse.Method = match.Groups[1].Value;
-                            headerParse.Version = match.Groups[4].Value;
+                            headerRequestParse.Uri = _uri;
+                            headerRequestParse.Method = match.Groups[1].Value;
+                            headerRequestParse.Version = match.Groups[4].Value;
                         }
                         else throw new InvalidOperationException();
                     }
@@ -77,35 +92,70 @@ namespace TqkLibrary.Proxy
                 }
                 else
                 {
-                    if (line.StartsWith("connection: ", StringComparison.OrdinalIgnoreCase))
+                    if (line.StartsWith("proxy-connection: ", StringComparison.OrdinalIgnoreCase))
                     {
-                        headerParse.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
+                        headerRequestParse.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
                     }
-                    else if (string.IsNullOrWhiteSpace(headerParse.Host) && line.StartsWith(host, StringComparison.OrdinalIgnoreCase))
+                    else if (string.IsNullOrWhiteSpace(headerRequestParse.Host) && line.StartsWith(host, StringComparison.OrdinalIgnoreCase))
                     {
-                        headerParse.Host = line.Substring(host.Length);
+                        headerRequestParse.Host = line.Substring(host.Length);
                     }
-                    else if (headerParse.ProxyAuthorization is null && line.StartsWith(proxy_authorization, StringComparison.OrdinalIgnoreCase))
+                    else if (headerRequestParse.ProxyAuthorization is null && line.StartsWith(proxy_authorization, StringComparison.OrdinalIgnoreCase))
                     {
                         //https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
                         string value = line.Substring(proxy_authorization.Length).Trim(' ');
                         int index = value.IndexOf(' ');
                         if (index > 0)
                         {
-                            headerParse.ProxyAuthorization = new AuthenticationHeaderValue(value.Substring(0, index), value.Substring(index + 1));
+                            headerRequestParse.ProxyAuthorization = new AuthenticationHeaderValue(value.Substring(0, index), value.Substring(index + 1));
                         }
                     }
                     else if (line.StartsWith(content_length, StringComparison.OrdinalIgnoreCase))
                     {
-                        headerParse.ContentLength = int.Parse(line.Substring(content_length.Length).Trim());
+                        headerRequestParse.ContentLength = int.Parse(line.Substring(content_length.Length).Trim());
                     }
                 }
             }
-            return headerParse;
+            return headerRequestParse;
         }
-        const string proxy_authorization = "Proxy-Authorization: ";
-        const string content_length = "content-length: ";
-        const string host = "Host: ";
+
+        internal static HeaderResponseParse ParseResponse(this IEnumerable<string> lines)
+        {
+            HeaderResponseParse responseStatusCode = new HeaderResponseParse();
+            foreach (var line in lines)
+            {
+                //Proxy just care
+                //+ first line
+                //+ Proxy-Authorization
+                //+ ContentLength
+                if (string.IsNullOrWhiteSpace(responseStatusCode.Version))
+                {
+                    //first line
+                    Match match = regex_httpResponseStatus.Match(line);
+                    if (match.Success)
+                    {
+                        responseStatusCode.Version = match.Groups[1].Value;
+                        responseStatusCode.StatusCode = int.Parse(match.Groups[2].Value);
+                        responseStatusCode.StatusMessage = match.Groups[3].Value;
+                    }
+                    else throw new InvalidOperationException();
+                }
+                else
+                {
+                    if (line.StartsWith("connection: ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        responseStatusCode.IsKeepAlive = line.Contains("keep-alive", StringComparison.OrdinalIgnoreCase);
+                    }
+                    else if (line.StartsWith(content_length, StringComparison.OrdinalIgnoreCase))
+                    {
+                        responseStatusCode.ContentLength = int.Parse(line.Substring(content_length.Length).Trim());
+                    }
+                }
+            }
+            return responseStatusCode;
+        }
+
+
         internal static int GetContentLength(this IEnumerable<string> lines)
         {
             foreach (var line in lines)
@@ -129,7 +179,7 @@ namespace TqkLibrary.Proxy
                 //if (streamReader.EndOfStream)
                 //    break;
 
-                string line = await stream.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                string line = await stream.ReadLineAsync(cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(line))
                 {

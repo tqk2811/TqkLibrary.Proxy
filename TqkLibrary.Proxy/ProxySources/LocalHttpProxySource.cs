@@ -33,7 +33,7 @@ namespace TqkLibrary.Proxy.ProxySources
                         try
                         {
                             await remote.ConnectAsync(address.Host, address.Port);
-                            return new HttpSessionSource(remote, host);
+                            return new StreamSessionSource(remote, host);
                         }
                         catch
                         {

@@ -62,7 +62,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 if (headerResponseParse.HttpStatusCode == HttpStatusCode.OK)
                 {
-                    return new HttpSessionSource(tcpClient);
+                    return new StreamSessionSource(tcpClient);
                 }
             }
             catch (Exception ex)

@@ -14,16 +14,16 @@ using TqkLibrary.Proxy.ProxyServers;
 
 namespace TqkLibrary.Proxy
 {
-    internal class HttpSessionSource : ISessionSource
+    internal class StreamSessionSource : ISessionSource
     {
         readonly TcpClient tcpClient;
         readonly string host;
-        public HttpSessionSource(TcpClient tcpClient, string host = null)
+        public StreamSessionSource(TcpClient tcpClient, string host = null)
         {
             this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
             this.host = host;
         }
-        ~HttpSessionSource()
+        ~StreamSessionSource()
         {
             tcpClient.Dispose();
         }

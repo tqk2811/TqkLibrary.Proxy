@@ -52,7 +52,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     if (client_HeaderParse.ProxyAuthorization == null)
                     {
                         //must read content if post,...
-                        await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                        await stream.ReadBytesAsync(client_HeaderParse.ContentLength);
                         should_continue = await WriteResponse407(remoteEndPoint, stream);
                         continue;
                     }
@@ -70,7 +70,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                                             !split[1].Equals(Credentials.Password, StringComparison.OrdinalIgnoreCase))
                                         {
                                             //must read content if post,...
-                                            await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                                            await stream.ReadBytesAsync(client_HeaderParse.ContentLength);
                                             should_continue = await WriteResponse407(remoteEndPoint, stream);
                                             continue;
                                         }
@@ -81,7 +81,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                             default:
                                 //must read content if post,...
-                                await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                                await stream.ReadBytesAsync(client_HeaderParse.ContentLength);
                                 should_continue = await WriteResponse(remoteEndPoint, stream, true, "400 Bad Request");
                                 continue;
                         }
@@ -119,7 +119,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             if (sessionSource == null)
             {
                 //must read content if post,...
-                await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                await stream.ReadBytesAsync(client_HeaderParse.ContentLength);
                 return await WriteResponse(remoteEndPoint, stream, true, "408 Request Timeout");
             }
             else

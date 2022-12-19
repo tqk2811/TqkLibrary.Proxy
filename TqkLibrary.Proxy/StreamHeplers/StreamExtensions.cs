@@ -30,23 +30,27 @@ namespace TqkLibrary.Proxy.StreamHeplers
             }
             while (totalRead < size);
         }
-        internal static async Task ReadContentAsync(this Stream from,
-            long size,
-            int bufferSize = 4096,
+
+        internal static async Task<byte[]> ReadBytesAsync(
+            this Stream from,
+            int size,
             CancellationToken cancellationToken = default)
         {
-            if (size <= 0) return;
+            if (size <= 0) return new byte[0];
             if (from == null) throw new ArgumentNullException(nameof(from));
             if (!from.CanRead) throw new InvalidOperationException($"{nameof(from)} must be {nameof(Stream.CanRead)}");
+            if (size > Singleton.ContentMaxLength) throw new InvalidOperationException("Content too long");
 
-            long totalRead = 0;
-            byte[] buffer = new byte[bufferSize];
+            int totalRead = 0;
+            byte[] buffer = new byte[size];
             do
             {
-                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken);
+                int byte_read = await from.ReadAsync(buffer, totalRead, size - totalRead, cancellationToken);
+                if (byte_read == 0) throw new InvalidOperationException("Stream ended");
                 totalRead += byte_read;
             }
             while (totalRead < size);
+            return buffer;
         }
 
 

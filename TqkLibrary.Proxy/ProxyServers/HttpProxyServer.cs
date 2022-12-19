@@ -39,10 +39,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 should_continue = false;
                 List<string> client_HeaderLines = await stream.ReadHeader();
+                if (client_HeaderLines.Count == 0)
+                    return;//client stream closed
 #if DEBUG
-                client_HeaderLines.ForEach(x => Console.WriteLine($"{remoteEndPoint} >> {x}"));
+                client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} >> {x}"));
 #endif
-                HeaderParse client_HeaderParse = client_HeaderLines.Parse();
+                HeaderRequestParse client_HeaderParse = client_HeaderLines.ParseRequest();
 
                 //Check Proxy-Authorization
                 if (Credentials != null)
@@ -50,16 +52,15 @@ namespace TqkLibrary.Proxy.ProxyServers
                     if (client_HeaderParse.ProxyAuthorization == null)
                     {
                         //must read content if post,...
-                        await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
-                        await WriteResponse407(remoteEndPoint, stream).ConfigureAwait(false);
-                        //should_continue = true;//ipv6 should continue
+                        await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                        should_continue = await WriteResponse407(remoteEndPoint, stream);
                         continue;
                     }
                     else
                     {
-                        switch (client_HeaderParse.ProxyAuthorization.Scheme)
+                        switch (client_HeaderParse.ProxyAuthorization.Scheme.ToLower())
                         {
-                            case "Basic":
+                            case "basic":
                                 {
                                     string parameter = Encoding.UTF8.GetString(Convert.FromBase64String(client_HeaderParse.ProxyAuthorization.Parameter));
                                     string[] split = parameter.Split(':');
@@ -69,9 +70,8 @@ namespace TqkLibrary.Proxy.ProxyServers
                                             !split[1].Equals(Credentials.Password, StringComparison.OrdinalIgnoreCase))
                                         {
                                             //must read content if post,...
-                                            await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
-                                            await WriteResponse407(remoteEndPoint, stream).ConfigureAwait(false);
-                                            //should_continue = true;//ipv6 should continue
+                                            await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                                            should_continue = await WriteResponse407(remoteEndPoint, stream);
                                             continue;
                                         }
                                         //else work
@@ -81,9 +81,9 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                             default:
                                 //must read content if post,...
-                                await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
-                                await WriteResponse(remoteEndPoint, stream, "400 Bad Request");
-                                return;
+                                await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                                should_continue = await WriteResponse(remoteEndPoint, stream, true, "400 Bad Request");
+                                continue;
                         }
                     }
                 }
@@ -113,19 +113,18 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task<bool> HttpsTransfer(
             EndPoint remoteEndPoint,
             Stream stream,
-            HeaderParse client_HeaderParse)
+            HeaderRequestParse client_HeaderParse)
         {
             using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
             if (sessionSource == null)
             {
                 //must read content if post,...
-                await stream.ReadContentAsync(client_HeaderParse.ContentLength).ConfigureAwait(false);
-                await WriteResponse(remoteEndPoint, stream, "408 Request Timeout");
-                return false;
+                await stream.ReadContentAsync(client_HeaderParse.ContentLength);
+                return await WriteResponse(remoteEndPoint, stream, true, "408 Request Timeout");
             }
             else
             {
-                await WriteResponse(remoteEndPoint, stream, "200 Connection established");
+                await WriteResponse(remoteEndPoint, stream, true, "200 Connection established");
             }
 
             using var remote_stream = sessionSource.GetStream();
@@ -133,7 +132,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 #if DEBUG
                 .DebugName(remoteEndPoint.ToString(), client_HeaderParse.Uri.ToString())
 #endif
-                .WaitUntilDisconnect().ConfigureAwait(false);
+                .WaitUntilDisconnect();
             return true;
         }
 
@@ -141,14 +140,13 @@ namespace TqkLibrary.Proxy.ProxyServers
             EndPoint remoteEndPoint,
             Stream stream,
             List<string> client_HeaderLines,
-            HeaderParse client_HeaderParse)
+            HeaderRequestParse client_HeaderParse)
         {
             //raw http header request
             using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
             if (sessionSource is null)
             {
-                await WriteResponse(remoteEndPoint, stream, "408 Request Timeout");
-                return false;
+                return await WriteResponse(remoteEndPoint, stream, true, "408 Request Timeout");
             }
             using Stream target_Stream = sessionSource.GetStream();
 
@@ -161,27 +159,27 @@ namespace TqkLibrary.Proxy.ProxyServers
                 headerLines.Add($"Host: {client_HeaderParse.Uri.Host}");
             }
             foreach (var line in client_HeaderLines.Skip(1)
-                .Where(x => !x.StartsWith("Proxy-Authorization: ", StringComparison.OrdinalIgnoreCase)))
+                .Where(x => !x.StartsWith("Proxy-", StringComparison.OrdinalIgnoreCase)))
             {
                 headerLines.Add(line);
             }
 
             foreach (var line in headerLines)
             {
-                await target_Stream.WriteLineAsync(line).ConfigureAwait(false);
+                await target_Stream.WriteLineAsync(line);
 #if DEBUG
-                Console.WriteLine($"{client_HeaderParse.Uri.Host} << {line}");
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} << {line}");
 #endif
             }
-            await target_Stream.WriteLineAsync().ConfigureAwait(false);
+            await target_Stream.WriteLineAsync();
 
 
             //Transfer content from client to target if have
-            await stream.TransferAsync(target_Stream, client_HeaderParse.ContentLength).ConfigureAwait(false);
+            await stream.TransferAsync(target_Stream, client_HeaderParse.ContentLength);
 #if DEBUG
-            Console.WriteLine($"[{remoteEndPoint} >> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} >> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
 #endif
-            await target_Stream.FlushAsync().ConfigureAwait(false);
+            await target_Stream.FlushAsync();
 
 
             //-----------------------------------------------------
@@ -190,37 +188,40 @@ namespace TqkLibrary.Proxy.ProxyServers
             int ContentLength = target_response_HeaderLines.GetContentLength();
             foreach (var line in target_response_HeaderLines)
             {
-                await stream.WriteLineAsync(line).ConfigureAwait(false);
+                await stream.WriteLineAsync(line);
 #if DEBUG
-                Console.WriteLine($"{client_HeaderParse.Uri.Host} >> {line}");
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} >> {line}");
 #endif
             }
-            await stream.WriteLineAsync().ConfigureAwait(false);
+            await stream.WriteLineAsync();
 
 
             //Transfer content from target to client if have
-            await target_Stream.TransferAsync(stream, ContentLength).ConfigureAwait(false);
+            await target_Stream.TransferAsync(stream, ContentLength);
 #if DEBUG
-            Console.WriteLine($"[{remoteEndPoint} << {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} << {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 #endif
-            await stream.FlushAsync().ConfigureAwait(false);
+            await stream.FlushAsync();
 
             return true;
         }
 
-        async Task WriteResponse407(EndPoint remoteEndPoint, Stream stream)
+        async Task<bool> WriteResponse407(EndPoint remoteEndPoint, Stream stream)
         {
 #if DEBUG
-            Console.WriteLine($"{remoteEndPoint} << HTTP/1.1 407 Proxy Authentication Required");
-            Console.WriteLine($"{remoteEndPoint} << Proxy-Authenticate: Basic Scheme='Data'");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << HTTP/1.1 407 Proxy Authentication Required");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Proxy-Authenticate: Basic Scheme='Data'");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Connection: keep-alive");
 #endif
-            await stream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required").ConfigureAwait(false);
-            await stream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'").ConfigureAwait(false);
-            await stream.WriteLineAsync().ConfigureAwait(false);
-            await stream.FlushAsync().ConfigureAwait(false);
+            await stream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required");
+            await stream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'");
+            await stream.WriteLineAsync("Connection: keep-alive");
+            await stream.WriteLineAsync();
+            await stream.FlushAsync();
+            return true;
         }
 
-        async Task WriteResponse(EndPoint remoteEndPoint, Stream stream, string code_and_message, string content_message = null)
+        async Task<bool> WriteResponse(EndPoint remoteEndPoint, Stream stream, bool isKeepAlive, string code_and_message, string content_message = null)
         {
             int contentLength = 0;
             byte[] content = null;
@@ -231,21 +232,28 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
 #if DEBUG
-            Console.WriteLine($"{remoteEndPoint} << HTTP/1.1 {code_and_message}");
-            Console.WriteLine($"{remoteEndPoint} << Content-Length: {contentLength}");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << HTTP/1.1 {code_and_message}");
+            if (isKeepAlive) Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Connection: keep-alive");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Content-Length: {contentLength}");
+            if (contentLength > 0 && content != null)
+            {
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Content-Type: text/html; charset=utf-8");
+            }
 #endif
-            await stream.WriteLineAsync($"HTTP/1.1 {code_and_message}").ConfigureAwait(false);
-            await stream.WriteLineAsync($"Content-Length: {contentLength}").ConfigureAwait(false);
+            await stream.WriteLineAsync($"HTTP/1.1 {code_and_message}");
+            if (isKeepAlive) await stream.WriteLineAsync("Connection: keep-alive");
+            await stream.WriteLineAsync($"Content-Length: {contentLength}");
             if (contentLength > 0 && content != null)
             {
-                await stream.WriteLineAsync($"Content-Type: text/html; charset=utf-8").ConfigureAwait(false);
+                await stream.WriteLineAsync($"Content-Type: text/html; charset=utf-8");
             }
-            await stream.WriteLineAsync().ConfigureAwait(false);
+            await stream.WriteLineAsync();
             if (contentLength > 0 && content != null)
             {
-                await stream.WriteAsync(content, 0, contentLength).ConfigureAwait(false);
+                await stream.WriteAsync(content, 0, contentLength);
             }
-            await stream.FlushAsync().ConfigureAwait(false);
+            await stream.FlushAsync();
+            return isKeepAlive;
         }
     }
 }

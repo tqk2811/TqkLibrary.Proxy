@@ -46,11 +46,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             {
                 while (true)
                 {
-                    int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
+                    int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken);
 #if DEBUG
                     Console.WriteLine($"[{_firstName} >> {_secondName}] {byte_read} bytes");
 #endif
-                    if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
+                    if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken);
                     else return;
                 }
             }
@@ -67,11 +67,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             {
                 while (true)
                 {
-                    int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken).ConfigureAwait(false);
+                    int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken);
 #if DEBUG
                     Console.WriteLine($"[{_firstName} << {_secondName}] {byte_read} bytes");
 #endif
-                    if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
+                    if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken);
                     else return;
                 }
             }

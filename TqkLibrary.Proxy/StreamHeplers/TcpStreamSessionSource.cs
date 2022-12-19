@@ -12,18 +12,18 @@ using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
 
-namespace TqkLibrary.Proxy
+namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal class StreamSessionSource : ISessionSource
+    internal class TcpStreamSessionSource : ISessionSource
     {
         readonly TcpClient tcpClient;
         readonly string host;
-        public StreamSessionSource(TcpClient tcpClient, string host = null)
+        public TcpStreamSessionSource(TcpClient tcpClient, string host = null)
         {
             this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
             this.host = host;
         }
-        ~StreamSessionSource()
+        ~TcpStreamSessionSource()
         {
             tcpClient.Dispose();
         }

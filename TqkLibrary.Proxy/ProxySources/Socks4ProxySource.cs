@@ -32,7 +32,7 @@ namespace TqkLibrary.Proxy.ProxySources
             this.userId = userId ?? string.Empty;
         }
 
-
+        public bool IsUseSocks4A { get; set; } = true;
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => false;
 
@@ -51,8 +51,13 @@ namespace TqkLibrary.Proxy.ProxySources
                     case UriHostNameType.IPv4:
                         IPAddress.TryParse(address.Host, out iPAddress);
                         break;
+
                     case UriHostNameType.Dns:
-                        iPAddress = Dns.GetHostAddresses(address.Host).Where(x => x.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+                        if (!IsUseSocks4A)
+                        {
+                            iPAddress = Dns.GetHostAddresses(address.Host).Where(x => x.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+                            if (iPAddress == null) throw new Exception($"{address.Host} not found");
+                        }
                         break;
 
                     default: throw new NotSupportedException(nameof(address.HostNameType));
@@ -64,42 +69,50 @@ namespace TqkLibrary.Proxy.ProxySources
                 await tcpClient.ConnectAsync(iPEndPoint.Address, iPEndPoint.Port);
                 networkStream = tcpClient.GetStream();
 
+
+                bool isRequestDomain = iPAddress == null && IsUseSocks4A;
                 //================first request====================
                 UInt16 port = (UInt16)address.Port;
                 byte[] ipv4_bytes = iPAddress.GetAddressBytes();
-                byte[] buffer = new byte[]
+                byte[] req_buffer = new byte[]
                 {
-                    Socks4Version,
-                    (byte)Socks4_CMD.EstablishStreamConnection,
-                    (byte)(port >> 8),
-                    (byte)(port),
-                    ipv4_bytes[0],
-                    ipv4_bytes[1],
-                    ipv4_bytes[2],
-                    ipv4_bytes[3],
+                        Socks4Version,
+                        (byte)Socks4_CMD.EstablishStreamConnection,
+                        (byte)(port >> 8),
+                        (byte)(port),
+                        isRequestDomain ? (byte)0 : ipv4_bytes[0],
+                        isRequestDomain ? (byte)0 : ipv4_bytes[1],
+                        isRequestDomain ? (byte)0 : ipv4_bytes[2],
+                        isRequestDomain ? (byte)1 : ipv4_bytes[3],
                 };
-                await networkStream.WriteAsync(buffer, 0, buffer.Length);
+                await networkStream.WriteAsync(req_buffer, 0, req_buffer.Length);
 
-                buffer = new byte[this.userId.Length + 1];
-                buffer[this.userId.Length] = 0;
+                req_buffer = new byte[this.userId.Length + 1];
+                req_buffer[this.userId.Length] = 0;
                 if (!string.IsNullOrWhiteSpace(this.userId))
                 {
-                    Encoding.ASCII.GetBytes(this.userId, 0, this.userId.Length, buffer, 0);
+                    Encoding.ASCII.GetBytes(this.userId, 0, this.userId.Length, req_buffer, 0);
                 }
-                await networkStream.WriteAsync(buffer, 0, buffer.Length);
+                await networkStream.WriteAsync(req_buffer, 0, req_buffer.Length);
+                if (isRequestDomain)
+                {
+                    req_buffer = new byte[address.Host.Length + 1];
+                    req_buffer[address.Host.Length] = 0;
+                    Encoding.ASCII.GetBytes(address.Host, 0, address.Host.Length, req_buffer, 0);
+                    await networkStream.WriteAsync(req_buffer, 0, req_buffer.Length);
+                }
                 await networkStream.FlushAsync();
 
-
                 //================first reply====================
-                buffer = await networkStream.ReadBytesAsync(8);
-                switch ((Socks4_REP)buffer[1])
+                byte[] res_buffer = await networkStream.ReadBytesAsync(8);
+                switch ((Socks4_REP)res_buffer[1])
                 {
                     case Socks4_REP.RequestGranted:
                         isSuccess = true;
                         return new TcpStreamSessionSource(tcpClient);
 
                     default:
-                        throw new Exception(((Socks4_REP)buffer[1]).ToString());
+                        throw new Exception(((Socks4_REP)res_buffer[1]).ToString());
                 }
             }
             catch (Exception ex)

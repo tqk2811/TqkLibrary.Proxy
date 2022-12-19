@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        configuration: [Release]
 
     env:
       Solution_Name: TqkLibrary.Proxy.sln                       # Replace with your solution name, i.e. MyWpfApp.sln.

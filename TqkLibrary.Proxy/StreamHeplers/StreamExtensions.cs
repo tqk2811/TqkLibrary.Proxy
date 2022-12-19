@@ -8,9 +8,9 @@ namespace TqkLibrary.Proxy.StreamHeplers
 {
     internal static class StreamExtensions
     {
-        internal static async Task TransferAsync(this Stream from, 
-            Stream to, 
-            long size, 
+        internal static async Task TransferAsync(this Stream from,
+            Stream to,
+            long size,
             int bufferSize = 4096,
             CancellationToken cancellationToken = default)
         {
@@ -24,8 +24,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
             byte[] buffer = new byte[bufferSize];
             do
             {
-                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken).ConfigureAwait(false);
-                await to.WriteAsync(buffer, 0, byte_read, cancellationToken).ConfigureAwait(false);
+                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken);
+                await to.WriteAsync(buffer, 0, byte_read, cancellationToken);
                 totalRead += byte_read;
             }
             while (totalRead < size);
@@ -43,7 +43,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             byte[] buffer = new byte[bufferSize];
             do
             {
-                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken).ConfigureAwait(false);
+                int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken);
                 totalRead += byte_read;
             }
             while (totalRead < size);
@@ -52,12 +52,17 @@ namespace TqkLibrary.Proxy.StreamHeplers
 
         internal static Task WriteAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(text)) throw new ArgumentNullException(nameof(text));
             byte[] buffer = Encoding.ASCII.GetBytes(text);
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
         internal static Task WriteLineAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(text + "\r\n");
+            if (string.IsNullOrWhiteSpace(text)) throw new ArgumentNullException(nameof(text));
+            byte[] buffer = new byte[text.Length + 2];
+            buffer[text.Length] = 13;
+            buffer[text.Length + 1] = 10;
+            Encoding.ASCII.GetBytes(text, 0, text.Length, buffer, 0);
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
 
@@ -77,12 +82,12 @@ namespace TqkLibrary.Proxy.StreamHeplers
             int totalRead = 0;
             while (true)
             {
-                int byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                int byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                 if (byte_read == 0)
                 {
-                    if (totalRead == 0) 
+                    if (totalRead == 0)
                         return string.Empty;
-                    else 
+                    else
                         throw new InvalidOperationException();
                 }
                 totalRead += byte_read;
@@ -91,13 +96,13 @@ namespace TqkLibrary.Proxy.StreamHeplers
 
                 if (buffer[0] == 13)
                 {
-                    byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
-                    if (byte_read == 0) 
+                    if (byte_read == 0)
                         throw new InvalidOperationException();
-                    if (buffer[0] == 10) 
+                    if (buffer[0] == 10)
                         return Encoding.ASCII.GetString(memoryStream.ToArray());
-                    else 
+                    else
                         throw new InvalidOperationException();
                 }
                 else memoryStream.WriteByte(buffer[0]);

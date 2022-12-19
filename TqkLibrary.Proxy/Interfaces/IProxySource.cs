@@ -12,9 +12,8 @@ namespace TqkLibrary.Proxy.Interfaces
         /// 
         /// </summary>
         /// <param name="address"></param>
-        /// <param name="host">Host for SslStream</param>
         /// <returns></returns>
-        Task<ISessionSource> InitSessionAsync(Uri address, string host = null);
+        Task<ISessionSource> InitSessionAsync(Uri address);
     }
     /*
      *Sock4/Sock5 => IP

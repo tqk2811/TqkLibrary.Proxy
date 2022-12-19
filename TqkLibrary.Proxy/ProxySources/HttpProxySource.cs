@@ -25,7 +25,7 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address, string host = null)
+        public async Task<ISessionSource> InitSessionAsync(Uri address)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
             //allway use connect

@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
+using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -19,7 +20,7 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address, string host = null)
+        public async Task<ISessionSource> InitSessionAsync(Uri address)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 
@@ -43,7 +44,7 @@ namespace TqkLibrary.Proxy.ProxySources
                                     try
                                     {
                                         await remote.ConnectAsync(address.Host, address.Port);
-                                        return new TcpStreamSessionSource(remote, host);
+                                        return new TcpStreamSessionSource(remote);
                                     }
                                     catch
                                     {

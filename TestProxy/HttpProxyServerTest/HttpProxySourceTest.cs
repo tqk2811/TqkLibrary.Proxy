@@ -21,7 +21,7 @@ namespace TestProxy.HttpProxyServerTest
 
         static HttpProxySourceTest()
         {
-            localProxySource = new LocalHttpProxySource();
+            localProxySource = new LocalProxySource();
 
             httpClientHandler = new HttpClientHandler()
             {

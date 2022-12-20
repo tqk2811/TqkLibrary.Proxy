@@ -42,7 +42,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (client_HeaderLines.Count == 0)
                     return;//client stream closed
 #if DEBUG
-                client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} >> {x}"));
+                client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} -> {x}"));
 #endif
                 HeaderRequestParse client_HeaderParse = client_HeaderLines.ParseRequest();
 
@@ -168,7 +168,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 await target_Stream.WriteLineAsync(line);
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} << {line}");
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} <- {line}");
 #endif
             }
             await target_Stream.WriteLineAsync();
@@ -177,7 +177,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             //Transfer content from client to target if have
             await stream.TransferAsync(target_Stream, client_HeaderParse.ContentLength);
 #if DEBUG
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} >> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} -> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
 #endif
             await target_Stream.FlushAsync();
 
@@ -190,7 +190,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 await stream.WriteLineAsync(line);
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} >> {line}");
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {client_HeaderParse.Uri.Host} -> {line}");
 #endif
             }
             await stream.WriteLineAsync();
@@ -199,7 +199,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             //Transfer content from target to client if have
             await target_Stream.TransferAsync(stream, ContentLength);
 #if DEBUG
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} << {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] [{remoteEndPoint} <- {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 #endif
             await stream.FlushAsync();
 
@@ -209,9 +209,9 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task<bool> WriteResponse407(EndPoint remoteEndPoint, Stream stream)
         {
 #if DEBUG
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << HTTP/1.1 407 Proxy Authentication Required");
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Proxy-Authenticate: Basic Scheme='Data'");
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Connection: keep-alive");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- HTTP/1.1 407 Proxy Authentication Required");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- Proxy-Authenticate: Basic Scheme='Data'");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- Connection: keep-alive");
 #endif
             await stream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required");
             await stream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'");
@@ -232,12 +232,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
 #if DEBUG
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << HTTP/1.1 {code_and_message}");
-            if (isKeepAlive) Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Connection: keep-alive");
-            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Content-Length: {contentLength}");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- HTTP/1.1 {code_and_message}");
+            if (isKeepAlive) Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- Connection: keep-alive");
+            Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- Content-Length: {contentLength}");
             if (contentLength > 0 && content != null)
             {
-                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} << Content-Type: text/html; charset=utf-8");
+                Console.WriteLine($"[{nameof(HttpProxyServer)}.{nameof(ProxyWork)}] {remoteEndPoint} <- Content-Type: text/html; charset=utf-8");
             }
 #endif
             await stream.WriteLineAsync($"HTTP/1.1 {code_and_message}");

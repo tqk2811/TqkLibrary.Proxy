@@ -40,14 +40,14 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 await networkStream.WriteLineAsync($"CONNECT {address} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} << CONNECT {address} HTTP/1.1");
+                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address} HTTP/1.1");
 #endif
                 if (networkCredential != null)
                 {
                     string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{networkCredential.UserName}:{networkCredential.Password}"));
                     await networkStream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
 #if DEBUG
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} << Proxy-Authorization: Basic {data}");
+                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- Proxy-Authorization: Basic {data}");
 #endif
                 }
                 await networkStream.WriteLineAsync();
@@ -56,7 +56,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 List<string> response_HeaderLines = await networkStream.ReadHeader();
 #if DEBUG
                 response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} >> {x}"));                
+                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} -> {x}"));                
 #endif
                 headerResponseParse = response_HeaderLines.ParseResponse();
 

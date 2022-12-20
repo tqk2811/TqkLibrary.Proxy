@@ -38,9 +38,9 @@ namespace TqkLibrary.Proxy.ProxySources
                 await tcpClient.ConnectAsync(proxy.Host, proxy.Port);
                 networkStream = tcpClient.GetStream();
 
-                await networkStream.WriteLineAsync($"CONNECT {address} HTTP/1.1");
+                await networkStream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address} HTTP/1.1");
+                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #endif
                 if (networkCredential != null)
                 {

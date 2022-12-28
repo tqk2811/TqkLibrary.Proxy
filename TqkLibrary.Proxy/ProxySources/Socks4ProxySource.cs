@@ -55,7 +55,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     case UriHostNameType.Dns:
                         if (!IsUseSocks4A)
                         {
-                            iPAddress = Dns.GetHostAddresses(address.Host).Where(x => x.AddressFamily == AddressFamily.InterNetwork).FirstOrDefault();
+                            iPAddress = Dns.GetHostAddresses(address.Host).FirstOrDefault();
                             if (iPAddress == null) throw new Exception($"{address.Host} not found");
                         }
                         break;

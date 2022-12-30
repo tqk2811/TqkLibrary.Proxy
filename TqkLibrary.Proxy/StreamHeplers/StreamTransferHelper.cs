@@ -46,7 +46,9 @@ namespace TqkLibrary.Proxy.StreamHeplers
             {
                 while (true)
                 {
+                    if (!_first.CanRead) return;
                     int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken);
+                    if (!_second.CanWrite) return;
 #if DEBUG
                     Console.WriteLine($"[{_firstName} -> {_secondName}] {byte_read} bytes");
 #endif
@@ -57,7 +59,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             catch (Exception ex)
             {
 #if DEBUG
-                Console.WriteLine($"{ex.GetType().FullName}: {ex.Message}");
+                Console.WriteLine($"[{nameof(StreamTransferHelper)}] {ex.GetType().FullName}: {ex.Message}");
 #endif
             }
         }
@@ -67,7 +69,9 @@ namespace TqkLibrary.Proxy.StreamHeplers
             {
                 while (true)
                 {
+                    if (!_second.CanRead) return;
                     int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken);
+                    if (!_first.CanWrite) return;
 #if DEBUG
                     Console.WriteLine($"[{_firstName} <- {_secondName}] {byte_read} bytes");
 #endif
@@ -78,7 +82,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             catch (Exception ex)
             {
 #if DEBUG
-                Console.WriteLine($"{ex.GetType().FullName}: {ex.Message}");
+                Console.WriteLine($"[{nameof(StreamTransferHelper)}] {ex.GetType().FullName}: {ex.Message}");
 #endif
             }
         }

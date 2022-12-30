@@ -13,6 +13,7 @@ namespace TqkLibrary.Proxy.ProxyServers
     {
         readonly TcpListener tcpListener;
         public IPEndPoint IPEndPoint { get; }
+
         public IProxySource ProxySource { get; }
         public int Timeout { get; set; } = 30000;
 
@@ -37,6 +38,8 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             StopListen();
         }
+
+
         public void ShutdownCurrentConnection()
         {
             throw new NotImplementedException();
@@ -55,17 +58,26 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             try
             {
-                lock (tcpListener)
+                if(this.tcpListener.Server.IsBound)
                 {
-                    TcpClient tcpClient = this.tcpListener.EndAcceptTcpClient(ar);
-                    _ = PreProxyWork(tcpClient);//run in task
-                    asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
+                    lock (tcpListener)
+                    {
+                        TcpClient tcpClient = this.tcpListener.EndAcceptTcpClient(ar);
+                        _ = PreProxyWork(tcpClient);//run in task
+                        asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
+                    }
                 }
+#if DEBUG
+                else
+                {
+                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(BeginAcceptTcpClientAsyncCallback)}] Stopped Listen");
+                }
+#endif
             }
             catch (Exception ex)
             {
 #if DEBUG
-                Console.WriteLine($"{ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+                Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(BeginAcceptTcpClientAsyncCallback)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
 #endif
             }
         }
@@ -74,7 +86,16 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             lock (tcpListener)
             {
-                try { this.tcpListener.Stop(); } catch { }
+                try
+                {
+                    this.tcpListener.Stop();
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(StopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
             }
         }
 

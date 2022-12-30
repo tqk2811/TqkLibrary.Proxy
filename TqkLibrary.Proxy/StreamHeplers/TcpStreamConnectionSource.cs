@@ -14,16 +14,16 @@ using TqkLibrary.Proxy.ProxyServers;
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal class TcpStreamSessionSource : ISessionSource
+    internal class TcpStreamConnectionSource : IConnectionSource
     {
         readonly TcpClient tcpClient;
         readonly string host;
-        public TcpStreamSessionSource(TcpClient tcpClient, string host = null)
+        public TcpStreamConnectionSource(TcpClient tcpClient, string host = null)
         {
             this.tcpClient = tcpClient ?? throw new ArgumentNullException(nameof(tcpClient));
             this.host = host;
         }
-        ~TcpStreamSessionSource()
+        ~TcpStreamConnectionSource()
         {
             tcpClient.Dispose();
         }

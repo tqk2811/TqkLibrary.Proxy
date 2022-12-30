@@ -19,8 +19,14 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
+        public bool IsSupportBind => true;
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address)
+        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 
@@ -44,7 +50,7 @@ namespace TqkLibrary.Proxy.ProxySources
                                     try
                                     {
                                         await remote.ConnectAsync(address.Host, address.Port);
-                                        return new TcpStreamSessionSource(remote);
+                                        return new TcpStreamConnectionSource(remote);
                                     }
                                     catch
                                     {

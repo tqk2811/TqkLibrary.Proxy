@@ -22,8 +22,14 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsUseSocks4A { get; set; } = true;
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => false;
+        public bool IsSupportBind => true;
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address)
+        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 
@@ -96,7 +102,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 {
                     case Socks4_REP.RequestGranted:
                         isSuccess = true;
-                        return new TcpStreamSessionSource(tcpClient);
+                        return new TcpStreamConnectionSource(tcpClient);
 
                     default:
                         throw new Exception(((Socks4_REP)res_buffer[1]).ToString());
@@ -104,7 +110,7 @@ namespace TqkLibrary.Proxy.ProxySources
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{nameof(Socks4ProxySource)}.{nameof(InitSessionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+                Console.WriteLine($"[{nameof(Socks4ProxySource)}.{nameof(InitConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
             }
             finally
             {

@@ -1,23 +1,33 @@
-﻿using System.Net;
-using System.Net.Sockets;
-
-namespace TqkLibrary.Proxy.Interfaces
+﻿namespace TqkLibrary.Proxy.Interfaces
 {
     public interface IProxySource
     {
+        /// <summary>
+        /// for socks5
+        /// </summary>
         bool IsSupportUdp { get; }
+
+        /// <summary>
+        /// for socks5
+        /// </summary>
         bool IsSupportIpv6 { get; }
+
+        /// <summary>
+        /// For socks4 and socks5
+        /// </summary>
+        bool IsSupportBind { get; }
+
+        /// <summary>
+        /// scheme: http/https, tcp, udp, ws/wss
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="address"></param>
         /// <returns></returns>
-        Task<ISessionSource> InitSessionAsync(Uri address);
+        Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default);
     }
-    /*
-     *Sock4/Sock5 => IP
-     *Https proxy: CONNECT domain:port or ip:port -> url
-     *Http proxy: Get <full url or ip:port>
-    */
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TqkLibrary.Proxy.Interfaces
 {
-    public interface ISessionSource : IDisposable
+    public interface IConnectionSource : IDisposable
     {
         Stream GetStream();
     }

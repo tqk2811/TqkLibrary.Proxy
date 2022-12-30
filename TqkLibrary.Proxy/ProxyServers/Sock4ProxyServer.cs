@@ -102,14 +102,14 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task EstablishStreamConnection(Stream remote_stream, IPAddress target_ip, UInt16 target_port, EndPoint remoteEndPoint)
         {
             Uri uri = new Uri($"http://{target_ip}:{target_port}");
-            ISessionSource session = null;
+            IConnectionSource connectionSource = null;
             Stream session_stream = null;
             try
             {
                 try
                 {
-                    session = await ProxySource.InitSessionAsync(uri);
-                    session_stream = session.GetStream();
+                    connectionSource = await ProxySource.InitConnectionAsync(uri);
+                    session_stream = connectionSource.GetStream();
                 }
                 catch (Exception ex)
                 {
@@ -133,7 +133,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             finally
             {
                 session_stream?.Dispose();
-                session?.Dispose();
+                connectionSource?.Dispose();
             }
         }
 

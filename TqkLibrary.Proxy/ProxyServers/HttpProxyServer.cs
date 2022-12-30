@@ -115,8 +115,8 @@ namespace TqkLibrary.Proxy.ProxyServers
             Stream stream,
             HeaderRequestParse client_HeaderParse)
         {
-            using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
-            if (sessionSource == null)
+            using IConnectionSource connectionSource = await this.ProxySource.InitConnectionAsync(client_HeaderParse.Uri);
+            if (connectionSource == null)
             {
                 //must read content if post,...
                 await stream.ReadBytesAsync(client_HeaderParse.ContentLength);
@@ -127,7 +127,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 await WriteResponse(remoteEndPoint, stream, true, "200 Connection established");
             }
 
-            using var remote_stream = sessionSource.GetStream();
+            using var remote_stream = connectionSource.GetStream();
             await new StreamTransferHelper(stream, remote_stream)
 #if DEBUG
                 .DebugName(remoteEndPoint.ToString(), client_HeaderParse.Uri.ToString())
@@ -143,12 +143,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             HeaderRequestParse client_HeaderParse)
         {
             //raw http header request
-            using ISessionSource sessionSource = await this.ProxySource.InitSessionAsync(client_HeaderParse.Uri);
-            if (sessionSource is null)
+            using IConnectionSource connectionSource = await this.ProxySource.InitConnectionAsync(client_HeaderParse.Uri);
+            if (connectionSource is null)
             {
                 return await WriteResponse(remoteEndPoint, stream, true, "408 Request Timeout");
             }
-            using Stream target_Stream = sessionSource.GetStream();
+            using Stream target_Stream = connectionSource.GetStream();
 
 
             //send header to target

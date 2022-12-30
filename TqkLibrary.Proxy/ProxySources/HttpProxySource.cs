@@ -24,8 +24,14 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
+        public bool IsSupportBind => false;
 
-        public async Task<ISessionSource> InitSessionAsync(Uri address)
+        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public async Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default)
         {
             if (address == null) throw new ArgumentNullException(nameof(address));
             //allway use connect
@@ -40,14 +46,14 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 await networkStream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
+                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectionAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #endif
                 if (networkCredential != null)
                 {
                     string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{networkCredential.UserName}:{networkCredential.Password}"));
                     await networkStream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
 #if DEBUG
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} <- Proxy-Authorization: Basic {data}");
+                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectionAsync)}] {proxy.Host}:{proxy.Port} <- Proxy-Authorization: Basic {data}");
 #endif
                 }
                 await networkStream.WriteLineAsync();
@@ -56,18 +62,18 @@ namespace TqkLibrary.Proxy.ProxySources
                 List<string> response_HeaderLines = await networkStream.ReadHeader();
 #if DEBUG
                 response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {proxy.Host}:{proxy.Port} -> {x}"));                
+                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectionAsync)}] {proxy.Host}:{proxy.Port} -> {x}"));
 #endif
                 headerResponseParse = response_HeaderLines.ParseResponse();
 
                 if (headerResponseParse.HttpStatusCode == HttpStatusCode.OK)
                 {
-                    return new TcpStreamSessionSource(tcpClient);
+                    return new TcpStreamConnectionSource(tcpClient);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitSessionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
             }
             finally
             {

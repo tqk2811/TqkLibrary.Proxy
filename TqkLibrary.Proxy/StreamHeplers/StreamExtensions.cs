@@ -112,5 +112,29 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 else memoryStream.WriteByte(buffer[0]);
             }
         }
+
+        internal static async Task<byte[]> ReadUntilNullTerminated(this Stream stream, int maxLength = 256 * 1024, CancellationToken cancellationToken = default)
+        {
+            using MemoryStream memoryStream = new MemoryStream();
+            byte[] buffer = new byte[1];
+            int totalRead = 0;
+            while (true)
+            {
+                int byte_read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+                if (byte_read == 0)
+                {
+                    throw new InvalidOperationException($"End of stream");
+                }
+                totalRead += byte_read;
+
+                if (totalRead > maxLength) throw new InvalidOperationException($"Data too long");
+
+                if (buffer[0] == 0)
+                {
+                    return memoryStream.ToArray();
+                }
+                else memoryStream.WriteByte(buffer[0]);
+            }
+        }
     }
 }

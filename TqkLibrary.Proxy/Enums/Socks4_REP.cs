@@ -1,4 +1,4 @@
-﻿namespace TqkLibrary.Proxy.ProxySources
+﻿namespace TqkLibrary.Proxy.Enums
 {
     internal enum Socks4_REP : byte
     {

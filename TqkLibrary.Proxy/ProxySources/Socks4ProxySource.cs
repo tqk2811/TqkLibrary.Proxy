@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 

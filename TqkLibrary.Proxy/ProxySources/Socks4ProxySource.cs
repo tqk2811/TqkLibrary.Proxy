@@ -8,20 +8,6 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public class Socks4ProxySource : IProxySource, ISocks4Proxy
     {
-        enum Socks4_CMD : byte
-        {
-            EstablishStreamConnection = 0x01,
-            EstablishPortBinding = 0x02,
-        }
-        enum Socks4_REP : byte
-        {
-            RequestGranted = 0x5a,
-            RequestRejectedOrFailed = 0x5b,
-            RequestFailedBecauseClientIsNotRunningIdentd = 0x5c,
-            RequestFailedBecauseClientIdentdCouldNotConfirmTheUserIdInTheRequest = 0x5d
-        }
-
-
         const byte Socks4Version = 0x04;
 
         readonly IPEndPoint iPEndPoint;

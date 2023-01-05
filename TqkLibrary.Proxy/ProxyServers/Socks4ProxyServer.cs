@@ -36,14 +36,22 @@ namespace TqkLibrary.Proxy.ProxyServers
             byte[] data_buffer = await stream.ReadBytesAsync(8);
             byte[] id = await stream.ReadUntilNullTerminated();
             byte[] host = null;
-            if (data_buffer[4] == 0 && data_buffer[5] == 0 && data_buffer[6] == 0 && data_buffer[7] != 0)//sock4a
+            bool isSocks4A = false;
+            if (data_buffer[4] == 0 && data_buffer[5] == 0 && data_buffer[6] == 0 && data_buffer[7] != 0)//socks4a
             {
+                isSocks4A = true;
                 if (IsUseSocks4A)
                 {
                     host = await stream.ReadUntilNullTerminated();
                 }
                 else return;//disconnect
             }
+            if (isSocks4A && host == null)//when IsUseSocks4A is false
+            {
+                await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                return;
+            }
+
 
             //check auth id
             //if(failed)
@@ -90,10 +98,18 @@ namespace TqkLibrary.Proxy.ProxyServers
                     return;
 
                 case Socks4_CMD.EstablishPortBinding:
-                    //not support now, write later
-                    //it create listen port on this IProxySource and transfer with current connection
-                    //and send reply ip:port listen
-                    await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    if (ProxySource.IsSupportBind)
+                    {
+                        //not support now, write later
+                        //it create listen port on this IProxySource and transfer with current connection
+                        //and send reply ip:port listen
+                        await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    }
+                    else
+                    {
+                        //not support
+                        await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    }
                     return;
 
             }

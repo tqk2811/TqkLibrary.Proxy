@@ -18,7 +18,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         }
         public bool IsUseSocks4A { get; set; } = true;
 
-        protected override async Task ProxyWork(Stream client_stream, EndPoint client_EndPoint)
+        protected override async Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
         {
             /*  Socks4
              *              VER	    CMD	    DSTPORT     DSTIP   ID

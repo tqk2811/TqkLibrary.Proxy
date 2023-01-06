@@ -58,7 +58,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             try
             {
-                if(this.tcpListener.Server.IsBound)
+                if (this.tcpListener.Server.IsBound)
                 {
                     lock (tcpListener)
                     {
@@ -105,10 +105,10 @@ namespace TqkLibrary.Proxy.ProxyServers
             using (tcpClient)
             {
                 using NetworkStream networkStream = tcpClient.GetStream();
-                await ProxyWork(networkStream, tcpClient.Client.RemoteEndPoint);
+                await ProxyWorkAsync(networkStream, tcpClient.Client.RemoteEndPoint);
             }
         }
-        protected abstract Task ProxyWork(Stream client_stream, EndPoint client_EndPoint);
+        protected abstract Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default);
 
     }
 }

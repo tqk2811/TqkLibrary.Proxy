@@ -31,7 +31,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             this.Credentials = credentials;
         }
 
-        protected override async Task ProxyWork(Stream client_stream, EndPoint client_EndPoint)
+        protected override async Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
         {
             bool client_isKeepAlive = false;
             bool should_continue = false;

@@ -136,5 +136,19 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 else memoryStream.WriteByte(buffer[0]);
             }
         }
+
+
+
+#if !NET5_0_OR_GREATER
+        public static Task WriteAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken = default)
+        {
+            return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+        }
+
+        public static void Write(this Stream stream, byte[] buffer)
+        {
+            stream.Write(buffer, 0, buffer.Length);
+        }
+#endif
     }
 }

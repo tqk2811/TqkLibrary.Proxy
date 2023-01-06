@@ -18,7 +18,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         }
         public bool IsUseSocks4A { get; set; } = true;
 
-        protected override async Task ProxyWork(Stream stream, EndPoint remoteEndPoint)
+        protected override async Task ProxyWork(Stream client_stream, EndPoint client_EndPoint)
         {
             /*  Socks4
              *              VER	    CMD	    DSTPORT     DSTIP   ID
@@ -33,8 +33,8 @@ namespace TqkLibrary.Proxy.ProxyServers
              *  variable is string null (0x00) terminated
              */
 
-            byte[] data_buffer = await stream.ReadBytesAsync(8);
-            byte[] id = await stream.ReadUntilNullTerminated();
+            byte[] data_buffer = await client_stream.ReadBytesAsync(8);
+            byte[] id = await client_stream.ReadUntilNullTerminated();
             byte[] host = null;
             bool isSocks4A = false;
             if (data_buffer[4] == 0 && data_buffer[5] == 0 && data_buffer[6] == 0 && data_buffer[7] != 0)//socks4a
@@ -42,13 +42,13 @@ namespace TqkLibrary.Proxy.ProxyServers
                 isSocks4A = true;
                 if (IsUseSocks4A)
                 {
-                    host = await stream.ReadUntilNullTerminated();
+                    host = await client_stream.ReadUntilNullTerminated();
                 }
                 else return;//disconnect
             }
             if (isSocks4A && host == null)//when IsUseSocks4A is false
             {
-                await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                 return;
             }
 
@@ -72,7 +72,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 string domain = Encoding.ASCII.GetString(host);
                 if (string.IsNullOrWhiteSpace(domain))
                 {
-                    await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                     return;
                 }
 
@@ -80,7 +80,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 target_ip = Dns.GetHostAddresses(domain).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
                 if (target_ip == null)
                 {
-                    await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                     return;
                 }
             }
@@ -94,7 +94,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             switch (cmd)
             {
                 case Socks4_CMD.EstablishStreamConnection:
-                    await EstablishStreamConnection(stream, target_ip, port, remoteEndPoint);
+                    await EstablishStreamConnection(client_stream, target_ip, port, client_EndPoint);
                     return;
 
                 case Socks4_CMD.EstablishPortBinding:
@@ -103,19 +103,19 @@ namespace TqkLibrary.Proxy.ProxyServers
                         //not support now, write later
                         //it create listen port on this IProxySource and transfer with current connection
                         //and send reply ip:port listen
-                        await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                        await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                     }
                     else
                     {
                         //not support
-                        await WriteReplyAsync(stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                        await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                     }
                     return;
 
             }
         }
 
-        async Task EstablishStreamConnection(Stream remote_stream, IPAddress target_ip, UInt16 target_port, EndPoint remoteEndPoint)
+        async Task EstablishStreamConnection(Stream client_stream, IPAddress target_ip, UInt16 target_port, EndPoint client_EndPoint)
         {
             Uri uri = new Uri($"http://{target_ip}:{target_port}");
             IConnectionSource connectionSource = null;
@@ -132,17 +132,17 @@ namespace TqkLibrary.Proxy.ProxyServers
 #if DEBUG
                     Console.WriteLine($"[{nameof(Socks4ProxyServer)}.{nameof(EstablishStreamConnection)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
 #endif
-                    await WriteReplyAsync(remote_stream, Socks4_REP.RequestRejectedOrFailed, remoteEndPoint);
+                    await WriteReplyAsync(client_stream, Socks4_REP.RequestRejectedOrFailed, client_EndPoint);
                     return;
                 }
 
                 //send response to client
-                await WriteReplyAsync(remote_stream, Socks4_REP.RequestGranted, remoteEndPoint);
+                await WriteReplyAsync(client_stream, Socks4_REP.RequestGranted, client_EndPoint);
 
                 //transfer until disconnect
-                await new StreamTransferHelper(remote_stream, session_stream)
+                await new StreamTransferHelper(client_stream, session_stream)
 #if DEBUG
-                    .DebugName(remoteEndPoint.ToString(), uri.ToString())
+                    .DebugName(client_EndPoint.ToString(), uri.ToString())
 #endif
                     .WaitUntilDisconnect();
             }
@@ -156,20 +156,20 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
         Task WriteReplyAsync(
-            Stream remote_stream,
+            Stream client_stream,
             Socks4_REP rep,
-            EndPoint remoteEndPoint,
+            EndPoint client_EndPoint,
             CancellationToken cancellationToken = default)
         {
-            return WriteReplyAsync(remote_stream, rep, IPAddress.Any, 0, remoteEndPoint, cancellationToken);
+            return WriteReplyAsync(client_stream, rep, IPAddress.Any, 0, client_EndPoint, cancellationToken);
         }
 
         async Task WriteReplyAsync(
-            Stream remote_stream,
+            Stream client_stream,
             Socks4_REP rep,
             IPAddress listen_ip,
             UInt16 listen_port,
-            EndPoint remoteEndPoint,
+            EndPoint client_EndPoint,
             CancellationToken cancellationToken = default)
         {
             if (listen_ip.AddressFamily != AddressFamily.InterNetwork)
@@ -182,10 +182,10 @@ namespace TqkLibrary.Proxy.ProxyServers
             rep_buffer[3] = (byte)listen_port;
             listen_ip.GetAddressBytes().CopyTo(rep_buffer, 4);
 #if DEBUG
-            Console.WriteLine($"[{nameof(Socks4ProxyServer)}.{nameof(WriteReplyAsync)}] {remoteEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+            Console.WriteLine($"[{nameof(Socks4ProxyServer)}.{nameof(WriteReplyAsync)}] {client_EndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 #endif
-            await remote_stream.WriteAsync(rep_buffer, 0, rep_buffer.Length, cancellationToken);
-            await remote_stream.FlushAsync(cancellationToken);
+            await client_stream.WriteAsync(rep_buffer, 0, rep_buffer.Length, cancellationToken);
+            await client_stream.FlushAsync(cancellationToken);
         }
     }
 }

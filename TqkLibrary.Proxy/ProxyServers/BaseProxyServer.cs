@@ -108,7 +108,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 await ProxyWork(networkStream, tcpClient.Client.RemoteEndPoint);
             }
         }
-        protected abstract Task ProxyWork(Stream stream, EndPoint remoteEndPoint);
+        protected abstract Task ProxyWork(Stream client_stream, EndPoint client_EndPoint);
 
     }
 }

@@ -11,18 +11,21 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class HttpProxyServer
     {
-        class HttpProxyServerTunnel
+        class HttpProxyServerTunnel : BaseTunnel<HttpProxyServer>
         {
-            readonly HttpProxyServer httpProxyServer;
-            readonly Stream client_stream;
-            readonly EndPoint client_EndPoint;
-            readonly CancellationToken cancellationToken;
-            internal HttpProxyServerTunnel(HttpProxyServer httpProxyServer, Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
+            internal HttpProxyServerTunnel(
+                HttpProxyServer proxyServer,
+                Stream clientStream,
+                EndPoint clientEndPoint,
+                CancellationToken cancellationToken = default
+                )
+                : base(
+                      proxyServer,
+                      clientStream,
+                      clientEndPoint,
+                      cancellationToken
+                      )
             {
-                this.httpProxyServer = httpProxyServer ?? throw new ArgumentNullException(nameof(httpProxyServer));
-                this.client_stream = client_stream ?? throw new ArgumentNullException(nameof(client_stream));
-                this.client_EndPoint = client_EndPoint ?? throw new ArgumentNullException(nameof(client_EndPoint));
-                this.cancellationToken = cancellationToken;
             }
 
             List<string> client_HeaderLines;
@@ -36,22 +39,22 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     should_continue = false;
 
-                    client_HeaderLines = await client_stream.ReadHeader(cancellationToken);
+                    client_HeaderLines = await _clientStream.ReadHeader(_cancellationToken);
                     if (client_HeaderLines.Count == 0)
                         return;//client stream closed
 
 #if DEBUG
-                    client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} -> {x}"));
+                    client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} -> {x}"));
 #endif
                     client_HeaderParse = client_HeaderLines.ParseRequest();
 
                     //Check Proxy-Authorization
-                    if (httpProxyServer.Credentials != null)
+                    if (_proxyServer.Credentials != null)
                     {
                         if (client_HeaderParse.ProxyAuthorization == null)
                         {
                             //must read content if post,...
-                            await client_stream.ReadBytesAsync(client_HeaderParse.ContentLength, cancellationToken);
+                            await _clientStream.ReadBytesAsync(client_HeaderParse.ContentLength, _cancellationToken);
                             should_continue = await WriteResponse407();
                             continue;
                         }
@@ -65,11 +68,11 @@ namespace TqkLibrary.Proxy.ProxyServers
                                         string[] split = parameter.Split(':');
                                         if (split.Length == 2)
                                         {
-                                            if (!split[0].Equals(httpProxyServer.Credentials.UserName, StringComparison.OrdinalIgnoreCase) ||
-                                                !split[1].Equals(httpProxyServer.Credentials.Password, StringComparison.OrdinalIgnoreCase))
+                                            if (!split[0].Equals(_proxyServer.Credentials.UserName, StringComparison.OrdinalIgnoreCase) ||
+                                                !split[1].Equals(_proxyServer.Credentials.Password, StringComparison.OrdinalIgnoreCase))
                                             {
                                                 //must read content if post,...
-                                                await client_stream.ReadBytesAsync(client_HeaderParse.ContentLength, cancellationToken);
+                                                await _clientStream.ReadBytesAsync(client_HeaderParse.ContentLength, _cancellationToken);
                                                 should_continue = await WriteResponse407();
                                                 continue;
                                             }
@@ -80,7 +83,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                                 default:
                                     //must read content if post,...
-                                    await client_stream.ReadBytesAsync(client_HeaderParse.ContentLength, cancellationToken);
+                                    await _clientStream.ReadBytesAsync(client_HeaderParse.ContentLength, _cancellationToken);
                                     should_continue = await WriteResponse(true, "400 Bad Request");
                                     continue;
                             }
@@ -103,11 +106,11 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task<bool> HttpsTransfer()
             {
-                using IConnectionSource connectionSource = await httpProxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, cancellationToken);
+                using IConnectionSource connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, _cancellationToken);
                 if (connectionSource == null)
                 {
                     //must read content if post,...
-                    await client_stream.ReadBytesAsync(client_HeaderParse.ContentLength, cancellationToken);
+                    await _clientStream.ReadBytesAsync(client_HeaderParse.ContentLength, _cancellationToken);
                     return await WriteResponse(true, "408 Request Timeout");
                 }
                 else
@@ -116,18 +119,18 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
                 using var remote_stream = connectionSource.GetStream();
-                await new StreamTransferHelper(client_stream, remote_stream)
+                await new StreamTransferHelper(_clientStream, remote_stream)
 #if DEBUG
-                    .DebugName(client_EndPoint.ToString(), client_HeaderParse.Uri.ToString())
+                    .DebugName(_clientEndPoint.ToString(), client_HeaderParse.Uri.ToString())
 #endif
-                    .WaitUntilDisconnect(cancellationToken);
+                    .WaitUntilDisconnect(_cancellationToken);
                 return true;
             }
 
             async Task<bool> HttpTransfer()
             {
                 //raw http header request
-                using IConnectionSource connectionSource = await httpProxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, cancellationToken);
+                using IConnectionSource connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, _cancellationToken);
                 if (connectionSource is null)
                 {
                     return await WriteResponse(true, "408 Request Timeout");
@@ -150,42 +153,42 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 foreach (var line in headerLines)
                 {
-                    await target_Stream.WriteLineAsync(line, cancellationToken);
+                    await target_Stream.WriteLineAsync(line, _cancellationToken);
 #if DEBUG
                     Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_HeaderParse.Uri.Host} <- {line}");
 #endif
                 }
-                await target_Stream.WriteLineAsync(cancellationToken);
+                await target_Stream.WriteLineAsync(_cancellationToken);
 
 
                 //Transfer content from client to target if have
-                await client_stream.TransferAsync(target_Stream, client_HeaderParse.ContentLength, cancellationToken: cancellationToken);
+                await _clientStream.TransferAsync(target_Stream, client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] [{client_EndPoint} -> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] [{_clientEndPoint} -> {client_HeaderParse.Uri.Host}] {client_HeaderParse.ContentLength} bytes");
 #endif
-                await target_Stream.FlushAsync(cancellationToken);
+                await target_Stream.FlushAsync(_cancellationToken);
 
 
                 //-----------------------------------------------------
                 //read header from target, and send back to client
-                List<string> target_response_HeaderLines = await target_Stream.ReadHeader(cancellationToken);
+                List<string> target_response_HeaderLines = await target_Stream.ReadHeader(_cancellationToken);
                 int ContentLength = target_response_HeaderLines.GetContentLength();
                 foreach (var line in target_response_HeaderLines)
                 {
-                    await client_stream.WriteLineAsync(line, cancellationToken);
+                    await _clientStream.WriteLineAsync(line, _cancellationToken);
 #if DEBUG
                     Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_HeaderParse.Uri.Host} -> {line}");
 #endif
                 }
-                await client_stream.WriteLineAsync(cancellationToken);
+                await _clientStream.WriteLineAsync(_cancellationToken);
 
 
                 //Transfer content from target to client if have
-                await target_Stream.TransferAsync(client_stream, ContentLength, cancellationToken: cancellationToken);
+                await target_Stream.TransferAsync(_clientStream, ContentLength, cancellationToken: _cancellationToken);
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] [{client_EndPoint} <- {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] [{_clientEndPoint} <- {client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 #endif
-                await client_stream.FlushAsync(cancellationToken);
+                await _clientStream.FlushAsync(_cancellationToken);
 
                 return true;
             }
@@ -193,15 +196,15 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task<bool> WriteResponse407()
             {
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- HTTP/1.1 407 Proxy Authentication Required");
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- Proxy-Authenticate: Basic Scheme='Data'");
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- Connection: keep-alive");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- HTTP/1.1 407 Proxy Authentication Required");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- Proxy-Authenticate: Basic Scheme='Data'");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- Connection: keep-alive");
 #endif
-                await client_stream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required", cancellationToken);
-                await client_stream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'", cancellationToken);
-                await client_stream.WriteLineAsync("Connection: keep-alive", cancellationToken);
-                await client_stream.WriteLineAsync(cancellationToken);
-                await client_stream.FlushAsync(cancellationToken);
+                await _clientStream.WriteLineAsync($"HTTP/1.1 407 Proxy Authentication Required", _cancellationToken);
+                await _clientStream.WriteLineAsync("Proxy-Authenticate: Basic Scheme='Data'", _cancellationToken);
+                await _clientStream.WriteLineAsync("Connection: keep-alive", _cancellationToken);
+                await _clientStream.WriteLineAsync(_cancellationToken);
+                await _clientStream.FlushAsync(_cancellationToken);
                 return true;
             }
 
@@ -219,27 +222,27 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- HTTP/1.1 {code_and_message}");
-                if (isKeepAlive) Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- Connection: keep-alive");
-                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- Content-Length: {contentLength}");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- HTTP/1.1 {code_and_message}");
+                if (isKeepAlive) Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- Connection: keep-alive");
+                Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- Content-Length: {contentLength}");
                 if (contentLength > 0 && content != null)
                 {
-                    Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {client_EndPoint} <- Content-Type: text/html; charset=utf-8");
+                    Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} <- Content-Type: text/html; charset=utf-8");
                 }
 #endif
-                await client_stream.WriteLineAsync($"HTTP/1.1 {code_and_message}", cancellationToken);
-                if (isKeepAlive) await client_stream.WriteLineAsync("Connection: keep-alive", cancellationToken);
-                await client_stream.WriteLineAsync($"Content-Length: {contentLength}", cancellationToken);
+                await _clientStream.WriteLineAsync($"HTTP/1.1 {code_and_message}", _cancellationToken);
+                if (isKeepAlive) await _clientStream.WriteLineAsync("Connection: keep-alive", _cancellationToken);
+                await _clientStream.WriteLineAsync($"Content-Length: {contentLength}", _cancellationToken);
                 if (contentLength > 0 && content != null)
                 {
-                    await client_stream.WriteLineAsync($"Content-Type: text/html; charset=utf-8", cancellationToken);
+                    await _clientStream.WriteLineAsync($"Content-Type: text/html; charset=utf-8", _cancellationToken);
                 }
-                await client_stream.WriteLineAsync(cancellationToken);
+                await _clientStream.WriteLineAsync(_cancellationToken);
                 if (contentLength > 0 && content != null)
                 {
-                    await client_stream.WriteAsync(content, cancellationToken);
+                    await _clientStream.WriteAsync(content, _cancellationToken);
                 }
-                await client_stream.FlushAsync(cancellationToken);
+                await _clientStream.FlushAsync(_cancellationToken);
                 return isKeepAlive;
             }
         }

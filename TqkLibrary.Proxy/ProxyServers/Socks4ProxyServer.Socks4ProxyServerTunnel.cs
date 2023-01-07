@@ -13,18 +13,21 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class Socks4ProxyServer
     {
-        class Socks4ProxyServerTunnel
+        class Socks4ProxyServerTunnel : BaseTunnel<Socks4ProxyServer>
         {
-            readonly Socks4ProxyServer socks4ProxyServer;
-            readonly Stream client_stream;
-            readonly EndPoint client_EndPoint;
-            readonly CancellationToken cancellationToken;
-            internal Socks4ProxyServerTunnel(Socks4ProxyServer socks4ProxyServer, Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
+            internal Socks4ProxyServerTunnel(
+                Socks4ProxyServer proxyServer,
+                Stream clientStream,
+                EndPoint clientEndPoint,
+                CancellationToken cancellationToken = default
+                )
+                : base(
+                      proxyServer,
+                      clientStream,
+                      clientEndPoint,
+                      cancellationToken
+                      )
             {
-                this.socks4ProxyServer = socks4ProxyServer ?? throw new ArgumentNullException(nameof(Socks4ProxyServerTunnel));
-                this.client_stream = client_stream ?? throw new ArgumentNullException(nameof(client_stream));
-                this.client_EndPoint = client_EndPoint ?? throw new ArgumentNullException(nameof(client_EndPoint));
-                this.cancellationToken = cancellationToken;
             }
 
             internal async Task ProxyWorkAsync()
@@ -42,16 +45,16 @@ namespace TqkLibrary.Proxy.ProxyServers
              *  variable is string null (0x00) terminated
              */
 
-                byte[] data_buffer = await client_stream.ReadBytesAsync(8, cancellationToken);
-                byte[] id = await client_stream.ReadUntilNullTerminated(cancellationToken: cancellationToken);
+                byte[] data_buffer = await _clientStream.ReadBytesAsync(8, _cancellationToken);
+                byte[] id = await _clientStream.ReadUntilNullTerminated(cancellationToken: _cancellationToken);
                 byte[] host = null;
                 bool isSocks4A = false;
                 if (data_buffer[4] == 0 && data_buffer[5] == 0 && data_buffer[6] == 0 && data_buffer[7] != 0)//socks4a
                 {
                     isSocks4A = true;
-                    if (socks4ProxyServer.IsUseSocks4A)
+                    if (_proxyServer.IsUseSocks4A)
                     {
-                        host = await client_stream.ReadUntilNullTerminated(cancellationToken: cancellationToken);
+                        host = await _clientStream.ReadUntilNullTerminated(cancellationToken: _cancellationToken);
                     }
                     else return;//disconnect
                 }
@@ -107,7 +110,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                         return;
 
                     case Socks4_CMD.EstablishPortBinding:
-                        if (socks4ProxyServer.ProxySource.IsSupportBind)
+                        if (_proxyServer.ProxySource.IsSupportBind)
                         {
                             //not support now, write later
                             //it create listen port on this IProxySource and transfer with current connection
@@ -139,7 +142,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     try
                     {
-                        connectionSource = await socks4ProxyServer.ProxySource.InitConnectionAsync(uri, cancellationToken);
+                        connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(uri, _cancellationToken);
                         session_stream = connectionSource.GetStream();
                     }
                     catch (Exception ex)
@@ -155,11 +158,11 @@ namespace TqkLibrary.Proxy.ProxyServers
                     await WriteReplyAsync(Socks4_REP.RequestGranted);
 
                     //transfer until disconnect
-                    await new StreamTransferHelper(client_stream, session_stream)
+                    await new StreamTransferHelper(_clientStream, session_stream)
 #if DEBUG
-                        .DebugName(client_EndPoint.ToString(), uri.ToString())
+                        .DebugName(_clientEndPoint.ToString(), uri.ToString())
 #endif
-                        .WaitUntilDisconnect(cancellationToken);
+                        .WaitUntilDisconnect(_cancellationToken);
                 }
                 finally
                 {
@@ -187,10 +190,10 @@ namespace TqkLibrary.Proxy.ProxyServers
                 rep_buffer[3] = (byte)listen_port;
                 listen_ip.GetAddressBytes().CopyTo(rep_buffer, 4);
 #if DEBUG
-                Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(WriteReplyAsync)}] {client_EndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+                Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(WriteReplyAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 #endif
-                await client_stream.WriteAsync(rep_buffer, cancellationToken);
-                await client_stream.FlushAsync(cancellationToken);
+                await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
+                await _clientStream.FlushAsync(_cancellationToken);
             }
         }
     }

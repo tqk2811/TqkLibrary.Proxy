@@ -31,7 +31,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             List<string> client_HeaderLines;
             HeaderRequestParse client_HeaderParse;
 
-            internal async Task ProxyWorkAsync()
+            internal override async Task ProxyWorkAsync()
             {
                 bool client_isKeepAlive = false;
                 bool should_continue = false;

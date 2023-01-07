@@ -30,7 +30,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
             }
 
-            internal async Task ProxyWorkAsync()
+            internal override async Task ProxyWorkAsync()
             {
                 /*  Socks4
              *              VER	    CMD	    DSTPORT     DSTIP   ID

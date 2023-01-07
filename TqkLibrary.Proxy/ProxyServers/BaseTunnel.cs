@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
-    internal class BaseTunnel<T> where T : BaseProxyServer
+    internal abstract class BaseTunnel<T> where T : BaseProxyServer
     {
         protected readonly T _proxyServer;
         protected readonly Stream _clientStream;
@@ -20,5 +20,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             this._clientEndPoint = clientEndPoint ?? throw new ArgumentNullException(nameof(clientEndPoint));
             this._cancellationToken = cancellationToken;
         }
+
+        internal abstract Task ProxyWorkAsync();
     }
 }

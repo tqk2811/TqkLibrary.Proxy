@@ -2,7 +2,7 @@
 
 namespace TqkLibrary.Proxy.Interfaces
 {
-    public interface IBindSource
+    public interface IBindSource : IDisposable
     {
         Task<IPEndPoint> InitListenAsync(CancellationToken cancellationToken = default);
         Task<Stream> WaitConnectionAsync(CancellationToken cancellationToken = default);

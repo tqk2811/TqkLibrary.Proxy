@@ -108,7 +108,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 await ProxyWorkAsync(networkStream, tcpClient.Client.RemoteEndPoint);
             }
         }
-        protected abstract Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default);
+        protected abstract Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default);
 
     }
 }

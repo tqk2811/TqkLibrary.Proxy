@@ -18,9 +18,9 @@ namespace TqkLibrary.Proxy.ProxyServers
         }
         public bool IsUseSocks4A { get; set; } = true;
 
-        protected override Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
+        protected override Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default)
         {
-            return new Socks4ProxyServerTunnel(this, client_stream, client_EndPoint, cancellationToken).ProxyWorkAsync();
+            return new Socks4ProxyServerTunnel(this, clientStream, clientEndPoint, cancellationToken).ProxyWorkAsync();
         }
     }
 }

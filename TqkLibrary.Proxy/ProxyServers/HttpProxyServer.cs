@@ -11,9 +11,9 @@ namespace TqkLibrary.Proxy.ProxyServers
             this.Credentials = credentials;
         }
 
-        protected override Task ProxyWorkAsync(Stream client_stream, EndPoint client_EndPoint, CancellationToken cancellationToken = default)
+        protected override Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default)
         {
-            return new HttpProxyServerTunnel(this, client_stream, client_EndPoint, cancellationToken)
+            return new HttpProxyServerTunnel(this, clientStream, clientEndPoint, cancellationToken)
                 .ProxyWorkAsync();
         }
     }

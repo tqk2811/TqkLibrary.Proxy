@@ -13,7 +13,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class Socks4ProxyServer
     {
-        class Socks4ProxyServerTunnel : BaseTunnel<Socks4ProxyServer>
+        class Socks4ProxyServerTunnel : BaseProxyServerTunnel<Socks4ProxyServer>
         {
             internal Socks4ProxyServerTunnel(
                 Socks4ProxyServer proxyServer,

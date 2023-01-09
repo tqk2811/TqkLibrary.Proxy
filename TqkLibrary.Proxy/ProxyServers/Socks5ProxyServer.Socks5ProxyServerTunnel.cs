@@ -13,7 +13,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class Socks5ProxyServer
     {
-        class Socks5ProxyServerTunnel : BaseTunnel<Socks5ProxyServer>
+        class Socks5ProxyServerTunnel : BaseProxyServerTunnel<Socks5ProxyServer>
         {
             const byte SOCKS5_VER = 0x05;
             internal Socks5ProxyServerTunnel(

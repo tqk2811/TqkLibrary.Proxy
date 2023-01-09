@@ -11,7 +11,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class HttpProxyServer
     {
-        class HttpProxyServerTunnel : BaseTunnel<HttpProxyServer>
+        class HttpProxyServerTunnel : BaseProxyServerTunnel<HttpProxyServer>
         {
             internal HttpProxyServerTunnel(
                 HttpProxyServer proxyServer,

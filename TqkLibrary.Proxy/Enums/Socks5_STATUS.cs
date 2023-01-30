@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TqkLibrary.Proxy.Enums
 {
-    internal enum Socks5_ConnectionStatus : byte
+    internal enum Socks5_STATUS : byte
     {
         RequestGranted = 0x00,
         GeneralFailure = 0x01,

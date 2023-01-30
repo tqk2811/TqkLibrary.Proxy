@@ -53,6 +53,14 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return buffer;
         }
 
+        internal static async Task<byte> ReadByteAsync(
+            this Stream from,
+            CancellationToken cancellationToken = default)
+        {
+            byte[] bytes = await ReadBytesAsync(from, 1, cancellationToken);
+            return bytes.First();
+        }
+
 
         internal static Task WriteAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
         {

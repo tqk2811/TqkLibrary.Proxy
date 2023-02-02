@@ -105,11 +105,11 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //connect to target
                 switch (cmd)
                 {
-                    case Socks4_CMD.EstablishStreamConnection:
+                    case Socks4_CMD.Connect:
                         await EstablishStreamConnectionAsync(target_ip, port);
                         return;
 
-                    case Socks4_CMD.EstablishPortBinding:
+                    case Socks4_CMD.Bind:
                         if (_proxyServer.ProxySource.IsSupportBind)
                         {
                             //not support now, write later

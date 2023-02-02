@@ -29,7 +29,7 @@ namespace TqkLibrary.Proxy.ProxySources
             throw new NotImplementedException();
         }
 
-        public async Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default)
+        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 

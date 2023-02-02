@@ -188,8 +188,8 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
             async Task EstablishStreamConnectionAsync(Uri uri)
             {
-                using IConnectionSource connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(uri, _cancellationToken);
-                using Stream session_stream = connectionSource?.GetStream();
+                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
+                using Stream session_stream = connectSource?.GetStream();
 
                 if (session_stream == null)
                 {

@@ -26,7 +26,7 @@ namespace TqkLibrary.Proxy.ProxySources
             throw new NotImplementedException();
         }
 
-        public async Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default)
+        public async Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
         {
             if (address == null) throw new NullReferenceException(nameof(address));
 
@@ -50,7 +50,7 @@ namespace TqkLibrary.Proxy.ProxySources
                                     try
                                     {
                                         await remote.ConnectAsync(address.Host, address.Port);
-                                        return new TcpStreamConnectionSource(remote);
+                                        return new TcpStreamConnectSource(remote);
                                     }
                                     catch
                                     {

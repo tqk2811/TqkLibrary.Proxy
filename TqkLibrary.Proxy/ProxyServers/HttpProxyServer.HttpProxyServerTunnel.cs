@@ -106,8 +106,8 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task<bool> HttpsTransfer()
             {
-                using IConnectionSource connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, _cancellationToken);
-                if (connectionSource == null)
+                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(client_HeaderParse.Uri, _cancellationToken);
+                if (connectSource == null)
                 {
                     //must read content if post,...
                     await _clientStream.ReadBytesAsync(client_HeaderParse.ContentLength, _cancellationToken);
@@ -118,7 +118,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     await WriteResponse(true, "200 Connection established");
                 }
 
-                using var remote_stream = connectionSource.GetStream();
+                using var remote_stream = connectSource.GetStream();
                 await new StreamTransferHelper(_clientStream, remote_stream)
 #if DEBUG
                     .DebugName(_clientEndPoint.ToString(), client_HeaderParse.Uri.ToString())
@@ -130,12 +130,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task<bool> HttpTransfer()
             {
                 //raw http header request
-                using IConnectionSource connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(client_HeaderParse.Uri, _cancellationToken);
-                if (connectionSource is null)
+                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(client_HeaderParse.Uri, _cancellationToken);
+                if (connectSource is null)
                 {
                     return await WriteResponse(true, "408 Request Timeout");
                 }
-                using Stream target_Stream = connectionSource.GetStream();
+                using Stream target_Stream = connectSource.GetStream();
 
 
                 //send header to target

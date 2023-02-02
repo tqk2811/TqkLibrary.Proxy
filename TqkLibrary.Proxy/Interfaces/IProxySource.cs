@@ -18,11 +18,11 @@
         bool IsSupportBind { get; }
 
         /// <summary>
-        /// scheme: http/https, tcp, udp, ws/wss
+        /// 
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
-        Task<IConnectionSource> InitConnectionAsync(Uri address, CancellationToken cancellationToken = default);
+        Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 

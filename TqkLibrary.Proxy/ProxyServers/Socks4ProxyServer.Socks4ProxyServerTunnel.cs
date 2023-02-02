@@ -136,14 +136,14 @@ namespace TqkLibrary.Proxy.ProxyServers
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                IConnectionSource connectionSource = null;
+                IConnectSource connectSource = null;
                 Stream session_stream = null;
                 try
                 {
                     try
                     {
-                        connectionSource = await _proxyServer.ProxySource.InitConnectionAsync(uri, _cancellationToken);
-                        session_stream = connectionSource.GetStream();
+                        connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
+                        session_stream = connectSource.GetStream();
                     }
                     catch (Exception ex)
                     {
@@ -167,7 +167,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 finally
                 {
                     session_stream?.Dispose();
-                    connectionSource?.Dispose();
+                    connectSource?.Dispose();
                 }
             }
 

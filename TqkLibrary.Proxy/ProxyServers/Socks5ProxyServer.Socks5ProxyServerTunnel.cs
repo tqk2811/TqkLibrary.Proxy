@@ -153,11 +153,11 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
-            Task WriteReplyConnectionRequestAsync(Socks5_ConnectionStatus status)
+            Task WriteReplyConnectionRequestAsync(Socks5_STATUS status)
                 => WriteReplyConnectionRequestAsync(status, IPAddress.Any, 0);
 
             async Task WriteReplyConnectionRequestAsync(
-                Socks5_ConnectionStatus status,
+                Socks5_STATUS status,
                 IPAddress listen_ip,
                 UInt16 listen_port
                 )
@@ -193,13 +193,13 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 if (session_stream == null)
                 {
-                    await WriteReplyConnectionRequestAsync(Socks5_ConnectionStatus.GeneralFailure);
+                    await WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
                     return;
                 }
                 else
                 {
                     //send response to client
-                    await WriteReplyConnectionRequestAsync(Socks5_ConnectionStatus.RequestGranted);
+                    await WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
                     //transfer until disconnect
                     await new StreamTransferHelper(_clientStream, session_stream)
@@ -216,7 +216,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 IPEndPoint listen_endpoint = await bindSource?.InitListenAsync(_cancellationToken);
 
                 await WriteReplyConnectionRequestAsync(
-                    Socks5_ConnectionStatus.RequestGranted,
+                    Socks5_STATUS.RequestGranted,
                     listen_endpoint.Address,
                     (UInt16)listen_endpoint.Port);
 

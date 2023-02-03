@@ -34,7 +34,8 @@ namespace TqkLibrary.Proxy.ProxySources
             public async Task<IConnectSource> InitConnectAsync(Uri address)
             {
                 if (address is null) throw new ArgumentNullException(nameof(address));
-                if(await ConnectToProxy(address))
+                await ConnectToProxy();
+                if (await CONNECT(address))
                 {
                     return this;
                 }
@@ -42,21 +43,24 @@ namespace TqkLibrary.Proxy.ProxySources
                 return null;
             }
 
-            async Task<bool> ConnectToProxy(Uri address)
+            async Task ConnectToProxy()
             {
                 await _tcpClient.ConnectAsync(_proxySource.proxy.Host, _proxySource.proxy.Port);
                 _stream = _tcpClient.GetStream();
+            }
 
+            async Task<bool> CONNECT(Uri address)
+            {
                 await _stream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
+                Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #endif
                 if (_proxySource.networkCredential != null)
                 {
                     string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.networkCredential.UserName}:{_proxySource.networkCredential.Password}"));
                     await _stream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
 #if DEBUG
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- Proxy-Authorization: Basic {data}");
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- Proxy-Authorization: Basic {data}");
 #endif
                 }
                 await _stream.WriteLineAsync();
@@ -66,7 +70,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 List<string> response_HeaderLines = await _stream.ReadHeader();
 #if DEBUG
                 response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} -> {x}"));
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} -> {x}"));
 #endif
                 var headerResponseParse = response_HeaderLines.ParseResponse();
 

@@ -31,7 +31,7 @@ namespace TqkLibrary.Proxy.ProxySources
             return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
         }
 
-        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();
         }

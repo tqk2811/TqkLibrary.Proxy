@@ -23,9 +23,9 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => true;
 
-        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
         {
-            return new Socks5ProxySourceTunnel(this, cancellationToken).InitBindAsync();
+            return new Socks5ProxySourceTunnel(this, cancellationToken).InitBindAsync(address);
         }
 
         public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)

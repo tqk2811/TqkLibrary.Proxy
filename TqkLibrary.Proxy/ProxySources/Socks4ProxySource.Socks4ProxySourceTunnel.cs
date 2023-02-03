@@ -30,19 +30,27 @@ namespace TqkLibrary.Proxy.ProxySources
             #region Connect
             internal async Task<IConnectSource> InitConnectAsync(Uri address)
             {
-                await ConnectToSocksServer();
-
-                Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Connect, address, _proxySource.userId);
-
-                byte[] buffer = socks4_Request.GetByteArray();
-                await this._stream.WriteAsync(buffer, 0, buffer.Length, _cancellationToken);
-
-                Socks4_RequestResponse socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(_cancellationToken);
-                if (socks4_RequestResponse.REP == Socks4_REP.RequestGranted)
+                try
                 {
-                    return this;
-                }
+                    await ConnectToSocksServer();
 
+                    Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Connect, address, _proxySource.userId);
+
+                    byte[] buffer = socks4_Request.GetByteArray();
+                    await this._stream.WriteAsync(buffer, 0, buffer.Length, _cancellationToken);
+
+                    Socks4_RequestResponse socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(_cancellationToken);
+                    if (socks4_RequestResponse.REP == Socks4_REP.RequestGranted)
+                    {
+                        return this;
+                    }
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
                 this.Dispose();
                 return null;
             }
@@ -56,21 +64,30 @@ namespace TqkLibrary.Proxy.ProxySources
 
             #region Bind
             Socks4_RequestResponse _socks4_RequestResponse;
-            internal async Task<IBindSource> InitBindAsync()
+            internal async Task<IBindSource> InitBindAsync(Uri address)
             {
-                await ConnectToSocksServer();
-
-                Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Bind, new Uri("http://0.0.0.0:0"), _proxySource.userId);
-
-                byte[] buffer = socks4_Request.GetByteArray();
-                await this._stream.WriteAsync(buffer, 0, buffer.Length, _cancellationToken);
-
-                _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(_cancellationToken);
-                if (_socks4_RequestResponse.REP == Socks4_REP.RequestGranted)
+                try
                 {
-                    return this;
-                }
+                    await ConnectToSocksServer();
 
+                    Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Bind, new Uri("http://0.0.0.0:0"), _proxySource.userId);
+
+                    byte[] buffer = socks4_Request.GetByteArray();
+                    await this._stream.WriteAsync(buffer, 0, buffer.Length, _cancellationToken);
+
+                    _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(_cancellationToken);
+                    if (_socks4_RequestResponse.REP == Socks4_REP.RequestGranted)
+                    {
+                        return this;
+                    }
+
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(InitBindAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
                 this.Dispose();
                 return null;
             }

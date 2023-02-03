@@ -105,7 +105,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                         break;
 
                     case Socks5_CMD.EstablishPortBinding:
-                        await EstablishPortBinding();
+                        await EstablishPortBinding(uri);
                         break;
 
                     case Socks5_CMD.AssociateUDP:
@@ -210,9 +210,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
-            async Task EstablishPortBinding()
+            async Task EstablishPortBinding(Uri uri)
             {
-                using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(_cancellationToken);
+                using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(uri, _cancellationToken);
                 IPEndPoint listen_endpoint = await bindSource?.InitListenAsync(_cancellationToken);
 
                 await WriteReplyConnectionRequestAsync(

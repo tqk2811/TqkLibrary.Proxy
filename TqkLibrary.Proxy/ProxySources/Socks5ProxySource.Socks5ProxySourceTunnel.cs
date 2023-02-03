@@ -30,32 +30,13 @@ namespace TqkLibrary.Proxy.ProxySources
 
             }
 
-            public async Task<IBindSource> InitBindAsync()
-            {
-                try
-                {
-                    await Init();
-                    if (await BindRequest())
-                    {
-                        return this;
-                    }
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(Socks5ProxySource)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                }
-                this.Dispose();
-                return null;
-            }
-
+            #region Connect
             public async Task<IConnectSource> InitConnectAsync(Uri address)
             {
                 try
                 {
-                    await Init();
-                    if (await ConnectionRequest(address))
+                    await InitAsync();
+                    if (await ConnectionRequestAsync(address))
                     {
                         return this;
                     }
@@ -63,24 +44,123 @@ namespace TqkLibrary.Proxy.ProxySources
                 catch (Exception ex)
                 {
 #if DEBUG
-                    Console.WriteLine($"[{nameof(Socks5ProxySource)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+                    Console.WriteLine($"[{nameof(Socks5ProxySourceTunnel)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
 #endif
                 }
                 this.Dispose();
                 return null;
             }
 
-            async Task Init()
+            async Task<bool> ConnectionRequestAsync(Uri address)
             {
-                await InitConnection();
-                Socks5_Auth socks5_Auth = await ClientGreeting(GetSupportAuth());
-                await Auth(socks5_Auth);
+                Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishStreamConnection, address);
+                await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
+                await _stream.FlushAsync(_cancellationToken);
+
+                Socks5_RequestResponse socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
+                if (socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            public Stream GetStream()
+            {
+                return this._stream;
+            }
+            #endregion
+
+
+            #region Bind
+            public async Task<IBindSource> InitBindAsync(Uri address)
+            {
+                try
+                {
+                    await InitAsync();
+                    if (await BindRequestAsync())
+                    {
+                        return this;
+                    }
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(Socks5ProxySourceTunnel)}.{nameof(InitBindAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
+                this.Dispose();
+                return null;
+            }
+
+            Socks5_RequestResponse _socks5_RequestResponse = null;
+            async Task<bool> BindRequestAsync()
+            {
+                if (_proxySource.IsSupportBind)
+                {
+                    Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishPortBinding, new Uri("http://0.0.0.0:0"));
+                    await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
+                    await _stream.FlushAsync(_cancellationToken);
+
+                    _socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
+                    if (_socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+
+                return false;
+            }
+
+            public Task<IPEndPoint> InitListenAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(_socks5_RequestResponse.IPEndPoint);
+            }
+
+            public Task<Stream> WaitConnectionAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(_stream);
+            }
+            #endregion
+
+
+            #region Udp
+            public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address)
+            {
+                try
+                {
+
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(Socks5ProxySourceTunnel)}.{nameof(InitUdpAssociateAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
+                this.Dispose();
+                return null;
             }
 
 
 
+            #endregion
 
-            async Task InitConnection()
+
+            async Task InitAsync()
+            {
+                await InitConnectionAsync();
+                Socks5_Auth socks5_Auth = await ClientGreetingAsync(GetSupportAuth());
+                await AuthAsync(socks5_Auth);
+            }
+
+            async Task InitConnectionAsync()
             {
                 await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port);
                 _stream = _tcpClient.GetStream();
@@ -92,14 +172,13 @@ namespace TqkLibrary.Proxy.ProxySources
                 yield return Socks5_Auth.NoAuthentication;
             }
 
-
-            Task<Socks5_Auth> ClientGreeting(IEnumerable<Socks5_Auth> auths)
-                => ClientGreeting(auths.ToArray());
+            Task<Socks5_Auth> ClientGreetingAsync(IEnumerable<Socks5_Auth> auths)
+                => ClientGreetingAsync(auths.ToArray());
 
             /// <summary>
             /// return server choise
             /// </summary>
-            async Task<Socks5_Auth> ClientGreeting(params Socks5_Auth[] auths)
+            async Task<Socks5_Auth> ClientGreetingAsync(params Socks5_Auth[] auths)
             {
                 if (auths == null || auths.Length == 0)
                     throw new InvalidDataException($"{nameof(auths)} is null or empty array");
@@ -117,7 +196,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
 
             const byte UsernamePassword_Ver = 0x01;
-            async Task Auth(Socks5_Auth socks5_Auth)
+            async Task AuthAsync(Socks5_Auth socks5_Auth)
             {
                 if (GetSupportAuth().Contains(socks5_Auth))
                 {
@@ -148,65 +227,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
 
-            async Task<bool> ConnectionRequest(Uri address)
-            {
-                Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishStreamConnection, address);
-                await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
-                await _stream.FlushAsync(_cancellationToken);
 
-                Socks5_RequestResponse socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
-                if (socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            Socks5_RequestResponse _socks5_RequestResponse = null;
-            async Task<bool> BindRequest()
-            {
-                if (_proxySource.IsSupportBind)
-                {
-                    Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishPortBinding, new Uri("http://0.0.0.0:0"));
-                    await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
-                    await _stream.FlushAsync(_cancellationToken);
-
-                    _socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
-                    if (_socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-
-                return false;
-            }
-
-            async Task<bool> UdpAssociateAsync()
-            {
-                return false;
-            }
-
-            public Task<IPEndPoint> InitListenAsync(CancellationToken cancellationToken = default)
-            {
-                return Task.FromResult(_socks5_RequestResponse.IPEndPoint);
-            }
-
-            public Task<Stream> WaitConnectionAsync(CancellationToken cancellationToken = default)
-            {
-                return Task.FromResult(_stream);
-            }
-
-            public Stream GetStream()
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

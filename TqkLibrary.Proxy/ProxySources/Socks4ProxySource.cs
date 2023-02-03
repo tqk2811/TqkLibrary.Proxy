@@ -27,9 +27,9 @@ namespace TqkLibrary.Proxy.ProxySources
             return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
         }
 
-        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
+        public Task<IBindSource> InitBindAsync(Uri address,CancellationToken cancellationToken = default)
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitBindAsync();
+            return new Socks4ProxySourceTunnel(this, cancellationToken).InitBindAsync(address);
         }
 
         public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)

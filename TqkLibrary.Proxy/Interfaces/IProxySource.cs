@@ -28,7 +28,7 @@
         /// 
         /// </summary>
         /// <returns></returns>
-        Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default);
+        Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 

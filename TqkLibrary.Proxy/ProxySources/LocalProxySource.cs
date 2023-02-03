@@ -17,14 +17,9 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public class LocalProxySource : IProxySource, IHttpProxy
     {
-        public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 => true;
-        public bool IsSupportBind => true;
-
-        public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+        public bool IsSupportUdp { get; set; } = true;
+        public bool IsSupportIpv6 { get; set; } = true;
+        public bool IsSupportBind { get; set; } = true;
 
         public async Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
         {
@@ -41,7 +36,7 @@ namespace TqkLibrary.Proxy.ProxySources
                             case "http":// http proxy
                             case "https":
 
-                            case "ws":// web socket
+                            case "ws":// for http request (not CONNECT)
                             case "wss":
 
                             case "tcp":// socks4 / socks5
@@ -49,7 +44,11 @@ namespace TqkLibrary.Proxy.ProxySources
                                     TcpClient remote = new TcpClient();
                                     try
                                     {
+#if NET5_0_OR_GREATER
+                                        await remote.ConnectAsync(address.Host, address.Port, cancellationToken);
+#else
                                         await remote.ConnectAsync(address.Host, address.Port);
+#endif
                                         return new TcpStreamConnectSource(remote);
                                     }
                                     catch
@@ -59,31 +58,26 @@ namespace TqkLibrary.Proxy.ProxySources
                                     }
                                 }
 
-                            case "udp":// socks5
-                                {
-                                    //UdpClient udpClient = new UdpClient();
-                                    //try
-                                    //{
-                                    //    udpClient.Connect(address.Host, address.Port);
-                                    //    return new StreamSessionSource(remote, host);
-                                    //}
-                                    //catch
-                                    //{
-                                    //    remote.Dispose();
-                                    //    return null;
-                                    //}
-                                    return null;
-                                }
-
                             default:
                                 throw new NotSupportedException(address.Scheme);
                         }
-                        
+
                     }
 
                 default:
                     throw new NotSupportedException(address.HostNameType.ToString());
             }
+        }
+
+        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

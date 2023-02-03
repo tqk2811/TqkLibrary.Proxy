@@ -6,7 +6,7 @@ using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public class HttpProxySource : IProxySource, IHttpProxy
+    public partial class HttpProxySource : IProxySource, IHttpProxy
     {
         readonly Uri proxy;
         readonly NetworkCredential networkCredential;
@@ -26,66 +26,19 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => false;
 
+        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        {
+            return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
+        }
+
         public Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();
         }
 
-        public async Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
         {
-            if (address == null) throw new ArgumentNullException(nameof(address));
-            //allway use connect
-
-            TcpClient tcpClient = new TcpClient();
-            Stream networkStream = null;
-            HeaderResponseParse headerResponseParse = null;
-            try
-            {
-                await tcpClient.ConnectAsync(proxy.Host, proxy.Port);
-                networkStream = tcpClient.GetStream();
-
-                await networkStream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
-#if DEBUG
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {proxy.Host}:{proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
-#endif
-                if (networkCredential != null)
-                {
-                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{networkCredential.UserName}:{networkCredential.Password}"));
-                    await networkStream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
-#if DEBUG
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {proxy.Host}:{proxy.Port} <- Proxy-Authorization: Basic {data}");
-#endif
-                }
-                await networkStream.WriteLineAsync();
-                await networkStream.FlushAsync();
-
-                List<string> response_HeaderLines = await networkStream.ReadHeader();
-#if DEBUG
-                response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {proxy.Host}:{proxy.Port} -> {x}"));
-#endif
-                headerResponseParse = response_HeaderLines.ParseResponse();
-
-                if (headerResponseParse.HttpStatusCode == HttpStatusCode.OK)
-                {
-                    return new TcpStreamConnectSource(tcpClient);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[{nameof(HttpProxySource)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-            }
-            finally
-            {
-                if (headerResponseParse?.HttpStatusCode != HttpStatusCode.OK)
-                {
-                    networkStream?.Dispose();
-                    networkStream = null;
-                    tcpClient?.Dispose();
-                    tcpClient = null;
-                }
-            }
-            return null;
+            throw new NotSupportedException();
         }
     }
 }

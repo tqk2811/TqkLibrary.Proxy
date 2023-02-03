@@ -29,5 +29,13 @@
         /// </summary>
         /// <returns></returns>
         Task<IBindSource> InitBindAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default);
     }
 }

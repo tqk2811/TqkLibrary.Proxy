@@ -81,7 +81,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 try
                 {
                     await InitAsync();
-                    if (await BindRequestAsync())
+                    if (await BindRequestAsync(address))
                     {
                         return this;
                     }
@@ -97,11 +97,11 @@ namespace TqkLibrary.Proxy.ProxySources
             }
 
             Socks5_RequestResponse _socks5_RequestResponse = null;
-            async Task<bool> BindRequestAsync()
+            async Task<bool> BindRequestAsync(Uri address)
             {
                 if (_proxySource.IsSupportBind)
                 {
-                    Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishPortBinding, new Uri("http://0.0.0.0:0"));
+                    Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishPortBinding, address);
                     await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
                     await _stream.FlushAsync(_cancellationToken);
 

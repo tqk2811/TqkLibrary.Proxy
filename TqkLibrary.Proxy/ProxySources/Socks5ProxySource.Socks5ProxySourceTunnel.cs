@@ -110,10 +110,6 @@ namespace TqkLibrary.Proxy.ProxySources
                     {
                         return true;
                     }
-                    else
-                    {
-                        return false;
-                    }
                 }
 
                 return false;

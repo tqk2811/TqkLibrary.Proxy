@@ -14,8 +14,17 @@ namespace TqkLibrary.Proxy.ProxyServers
         readonly TcpListener tcpListener;
         public IPEndPoint IPEndPoint { get; }
 
-        public IProxySource ProxySource { get; }
+        public IProxySource ProxySource { get; private set; }
         public int Timeout { get; set; } = 30000;
+
+
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        readonly object lock_cancellationToken = new object();
+        CancellationToken CancellationToken
+        {
+            get { lock (lock_cancellationToken) return cancellationTokenSource.Token; }
+        }
+
 
         IAsyncResult asyncResult;
 
@@ -37,12 +46,23 @@ namespace TqkLibrary.Proxy.ProxyServers
         void Dispose(bool disposing)
         {
             StopListen();
+            ShutdownCurrentConnection(false);
         }
 
 
         public void ShutdownCurrentConnection()
         {
-            throw new NotImplementedException();
+            ShutdownCurrentConnection(true);
+        }
+        void ShutdownCurrentConnection(bool createNewCancellationToken)
+        {
+            lock (lock_cancellationToken)
+            {
+                cancellationTokenSource?.Cancel();
+                cancellationTokenSource?.Dispose();
+                cancellationTokenSource = null;
+                if (createNewCancellationToken) cancellationTokenSource = new CancellationTokenSource();
+            }
         }
 
         public void StartListen()
@@ -53,6 +73,30 @@ namespace TqkLibrary.Proxy.ProxyServers
                 asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
             }
         }
+        public void StopListen()
+        {
+            lock (tcpListener)
+            {
+                try
+                {
+                    this.tcpListener.Stop();
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(StopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
+            }
+        }
+
+        public void ChangeSource(IProxySource proxySource, bool isShutdownCurrentConnection = false)
+        {
+            if (proxySource is null) throw new ArgumentNullException(nameof(proxySource));
+            this.ProxySource = proxySource;
+            if (isShutdownCurrentConnection) ShutdownCurrentConnection();
+        }
+
 
         void BeginAcceptTcpClientAsyncCallback(IAsyncResult ar)
         {
@@ -82,32 +126,15 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
         }
 
-        public void StopListen()
-        {
-            lock (tcpListener)
-            {
-                try
-                {
-                    this.tcpListener.Stop();
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(StopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                }
-            }
-        }
-
-
         private async Task PreProxyWork(TcpClient tcpClient)
         {
             using (tcpClient)
             {
                 using NetworkStream networkStream = tcpClient.GetStream();
-                await ProxyWorkAsync(networkStream, tcpClient.Client.RemoteEndPoint);
+                await ProxyWorkAsync(networkStream, tcpClient.Client.RemoteEndPoint, CancellationToken);
             }
         }
+
         protected abstract Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default);
 
     }

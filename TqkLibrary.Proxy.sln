@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TqkLibrary.Proxy", "TqkLibr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{40FA16F0-BA5E-40C7-A5B4-A9AA09C967C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProxy", "TestProxy\TestProxy.csproj", "{DE676026-74A6-46B6-8A3F-55D53645AE6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProxy", "TestProxy\TestProxy.csproj", "{DE676026-74A6-46B6-8A3F-55D53645AE6E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1D31E06-4B0C-4398-A9E2-8D52495A76E0}"
+	ProjectSection(SolutionItems) = preProject
+		ProjectBuildProperties.targets = ProjectBuildProperties.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

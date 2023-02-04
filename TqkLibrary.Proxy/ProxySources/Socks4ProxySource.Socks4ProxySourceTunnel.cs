@@ -70,7 +70,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 {
                     await ConnectToSocksServer();
 
-                    Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Bind, new Uri("http://0.0.0.0:0"), _proxySource.userId);
+                    Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Bind, address, _proxySource.userId);
 
                     byte[] buffer = socks4_Request.GetByteArray();
                     await this._stream.WriteAsync(buffer, 0, buffer.Length, _cancellationToken);

@@ -31,7 +31,7 @@ namespace TqkLibrary.Proxy.ProxySources
             }
 
             #region Connect
-            public async Task<IConnectSource> InitConnectAsync(Uri address)
+            internal async Task<IConnectSource> InitConnectAsync(Uri address)
             {
                 try
                 {
@@ -76,7 +76,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
 
             #region Bind
-            public async Task<IBindSource> InitBindAsync(Uri address)
+            internal async Task<IBindSource> InitBindAsync(Uri address)
             {
                 try
                 {

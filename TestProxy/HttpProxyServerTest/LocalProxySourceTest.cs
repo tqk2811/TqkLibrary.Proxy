@@ -12,14 +12,14 @@ using Newtonsoft.Json;
 namespace TestProxy.HttpProxyServerTest
 {
     [TestClass]
-    public class LocalHttpProxySourceTest
+    public class LocalProxySourceTest
     {
         static readonly IProxySource localProxySource;
 
         static readonly HttpClientHandler httpClientHandler;
         static readonly HttpClient httpClient;
         static readonly NetworkCredential networkCredential = new NetworkCredential("user", "password");
-        static LocalHttpProxySourceTest()
+        static LocalProxySourceTest()
         {
             localProxySource = new LocalProxySource();
 

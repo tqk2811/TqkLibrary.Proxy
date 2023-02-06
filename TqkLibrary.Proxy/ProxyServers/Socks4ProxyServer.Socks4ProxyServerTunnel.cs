@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -32,38 +33,12 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             internal override async Task ProxyWorkAsync()
             {
-                /*  Socks4
-             *              VER	    CMD	    DSTPORT     DSTIP   ID
-             *  Byte Count	1	    1	    2	        4	    Variable
-             *  -----------------------------------------------------
-             *  Socks4a
-             *              VER	    CMD	    DSTPORT     DSTIP   ID          DOMAIN
-             *  Byte Count	1	    1	    2	        4	    Variable    variable
-             *  
-             *  in Socks4a, DSTIP willbe 0.0.0.x (x != 0)
-             *  -----------------------------------------------------
-             *  variable is string null (0x00) terminated
-             */
-
-                byte[] data_buffer = await _clientStream.ReadBytesAsync(8, _cancellationToken);
-                byte[] id = await _clientStream.ReadUntilNullTerminated(cancellationToken: _cancellationToken);
-                byte[] host = null;
-                bool isSocks4A = false;
-                if (data_buffer[4] == 0 && data_buffer[5] == 0 && data_buffer[6] == 0 && data_buffer[7] != 0)//socks4a
-                {
-                    isSocks4A = true;
-                    if (_proxyServer.IsUseSocks4A)
-                    {
-                        host = await _clientStream.ReadUntilNullTerminated(cancellationToken: _cancellationToken);
-                    }
-                    else return;//disconnect
-                }
-                if (isSocks4A && host == null)//when IsUseSocks4A is false
+                Socks4_Request socks4_Request = await _clientStream.Read_Socks4_Request_Async(_cancellationToken);
+                if (socks4_Request.IsDomain && !_proxyServer.IsUseSocks4A)//socks4a
                 {
                     await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                     return;
                 }
-
 
                 //check auth id
                 //if(failed)
@@ -72,41 +47,33 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //    return;
                 //}
 
-                Socks4_CMD cmd = (Socks4_CMD)data_buffer[1];
-                UInt16 port = BitConverter.ToUInt16(data_buffer, 2);
                 IPAddress target_ip = null;
-                if (host == null)
+                if (socks4_Request.IsDomain)
                 {
-                    target_ip = new IPAddress(data_buffer.Skip(4).Take(4).ToArray());
-                }
-                else
-                {
-                    string domain = Encoding.ASCII.GetString(host);
-                    if (string.IsNullOrWhiteSpace(domain))
+                    if (string.IsNullOrWhiteSpace(socks4_Request.DOMAIN))
                     {
                         await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
 
                     //ipv4 only because need to response
-                    target_ip = Dns.GetHostAddresses(domain).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
+                    target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
                     if (target_ip == null)
                     {
                         await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
                 }
-
-                //release memory
-                data_buffer = null;
-                id = null;
-                host = null;
+                else
+                {
+                    target_ip = socks4_Request.DSTIP;
+                }
 
                 //connect to target
-                switch (cmd)
+                switch (socks4_Request.CMD)
                 {
                     case Socks4_CMD.Connect:
-                        await EstablishStreamConnectionAsync(target_ip, port);
+                        await EstablishStreamConnectionAsync(target_ip, socks4_Request.DSTPORT);
                         return;
 
                     case Socks4_CMD.Bind:

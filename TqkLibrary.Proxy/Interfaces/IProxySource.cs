@@ -27,14 +27,14 @@
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="address"><see cref="Uri.HostNameType"/> must be <see cref="UriHostNameType.IPv4"/> or <see cref="UriHostNameType.IPv6"/></param>
         /// <returns></returns>
         Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="address"><param name="address"><see cref="Uri.HostNameType"/> must be <see cref="UriHostNameType.IPv4"/> or <see cref="UriHostNameType.IPv6"/></param></param>
         /// <returns></returns>
         Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default);
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Filters;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.ProxySources;
@@ -23,8 +24,10 @@ namespace ConsoleTest
             NetworkCredential networkCredential = new NetworkCredential("admin", "admin");
             credentialCache.Add(new Uri($"http://{address}"), "Basic", networkCredential);
 
+            HttpProxyServerFilter filter = new HttpProxyServerFilter();
+            filter.WithAuthentications(networkCredential);
 
-            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource, networkCredential);
+            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource, filter);
             httpProxyServer.StartListen();
 
             using HttpClientHandler httpClientHandler = new HttpClientHandler()

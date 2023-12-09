@@ -34,9 +34,10 @@ namespace TqkLibrary.Proxy.ProxyServers
             internal override async Task ProxyWorkAsync()
             {
                 Socks4_Request socks4_Request = await _clientStream.Read_Socks4_Request_Async(_cancellationToken);
-                if (socks4_Request.IsDomain && !_proxyServer.IsUseSocks4A)//socks4a
+                if (socks4_Request.IsDomain && 
+                    !await _proxyServer.Filter.IsUseSocks4AAsync(_cancellationToken))//socks4a
                 {
-                    await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                    await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                     return;
                 }
 
@@ -52,7 +53,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     if (string.IsNullOrWhiteSpace(socks4_Request.DOMAIN))
                     {
-                        await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
 
@@ -60,7 +61,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
                     if (target_ip == null)
                     {
-                        await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
                 }
@@ -73,7 +74,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 switch (socks4_Request.CMD)
                 {
                     case Socks4_CMD.Connect:
-                        await EstablishStreamConnectionAsync(target_ip, socks4_Request.DSTPORT);
+                        await _EstablishStreamConnectionAsync(target_ip, socks4_Request.DSTPORT);
                         return;
 
                     case Socks4_CMD.Bind:
@@ -82,22 +83,19 @@ namespace TqkLibrary.Proxy.ProxyServers
                             //not support now, write later
                             //it create listen port on this IProxySource and transfer with current connection
                             //and send reply ip:port listen
-                            await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         }
                         else
                         {
                             //not support
-                            await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         }
                         return;
 
                 }
             }
 
-
-
-
-            async Task EstablishStreamConnectionAsync(
+            async Task _EstablishStreamConnectionAsync(
                 IPAddress target_ip,
                 UInt16 target_port
                 )
@@ -115,14 +113,14 @@ namespace TqkLibrary.Proxy.ProxyServers
                     catch (Exception ex)
                     {
 #if DEBUG
-                        Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+                        Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
 #endif
-                        await WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
 
                     //send response to client
-                    await WriteReplyAsync(Socks4_REP.RequestGranted);
+                    await _WriteReplyAsync(Socks4_REP.RequestGranted);
 
                     //transfer until disconnect
                     await new StreamTransferHelper(_clientStream, session_stream)
@@ -138,11 +136,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
+            Task _WriteReplyAsync(Socks4_REP rep) => _WriteReplyAsync(rep, IPAddress.Any, 0);
 
-
-            Task WriteReplyAsync(Socks4_REP rep) => WriteReplyAsync(rep, IPAddress.Any, 0);
-
-            async Task WriteReplyAsync(
+            async Task _WriteReplyAsync(
                 Socks4_REP rep,
                 IPAddress listen_ip,
                 UInt16 listen_port)
@@ -157,7 +153,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 rep_buffer[3] = (byte)listen_port;
                 listen_ip.GetAddressBytes().CopyTo(rep_buffer, 4);
 #if DEBUG
-                Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(WriteReplyAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+                Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_WriteReplyAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 #endif
                 await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
                 await _clientStream.FlushAsync(_cancellationToken);

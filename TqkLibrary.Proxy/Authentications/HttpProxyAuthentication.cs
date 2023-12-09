@@ -1,4 +1,6 @@
-﻿namespace TqkLibrary.Proxy.Authentications
+﻿using System.Net;
+
+namespace TqkLibrary.Proxy.Authentications
 {
     public class HttpProxyAuthentication : BaseProxyAuthentication
     {
@@ -25,6 +27,12 @@
 
             return false;
         }
+
+        public static explicit operator NetworkCredential(HttpProxyAuthentication httpProxyAuthentication)
+            => new NetworkCredential(httpProxyAuthentication.UserName, httpProxyAuthentication.Password);
+
+        public static implicit operator HttpProxyAuthentication(NetworkCredential networkCredential)
+            => new HttpProxyAuthentication(networkCredential.UserName, networkCredential.Password);
 
         public override int GetHashCode()
         {

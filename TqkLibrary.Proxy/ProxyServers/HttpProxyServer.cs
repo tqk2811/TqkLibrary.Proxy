@@ -1,14 +1,21 @@
 ﻿using System.Net;
+using TqkLibrary.Proxy.Filters;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
     public partial class HttpProxyServer : BaseProxyServer, IHttpProxy
     {
-        public NetworkCredential Credentials { get; }
-        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, NetworkCredential credentials = null) : base(iPEndPoint, proxySource)
+        public HttpProxyServerFilter HttpProxyServerFilter { get; }
+
+        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource)
+            : this(iPEndPoint, proxySource, new HttpProxyServerFilter())
         {
-            this.Credentials = credentials;
+
+        }
+        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, HttpProxyServerFilter httpProxyServerFilter) : base(iPEndPoint, proxySource, httpProxyServerFilter)
+        {
+            this.HttpProxyServerFilter = httpProxyServerFilter;
         }
 
         protected override Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default)

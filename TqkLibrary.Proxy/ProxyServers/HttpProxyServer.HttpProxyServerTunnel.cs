@@ -50,7 +50,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     _client_HeaderParse = _client_HeaderLines.ParseRequest();
 
                     //Check Proxy-Authorization
-                    if (await _proxyServer.HttpProxyServerFilter.IsNeedAuthenticationAsync(_cancellationToken))
+                    if (await _proxyServer.Filter.IsNeedAuthenticationAsync(_cancellationToken))
                     {
                         switch (_client_HeaderParse.ProxyAuthorization?.Scheme?.ToLower())
                         {
@@ -59,7 +59,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                                 string[] split = parameter.Split(':');
                                 if (split.Length == 2 &&
                                     split.All(x => !string.IsNullOrWhiteSpace(x)) &&
-                                    await _proxyServer.HttpProxyServerFilter.CheckAuthenticationAsync(new HttpProxyAuthentication(split[0], split[1]), _cancellationToken))
+                                    await _proxyServer.Filter.CheckAuthenticationAsync(new HttpProxyAuthentication(split[0], split[1]), _cancellationToken))
                                 {
                                     break;//allow
                                 }

@@ -36,6 +36,7 @@ namespace TestProxy.HttpProxyServerTest
             httpClient = new HttpClient(httpClientHandler, false);
         }
 
+        //------------------Connect Test----------------//
         [TestMethod]
         public async Task HttpGet()
         {
@@ -118,5 +119,11 @@ namespace TestProxy.HttpProxyServerTest
             Assert.AreEqual(json["url"]?.ToString(), "https://httpbin.org/post");
             Assert.AreEqual(json["data"]?.ToString(), "Test post");
         }
+
+
+        //------------------Bind Test----------------//
+
+
+
     }
 }

@@ -14,5 +14,11 @@ namespace TqkLibrary.Proxy
             return self.IndexOf(value, stringComparison) >= 0;
         }
 #endif
+        internal static IEnumerable<T> Except<T>(this IEnumerable<T> source, params T[] values)
+            => source.Except(values.AsEnumerable());
+        internal static IEnumerable<T> Concat<T>(this IEnumerable<T> source, params T[] values)
+            => source.Concat(values.AsEnumerable());
+        internal static IEnumerable<T> ConcatIf<T>(this IEnumerable<T> source, bool val, params T[] values)
+            => val ? source.Concat(values.AsEnumerable()) : source;
     }
 }

@@ -84,7 +84,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
                 Uri uri = await _Read_DSTADDR_DSTPORT_Async();
-                if(await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri,_cancellationToken))
+                if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
                 {
                     switch ((Socks5_CMD)data_buffer[1])
                     {

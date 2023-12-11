@@ -84,19 +84,26 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
                 Uri uri = await _Read_DSTADDR_DSTPORT_Async();
-                switch ((Socks5_CMD)data_buffer[1])
+                if(await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri,_cancellationToken))
                 {
-                    case Socks5_CMD.EstablishStreamConnection:
-                        await _EstablishStreamConnectionAsync(uri);
-                        break;
+                    switch ((Socks5_CMD)data_buffer[1])
+                    {
+                        case Socks5_CMD.EstablishStreamConnection:
+                            await _EstablishStreamConnectionAsync(uri);
+                            break;
 
-                    case Socks5_CMD.EstablishPortBinding:
-                        await _EstablishPortBinding(uri);
-                        break;
+                        case Socks5_CMD.EstablishPortBinding:
+                            await _EstablishPortBinding(uri);
+                            break;
 
-                    case Socks5_CMD.AssociateUDP:
-                    default:
-                        throw new NotSupportedException($"{nameof(Socks5_CMD)}: {data_buffer[1]:X2}");
+                        case Socks5_CMD.AssociateUDP:
+                        default:
+                            throw new NotSupportedException($"{nameof(Socks5_CMD)}: {data_buffer[1]:X2}");
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
             }
 

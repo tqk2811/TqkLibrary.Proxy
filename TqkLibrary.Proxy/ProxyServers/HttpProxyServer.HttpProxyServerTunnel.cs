@@ -84,13 +84,21 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                     client_isKeepAlive = _client_HeaderParse.IsKeepAlive;
 
-                    if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
+                    if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(_client_HeaderParse.Uri, _cancellationToken))
                     {
-                        should_continue = await _HttpsTransfer();
+                        if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
+                        {
+                            should_continue = await _HttpsTransfer();
+                        }
+                        else
+                        {
+                            should_continue = await _HttpTransfer();
+                        }
                     }
                     else
                     {
-                        should_continue = await _HttpTransfer();
+                        await _WriteResponse(true, "403 Forbidden");
+                        should_continue = client_isKeepAlive;
                     }
                 }
                 while ((client_isKeepAlive || should_continue));

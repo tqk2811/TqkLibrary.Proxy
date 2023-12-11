@@ -134,7 +134,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
                 //read des port
                 buffer = await _clientStream.ReadBytesAsync(2);
-                UInt16 DSTPORT = BitConverter.ToUInt16(buffer, 2);
+                UInt16 DSTPORT = BitConverter.ToUInt16(buffer.Reverse().ToArray(), 0);
 
                 if (string.IsNullOrWhiteSpace(domain))
                 {

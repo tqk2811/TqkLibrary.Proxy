@@ -10,9 +10,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProxy", "TestProxy\TestProxy.csproj", "{DE676026-74A6-46B6-8A3F-55D53645AE6E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1D31E06-4B0C-4398-A9E2-8D52495A76E0}"
-	ProjectSection(SolutionItems) = preProject
-		ProjectBuildProperties.targets = ProjectBuildProperties.targets
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

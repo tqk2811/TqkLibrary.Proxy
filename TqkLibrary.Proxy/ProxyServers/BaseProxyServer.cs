@@ -5,33 +5,40 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Filters;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
     public abstract class BaseProxyServer : IProxyServer
     {
-        readonly TcpListener tcpListener;
         public IPEndPoint IPEndPoint { get; }
-
         public IProxySource ProxySource { get; private set; }
         public int Timeout { get; set; } = 30000;
 
 
-        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-        readonly object lock_cancellationToken = new object();
-        CancellationToken CancellationToken
+        readonly TcpListener _tcpListener;
+        readonly BaseProxyServerFilter _baseProxyServerFilter;
+        readonly object _lock_cancellationToken = new object();
+        CancellationToken _CancellationToken
         {
-            get { lock (lock_cancellationToken) return cancellationTokenSource.Token; }
+            get { lock (_lock_cancellationToken) return _cancellationTokenSource.Token; }
         }
 
 
-        IAsyncResult asyncResult;
+        CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        IAsyncResult _asyncResult;
 
-        protected BaseProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource)
+
+        protected BaseProxyServer(
+            IPEndPoint iPEndPoint,
+            IProxySource proxySource,
+            BaseProxyServerFilter baseProxyServerFilter
+            )
         {
+            this._baseProxyServerFilter = baseProxyServerFilter ?? throw new ArgumentNullException(nameof(baseProxyServerFilter));
             this.ProxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
-            this.tcpListener = new TcpListener(iPEndPoint);
+            this._tcpListener = new TcpListener(iPEndPoint);
             this.IPEndPoint = iPEndPoint;
         }
         ~BaseProxyServer()
@@ -46,92 +53,74 @@ namespace TqkLibrary.Proxy.ProxyServers
         void Dispose(bool disposing)
         {
             StopListen();
-            ShutdownCurrentConnection(false);
+            _ShutdownCurrentConnection(false);
         }
 
-
-        public void ShutdownCurrentConnection()
-        {
-            ShutdownCurrentConnection(true);
-        }
-        void ShutdownCurrentConnection(bool createNewCancellationToken)
-        {
-            lock (lock_cancellationToken)
-            {
-                cancellationTokenSource?.Cancel();
-                cancellationTokenSource?.Dispose();
-                cancellationTokenSource = null;
-                if (createNewCancellationToken) cancellationTokenSource = new CancellationTokenSource();
-            }
-        }
 
         public void StartListen()
         {
-            lock (tcpListener)
+            if (!this._tcpListener.Server.IsBound)
             {
-                this.tcpListener.Start();
-                asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
+                this._tcpListener.Start();
+                Task.Run(_MainLoopListen);
             }
         }
         public void StopListen()
         {
-            lock (tcpListener)
-            {
-                try
-                {
-                    this.tcpListener.Stop();
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(StopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                }
-            }
+            if (this._tcpListener.Server.IsBound)
+                this._tcpListener.Stop();
         }
-
         public void ChangeSource(IProxySource proxySource, bool isShutdownCurrentConnection = false)
         {
             if (proxySource is null) throw new ArgumentNullException(nameof(proxySource));
             this.ProxySource = proxySource;
             if (isShutdownCurrentConnection) ShutdownCurrentConnection();
         }
-
-
-        void BeginAcceptTcpClientAsyncCallback(IAsyncResult ar)
+        public void ShutdownCurrentConnection()
         {
-            try
+            _ShutdownCurrentConnection(true);
+        }
+        void _ShutdownCurrentConnection(bool createNewCancellationToken)
+        {
+            lock (_lock_cancellationToken)
             {
-                if (this.tcpListener.Server.IsBound)
-                {
-                    lock (tcpListener)
-                    {
-                        TcpClient tcpClient = this.tcpListener.EndAcceptTcpClient(ar);
-                        _ = PreProxyWork(tcpClient);//run in task
-                        asyncResult = this.tcpListener.BeginAcceptTcpClient(BeginAcceptTcpClientAsyncCallback, null);
-                    }
-                }
-#if DEBUG
-                else
-                {
-                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(BeginAcceptTcpClientAsyncCallback)}] Stopped Listen");
-                }
-#endif
-            }
-            catch (Exception ex)
-            {
-#if DEBUG
-                Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(BeginAcceptTcpClientAsyncCallback)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
+                _cancellationTokenSource?.Cancel();
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+                if (createNewCancellationToken) _cancellationTokenSource = new CancellationTokenSource();
             }
         }
 
-        private async Task PreProxyWork(TcpClient tcpClient)
+
+
+        async void _MainLoopListen()
+        {
+            while (this._tcpListener.Server.IsBound)
+            {
+                try
+                {
+                    TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                    _ = _PreProxyWorkAsync(tcpClient);//run in task
+                }
+                catch (Exception ex)
+                {
+#if DEBUG
+                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(_MainLoopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                }
+            }
+        }
+
+
+        private async Task _PreProxyWorkAsync(TcpClient tcpClient)
         {
             using (tcpClient)
             {
-                using NetworkStream networkStream = tcpClient.GetStream();
-                await ProxyWorkAsync(networkStream, tcpClient.Client.RemoteEndPoint, CancellationToken);
+                if (await _baseProxyServerFilter.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
+                {
+                    using Stream stream = await _baseProxyServerFilter.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
+                    await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint, _CancellationToken);
+                }
             }
         }
 

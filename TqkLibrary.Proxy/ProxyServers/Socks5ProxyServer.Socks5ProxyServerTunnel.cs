@@ -34,16 +34,16 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             internal override async Task ProxyWorkAsync()
             {
-                if (await ClientGreeting_And_ServerChoice())
+                if (await _ClientGreeting_And_ServerChoice())
                 {
-                    await ClientConnectionRequest();
+                    await _ClientConnectionRequest();
                 }
             }
 
 
             #region Client greeting & Server choice
 
-            async Task<bool> ClientGreeting_And_ServerChoice()
+            async Task<bool> _ClientGreeting_And_ServerChoice()
             {
                 /*
                  * 	                VER	    NAUTH	AUTH
@@ -56,26 +56,12 @@ namespace TqkLibrary.Proxy.ProxyServers
                 Socks5_Auth[] auths = auths_buffer.Select(x => (Socks5_Auth)x).ToArray();
 
                 //-------------------Server choice-------------------//
-                if (_proxyServer.NetworkCredential != null && auths.Contains(Socks5_Auth.UsernamePassword))
-                {
-                    //await ServerChoiceResponseAsync(stream, Socks5_Auth.UsernamePassword);
-                    //write later
-
-                    await ServerChoiceResponseAsync(Socks5_Auth.Reject);
-                }
-                else if (auths.Contains(Socks5_Auth.NoAuthentication))
-                {
-                    await ServerChoiceResponseAsync(Socks5_Auth.NoAuthentication);
-                    return true;
-                }
-                else
-                {
-                    await ServerChoiceResponseAsync(Socks5_Auth.Reject);
-                }
-                return false;
+                Socks5_Auth choice = await _proxyServer.Filter.ChoseAuthAsync(auths, _cancellationToken);
+                await _ServerChoiceResponseAsync(choice);
+                return choice != Socks5_Auth.Reject;
             }
 
-            async Task ServerChoiceResponseAsync(Socks5_Auth socks5_Auth)
+            async Task _ServerChoiceResponseAsync(Socks5_Auth socks5_Auth)
             {
                 byte[] buffer = new byte[2]
                 {
@@ -94,18 +80,18 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             #region Client connection request
 
-            async Task ClientConnectionRequest()
+            async Task _ClientConnectionRequest()
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
-                Uri uri = await Read_DSTADDR_DSTPORT_Async();
+                Uri uri = await _Read_DSTADDR_DSTPORT_Async();
                 switch ((Socks5_CMD)data_buffer[1])
                 {
                     case Socks5_CMD.EstablishStreamConnection:
-                        await EstablishStreamConnectionAsync(uri);
+                        await _EstablishStreamConnectionAsync(uri);
                         break;
 
                     case Socks5_CMD.EstablishPortBinding:
-                        await EstablishPortBinding(uri);
+                        await _EstablishPortBinding(uri);
                         break;
 
                     case Socks5_CMD.AssociateUDP:
@@ -114,7 +100,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
-            async Task<Uri> Read_DSTADDR_DSTPORT_Async()
+            async Task<Uri> _Read_DSTADDR_DSTPORT_Async()
             {
                 byte[] buffer = await _clientStream.ReadBytesAsync(1);
 
@@ -153,10 +139,10 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
-            Task WriteReplyConnectionRequestAsync(Socks5_STATUS status)
-                => WriteReplyConnectionRequestAsync(status, IPAddress.Any, 0);
+            Task _WriteReplyConnectionRequestAsync(Socks5_STATUS status)
+                => _WriteReplyConnectionRequestAsync(status, IPAddress.Any, 0);
 
-            async Task WriteReplyConnectionRequestAsync(
+            async Task _WriteReplyConnectionRequestAsync(
                 Socks5_STATUS status,
                 IPAddress listen_ip,
                 UInt16 listen_port
@@ -166,18 +152,18 @@ namespace TqkLibrary.Proxy.ProxyServers
                 memoryStream.WriteByte(SOCKS5_VER);
                 memoryStream.WriteByte((byte)status);
                 memoryStream.WriteByte(0);
-                Write_BNDADDR(memoryStream, listen_ip);
+                _Write_BNDADDR(memoryStream, listen_ip);
                 memoryStream.WriteByte((byte)(listen_port >> 8));
                 memoryStream.WriteByte((byte)listen_port);
                 byte[] rep_buffer = memoryStream.ToArray();
 #if DEBUG
-                Console.WriteLine($"[{nameof(Socks5ProxyServerTunnel)}.{nameof(WriteReplyConnectionRequestAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+                Console.WriteLine($"[{nameof(Socks5ProxyServerTunnel)}.{nameof(_WriteReplyConnectionRequestAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 #endif
                 await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
                 await _clientStream.FlushAsync(_cancellationToken);
             }
 
-            void Write_BNDADDR(MemoryStream memoryStream, IPAddress iPAddress)
+            void _Write_BNDADDR(MemoryStream memoryStream, IPAddress iPAddress)
             {
                 if (iPAddress.AddressFamily != AddressFamily.InterNetwork && iPAddress.AddressFamily != AddressFamily.InterNetworkV6)
                     throw new InvalidDataException($"{nameof(iPAddress)} must be ipv4 or ipv6");
@@ -186,20 +172,20 @@ namespace TqkLibrary.Proxy.ProxyServers
                 memoryStream.WriteByte((byte)(address_bytes.Length == 4 ? Socks5_ATYP.IpV4 : Socks5_ATYP.IpV6));
                 memoryStream.Write(address_bytes);
             }
-            async Task EstablishStreamConnectionAsync(Uri uri)
+            async Task _EstablishStreamConnectionAsync(Uri uri)
             {
                 using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
                 using Stream session_stream = connectSource?.GetStream();
 
                 if (session_stream == null)
                 {
-                    await WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
+                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
                     return;
                 }
                 else
                 {
                     //send response to client
-                    await WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
+                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
                     //transfer until disconnect
                     await new StreamTransferHelper(_clientStream, session_stream)
@@ -210,12 +196,12 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
             }
 
-            async Task EstablishPortBinding(Uri uri)
+            async Task _EstablishPortBinding(Uri uri)
             {
                 using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(uri, _cancellationToken);
                 IPEndPoint listen_endpoint = await bindSource?.InitListenAsync(_cancellationToken);
 
-                await WriteReplyConnectionRequestAsync(
+                await _WriteReplyConnectionRequestAsync(
                     Socks5_STATUS.RequestGranted,
                     listen_endpoint.Address,
                     (UInt16)listen_endpoint.Port);

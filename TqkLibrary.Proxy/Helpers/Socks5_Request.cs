@@ -40,7 +40,7 @@ namespace TqkLibrary.Proxy.Helpers
             socks5_Connection.CMD = (Socks5_CMD)buffer[1];
             socks5_Connection.RSV = buffer[2];
             socks5_Connection.DSTADDR = await stream.Read_Socks5_DSTADDR_Async(cancellationToken);
-            socks5_Connection.DSTPORT = BitConverter.ToUInt16(await stream.ReadBytesAsync(2, cancellationToken), 0);
+            socks5_Connection.DSTPORT = BitConverter.ToUInt16((await stream.ReadBytesAsync(2, cancellationToken)).Reverse().ToArray(), 0);
             return socks5_Connection;
         }
 
@@ -55,8 +55,8 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
-            yield return (byte)(DSTPORT >> 8);
             yield return (byte)DSTPORT;
+            yield return (byte)(DSTPORT >> 8);
         }
     }
     internal static class Socks5_Request_Extensions

@@ -9,29 +9,28 @@ using TqkLibrary.Proxy.ProxySources;
 using TqkLibrary.Proxy.ProxyServers;
 using Newtonsoft.Json;
 
-namespace TestProxy.HttpProxyServerTest
+namespace TestProxy.Socks4ProxyServerTest
 {
     [TestClass]
-    public class LocalHttpProxySourceTest
+    public class LocalProxySourceTest
     {
         static readonly IProxySource localProxySource;
 
-        static readonly HttpClientHandler httpClientHandler;
+        static readonly SocketsHttpHandler httpClientHandler;
         static readonly HttpClient httpClient;
-        static readonly NetworkCredential networkCredential = new NetworkCredential("user", "password");
-        static LocalHttpProxySourceTest()
+        static LocalProxySourceTest()
         {
             localProxySource = new LocalProxySource();
-
-            httpClientHandler = new HttpClientHandler()
+            //.Net6 support socks4 and socks5
+            //https://devblogs.microsoft.com/dotnet/dotnet-6-networking-improvements/#socks-proxy-support
+            httpClientHandler = new SocketsHttpHandler()
             {
                 Proxy = new WebProxy()
                 {
-                    Address = new Uri($"http://{Singleton.Address0}"),
+                    Address = new Uri($"socks4://{Singleton.Address0}"),
                 },
                 UseCookies = false,
                 UseProxy = true,
-                DefaultProxyCredentials = networkCredential,
             };
             httpClient = new HttpClient(httpClientHandler, false);
         }
@@ -39,8 +38,8 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource, networkCredential);
-            httpProxyServer.StartListen();
+            using var socks4ProxyServer = new Socks4ProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource);
+            socks4ProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
             using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
@@ -52,8 +51,8 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpGetTwoTimes()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource, networkCredential);
-            httpProxyServer.StartListen();
+            using var socks4ProxyServer = new Socks4ProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource);
+            socks4ProxyServer.StartListen();
 
             {
                 using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
@@ -76,8 +75,8 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource, networkCredential);
-            httpProxyServer.StartListen();
+            using var socks4ProxyServer = new Socks4ProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource);
+            socks4ProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
             httpRequestMessage.Headers.Add("Accept", "application/json");
@@ -93,8 +92,8 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource, networkCredential);
-            httpProxyServer.StartListen();
+            using var socks4ProxyServer = new Socks4ProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource);
+            socks4ProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://httpbin.org/get");
             using HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
@@ -106,8 +105,8 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource, networkCredential);
-            httpProxyServer.StartListen();
+            using var socks4ProxyServer = new Socks4ProxyServer(IPEndPoint.Parse(Singleton.Address0), localProxySource);
+            socks4ProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://httpbin.org/post");
             httpRequestMessage.Headers.Add("Accept", "application/json");

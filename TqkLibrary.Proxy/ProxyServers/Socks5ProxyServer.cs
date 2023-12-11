@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         public Socks5ProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, Socks5ProxyServerFilter filter)
             : base(iPEndPoint, proxySource, filter)
         {
-
+            this.Filter = filter;
         }
         protected override Task ProxyWorkAsync(Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default)
         {

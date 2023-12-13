@@ -12,9 +12,11 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class HttpProxySource
     {
-        class Socks4ProxySourceTunnel : BaseProxySourceTunnel<HttpProxySource>, IConnectSource
+        class ConnectTunnel : BaseProxySourceTunnel<HttpProxySource>, IConnectSource
         {
-            internal Socks4ProxySourceTunnel(
+            readonly TcpClient _tcpClient = new TcpClient();
+            Stream _stream;
+            internal ConnectTunnel(
                 HttpProxySource proxySource,
                 CancellationToken cancellationToken = default
                 )
@@ -25,6 +27,12 @@ namespace TqkLibrary.Proxy.ProxySources
             {
 
             }
+            protected override void Dispose(bool isDisposing)
+            {
+                _stream?.Dispose();
+                _tcpClient.Dispose();
+                base.Dispose(isDisposing);
+            }
 
             public Stream GetStream()
             {
@@ -34,8 +42,8 @@ namespace TqkLibrary.Proxy.ProxySources
             public async Task<IConnectSource> InitConnectAsync(Uri address)
             {
                 if (address is null) throw new ArgumentNullException(nameof(address));
-                await ConnectToProxy();
-                if (await CONNECT(address))
+                await _ConnectToProxyAsync();
+                if (await _CONNECT_Async(address))
                 {
                     return this;
                 }
@@ -43,24 +51,24 @@ namespace TqkLibrary.Proxy.ProxySources
                 return null;
             }
 
-            async Task ConnectToProxy()
+            async Task _ConnectToProxyAsync()
             {
                 await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port);
                 _stream = _tcpClient.GetStream();
             }
 
-            async Task<bool> CONNECT(Uri address)
+            async Task<bool> _CONNECT_Async(Uri address)
             {
                 await _stream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
+                Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #endif
-                if (_proxySource._httpProxyAuthentication != null)
+                if (_proxySource.HttpProxyAuthentication != null)
                 {
-                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource._httpProxyAuthentication.UserName}:{_proxySource._httpProxyAuthentication.Password}"));
+                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.HttpProxyAuthentication.UserName}:{_proxySource.HttpProxyAuthentication.Password}"));
                     await _stream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
 #if DEBUG
-                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- Proxy-Authorization: Basic {data}");
+                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- Proxy-Authorization: Basic {data}");
 #endif
                 }
                 await _stream.WriteLineAsync();
@@ -70,7 +78,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 List<string> response_HeaderLines = await _stream.ReadHeader();
 #if DEBUG
                 response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} -> {x}"));
+                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} -> {x}"));
 #endif
                 var headerResponseParse = response_HeaderLines.ParseResponse();
 

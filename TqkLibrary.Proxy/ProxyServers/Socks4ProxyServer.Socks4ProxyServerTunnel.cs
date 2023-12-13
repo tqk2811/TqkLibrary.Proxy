@@ -126,6 +126,12 @@ namespace TqkLibrary.Proxy.ProxyServers
                     try
                     {
                         connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
+                        if(connectSource is null)
+                        {
+                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                            return;
+                        }
+
                         session_stream = await connectSource.GetStreamAsync();
                     }
                     catch (Exception ex)

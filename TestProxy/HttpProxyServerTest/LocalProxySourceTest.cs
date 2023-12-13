@@ -21,7 +21,7 @@ namespace TestProxy.HttpProxyServerTest
         static readonly HttpClientHandler httpClientHandler;
         static readonly HttpClient httpClient;
         static readonly NetworkCredential networkCredential = new NetworkCredential("user", "password");
-        static readonly HttpProxyServerFilter filter = new HttpProxyServerFilter();
+        static readonly HttpAuthenticationProxyServerFilter filter = new HttpAuthenticationProxyServerFilter();
         static LocalProxySourceTest()
         {
             localProxySource = new LocalProxySource();

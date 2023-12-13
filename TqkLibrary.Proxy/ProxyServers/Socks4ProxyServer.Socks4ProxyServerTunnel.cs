@@ -119,29 +119,15 @@ namespace TqkLibrary.Proxy.ProxyServers
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                IConnectSource connectSource = null;
-                Stream session_stream = null;
                 try
                 {
-                    try
+                    using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
+                    if (connectSource is null)
                     {
-                        connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                        if(connectSource is null)
-                        {
-                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                            return;
-                        }
-
-                        session_stream = await connectSource.GetStreamAsync();
-                    }
-                    catch (Exception ex)
-                    {
-#if DEBUG
-                        Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
                         await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
                     }
+                    using Stream session_stream = await connectSource.GetStreamAsync();
 
                     //send response to client
                     await _WriteReplyAsync(Socks4_REP.RequestGranted);
@@ -153,10 +139,13 @@ namespace TqkLibrary.Proxy.ProxyServers
 #endif
                         .WaitUntilDisconnect(_cancellationToken);
                 }
-                finally
+                catch (Exception ex)
                 {
-                    session_stream?.Dispose();
-                    connectSource?.Dispose();
+#if DEBUG
+                    Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
+#endif
+                    await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                    return;
                 }
             }
 

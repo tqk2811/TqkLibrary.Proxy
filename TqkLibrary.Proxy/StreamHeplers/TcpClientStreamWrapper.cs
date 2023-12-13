@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Runtime.Remoting;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -64,9 +63,6 @@ namespace TqkLibrary.Proxy.StreamHeplers
 
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
             => _stream.CopyToAsync(destination, bufferSize, cancellationToken);
-
-        public override ObjRef CreateObjRef(Type requestedType)
-            => _stream.CreateObjRef(requestedType);
 
         public override int GetHashCode()
             => _stream.GetHashCode();

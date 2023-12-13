@@ -45,7 +45,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
             async Task ConnectToProxy()
             {
-                await _tcpClient.ConnectAsync(_proxySource.proxy.Host, _proxySource.proxy.Port);
+                await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port);
                 _stream = _tcpClient.GetStream();
             }
 
@@ -53,14 +53,14 @@ namespace TqkLibrary.Proxy.ProxySources
             {
                 await _stream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #if DEBUG
-                Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
+                Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
 #endif
-                if (_proxySource.networkCredential != null)
+                if (_proxySource._httpProxyAuthentication != null)
                 {
-                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.networkCredential.UserName}:{_proxySource.networkCredential.Password}"));
+                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource._httpProxyAuthentication.UserName}:{_proxySource._httpProxyAuthentication.Password}"));
                     await _stream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
 #if DEBUG
-                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} <- Proxy-Authorization: Basic {data}");
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- Proxy-Authorization: Basic {data}");
 #endif
                 }
                 await _stream.WriteLineAsync();
@@ -70,7 +70,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 List<string> response_HeaderLines = await _stream.ReadHeader();
 #if DEBUG
                 response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource.proxy.Host}:{_proxySource.proxy.Port} -> {x}"));
+                    Console.WriteLine($"[{nameof(Socks4ProxySourceTunnel)}.{nameof(CONNECT)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} -> {x}"));
 #endif
                 var headerResponseParse = response_HeaderLines.ParseResponse();
 

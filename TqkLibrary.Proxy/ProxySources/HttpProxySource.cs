@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -8,18 +9,18 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class HttpProxySource : IProxySource, IHttpProxy
     {
-        readonly Uri proxy;
-        readonly NetworkCredential networkCredential;
+        readonly Uri _proxy;
+        readonly HttpProxyAuthentication _httpProxyAuthentication;
         public HttpProxySource(Uri proxy)
         {
-            this.proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
+            this._proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
         }
         /// <summary>
         /// Self host
         /// </summary>
-        public HttpProxySource(Uri proxy, NetworkCredential networkCredential) : this(proxy)
+        public HttpProxySource(Uri proxy, HttpProxyAuthentication httpProxyAuthentication) : this(proxy)
         {
-            this.networkCredential = networkCredential ?? throw new ArgumentNullException(nameof(networkCredential));
+            this._httpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
         public bool IsSupportUdp => false;

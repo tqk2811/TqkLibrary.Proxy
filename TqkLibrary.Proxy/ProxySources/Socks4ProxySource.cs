@@ -24,12 +24,12 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
+            return new ConnectTunnel(this, cancellationToken).InitConnectAsync(address);
         }
 
-        public Task<IBindSource> InitBindAsync(Uri address,CancellationToken cancellationToken = default)
+        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitBindAsync(address);
+            return new BindTunnel(this, cancellationToken).InitBindAsync(address);
         }
 
         public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)

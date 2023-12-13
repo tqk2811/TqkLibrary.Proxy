@@ -29,7 +29,8 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportUdp { get; set; } = true;
         public bool IsSupportIpv6 { get; set; } = true;
         public bool IsSupportBind { get; set; } = true;
-        public IPAddress BindIpAddress { get; set; }
+        public IPAddress? BindIpAddress { get; set; }
+        public UInt16 BindListenPort { get; set; } = 0;
 
         public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
         {
@@ -38,7 +39,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
         {
-            return new BindTunnel(this, cancellationToken).InitBindAsync(address);
+            return BindTunnel._InitBindAsync(this, address, cancellationToken);
         }
 
         public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)

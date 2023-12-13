@@ -14,8 +14,6 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         protected readonly T _proxySource;
         protected readonly CancellationToken _cancellationToken;
-        protected readonly TcpClient _tcpClient = new TcpClient();
-        protected Stream _stream;
         protected BaseProxySourceTunnel(T proxySource, CancellationToken cancellationToken = default)
         {
             this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
@@ -30,10 +28,9 @@ namespace TqkLibrary.Proxy.ProxySources
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-        void Dispose(bool isDisposing)
+        protected virtual void Dispose(bool isDisposing)
         {
-            _stream?.Dispose();
-            _tcpClient?.Dispose();
+
         }
     }
 }

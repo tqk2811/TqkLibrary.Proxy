@@ -66,8 +66,5 @@ namespace TqkLibrary.Proxy.StreamHeplers
 
         public override int GetHashCode()
             => _stream.GetHashCode();
-
-        public override object InitializeLifetimeService()
-            => _stream.InitializeLifetimeService();
     }
 }

@@ -209,7 +209,13 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task _EstablishPortBinding(Uri uri)
             {
                 using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(uri, _cancellationToken);
-                IPEndPoint listen_endpoint = await bindSource?.InitListenAsync(_cancellationToken);
+                if(bindSource is null)
+                {
+                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
+                    return;
+                }
+
+                IPEndPoint listen_endpoint = await bindSource.InitListenAsync(_cancellationToken);
 
                 await _WriteReplyConnectionRequestAsync(
                     Socks5_STATUS.RequestGranted,

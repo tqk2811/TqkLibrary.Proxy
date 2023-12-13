@@ -119,34 +119,23 @@ namespace TqkLibrary.Proxy.ProxyServers
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                try
+                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
+                if (connectSource is null)
                 {
-                    using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                    if (connectSource is null)
-                    {
-                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                        return;
-                    }
-                    using Stream session_stream = await connectSource.GetStreamAsync();
-
-                    //send response to client
-                    await _WriteReplyAsync(Socks4_REP.RequestGranted);
-
-                    //transfer until disconnect
-                    await new StreamTransferHelper(_clientStream, session_stream)
-#if DEBUG
-                        .DebugName(_clientEndPoint.ToString(), uri.ToString())
-#endif
-                        .WaitUntilDisconnect(_cancellationToken);
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
                     await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                     return;
                 }
+                using Stream session_stream = await connectSource.GetStreamAsync();
+
+                //send response to client
+                await _WriteReplyAsync(Socks4_REP.RequestGranted);
+
+                //transfer until disconnect
+                await new StreamTransferHelper(_clientStream, session_stream)
+#if DEBUG
+                    .DebugName(_clientEndPoint.ToString(), uri.ToString())
+#endif
+                    .WaitUntilDisconnect(_cancellationToken);
             }
 
             Task _WriteReplyAsync(Socks4_REP rep) => _WriteReplyAsync(rep, IPAddress.Any, 0);

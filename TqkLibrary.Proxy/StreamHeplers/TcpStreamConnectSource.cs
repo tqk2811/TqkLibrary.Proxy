@@ -58,8 +58,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 }
                 catch (AuthenticationException)
                 {
-                    stream.Close();
-                    return null;
+                    stream.Dispose();
+                    throw;
                 }
             }
         }

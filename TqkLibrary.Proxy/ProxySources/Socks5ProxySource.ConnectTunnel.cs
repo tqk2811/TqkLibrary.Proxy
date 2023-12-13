@@ -21,6 +21,11 @@ namespace TqkLibrary.Proxy.ProxySources
 
             }
 
+            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(this._stream);
+            }
+
             internal async Task<IConnectSource> InitConnectAsync(Uri address)
             {
                 try
@@ -56,11 +61,6 @@ namespace TqkLibrary.Proxy.ProxySources
                 {
                     return false;
                 }
-            }
-
-            public Stream GetStream()
-            {
-                return this._stream;
             }
         }
     }

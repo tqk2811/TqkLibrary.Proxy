@@ -182,25 +182,28 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task _EstablishStreamConnectionAsync(Uri uri)
             {
                 using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                using Stream session_stream = connectSource?.GetStream();
-
-                if (session_stream == null)
+                if (connectSource is null)
                 {
                     await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
                     return;
                 }
-                else
-                {
-                    //send response to client
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
-                    //transfer until disconnect
-                    await new StreamTransferHelper(_clientStream, session_stream)
-#if DEBUG
-                        .DebugName(_clientEndPoint.ToString(), uri.ToString())
-#endif
-                        .WaitUntilDisconnect(_cancellationToken);
+                using Stream session_stream = await connectSource.GetStreamAsync();
+                if (session_stream is null)
+                {
+                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
+                    return;
                 }
+
+                //send response to client
+                await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
+
+                //transfer until disconnect
+                await new StreamTransferHelper(_clientStream, session_stream)
+#if DEBUG
+                    .DebugName(_clientEndPoint.ToString(), uri.ToString())
+#endif
+                    .WaitUntilDisconnect(_cancellationToken);
             }
 
             async Task _EstablishPortBinding(Uri uri)

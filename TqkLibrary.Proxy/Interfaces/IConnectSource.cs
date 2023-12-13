@@ -8,6 +8,6 @@ namespace TqkLibrary.Proxy.Interfaces
 {
     public interface IConnectSource : IDisposable
     {
-        Stream GetStream();
+        Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default);
     }
 }

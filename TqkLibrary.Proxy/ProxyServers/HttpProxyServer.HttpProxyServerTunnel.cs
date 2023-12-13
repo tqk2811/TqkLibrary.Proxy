@@ -118,7 +118,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     await _WriteResponse(true, "200 Connection established");
                 }
 
-                using var remote_stream = connectSource.GetStream();
+                using var remote_stream = await connectSource.GetStreamAsync();
                 await new StreamTransferHelper(_clientStream, remote_stream)
 #if DEBUG
                     .DebugName(_clientEndPoint.ToString(), _client_HeaderParse.Uri.ToString())
@@ -135,7 +135,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     return await _WriteResponse(true, "408 Request Timeout");
                 }
-                using Stream target_Stream = connectSource.GetStream();
+                using Stream target_Stream = await connectSource.GetStreamAsync();
 
 
                 //send header to target

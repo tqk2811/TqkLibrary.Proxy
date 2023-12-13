@@ -33,7 +33,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             GC.SuppressFinalize(this);
         }
 
-        public Stream GetStream()
+        public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(_GetStream());
+
+
+        Stream _GetStream()
         {
             if (string.IsNullOrWhiteSpace(host))
             {
@@ -44,8 +48,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 var stream = new SslStream(
                     tcpClient.GetStream(),
                     false,
-                    null,//RemoteCertificateValidationCallback,
-                    null//LocalCertificateSelectionCallback
+                    null,//_RemoteCertificateValidationCallback,
+                    null//_LocalCertificateSelectionCallback
                     );
                 try
                 {
@@ -59,7 +63,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 }
             }
         }
-        bool RemoteCertificateValidationCallback(
+
+        bool _RemoteCertificateValidationCallback(
             object sender,
             X509Certificate certificate,
             X509Chain chain,
@@ -67,7 +72,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
         {
             return false;
         }
-        X509Certificate LocalCertificateSelectionCallback(
+        X509Certificate _LocalCertificateSelectionCallback(
             object sender,
             string targetHost,
             X509CertificateCollection localCertificates,

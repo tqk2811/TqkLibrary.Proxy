@@ -126,7 +126,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     try
                     {
                         connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                        session_stream = connectSource.GetStream();
+                        session_stream = await connectSource.GetStreamAsync();
                     }
                     catch (Exception ex)
                     {

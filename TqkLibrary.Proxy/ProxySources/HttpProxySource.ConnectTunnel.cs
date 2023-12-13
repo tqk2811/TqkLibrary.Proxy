@@ -34,9 +34,9 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            public Stream GetStream()
+            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
-                return this._stream;
+                return Task.FromResult(this._stream);
             }
 
             public async Task<IConnectSource> InitConnectAsync(Uri address)

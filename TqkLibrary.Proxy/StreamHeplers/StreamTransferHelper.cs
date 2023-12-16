@@ -24,8 +24,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
 #if DEBUG
         string _firstName = string.Empty;
         string _secondName = string.Empty;
-
-        public StreamTransferHelper DebugName(string firstName, string secondName)
+        public StreamTransferHelper DebugName(object? first, object? second)
+        {
+            return DebugName(first?.ToString(), second?.ToString());
+        }
+        public StreamTransferHelper DebugName(string? firstName, string? secondName)
         {
             this._firstName = firstName ?? string.Empty;
             this._secondName = secondName ?? string.Empty;

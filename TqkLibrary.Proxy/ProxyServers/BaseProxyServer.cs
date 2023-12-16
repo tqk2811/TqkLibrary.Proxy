@@ -27,7 +27,6 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
         CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        IAsyncResult? _asyncResult;
 
 
         protected BaseProxyServer(
@@ -121,7 +120,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (await _baseProxyServerFilter.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
                 {
                     using Stream stream = await _baseProxyServerFilter.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
-                    await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint, _CancellationToken);
+                    await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint!, _CancellationToken);
                 }
             }
         }

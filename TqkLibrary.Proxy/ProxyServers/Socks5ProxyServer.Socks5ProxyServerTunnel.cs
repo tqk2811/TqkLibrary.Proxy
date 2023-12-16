@@ -190,7 +190,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, session_stream)
 #if DEBUG
-                    .DebugName(_clientEndPoint.ToString(), uri.ToString())
+                    .DebugName(_clientEndPoint, uri)
 #endif
                     .WaitUntilDisconnect(_cancellationToken);
             }
@@ -211,7 +211,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, target_stream)
 #if DEBUG
-                    .DebugName(_clientEndPoint.ToString(), listen_endpoint.ToString())
+                    .DebugName(_clientEndPoint, listen_endpoint)
 #endif
                     .WaitUntilDisconnect(_cancellationToken);
             }

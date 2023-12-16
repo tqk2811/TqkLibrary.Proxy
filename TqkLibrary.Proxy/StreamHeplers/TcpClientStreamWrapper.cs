@@ -48,12 +48,12 @@ namespace TqkLibrary.Proxy.StreamHeplers
         public override void Write(byte[] buffer, int offset, int count)
             => _stream.Write(buffer, offset, count);
 
-        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
             => _stream.BeginRead(buffer, offset, count, callback, state);
         public override int EndRead(IAsyncResult asyncResult)
             => _stream.EndRead(asyncResult);
 
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
+        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
             => _stream.BeginWrite(buffer, offset, count, callback, state);
         public override void EndWrite(IAsyncResult asyncResult)
             => _stream.EndWrite(asyncResult);

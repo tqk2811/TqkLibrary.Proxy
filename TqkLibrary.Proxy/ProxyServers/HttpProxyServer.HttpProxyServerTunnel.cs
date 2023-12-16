@@ -56,7 +56,10 @@ namespace TqkLibrary.Proxy.ProxyServers
                         switch (_client_HeaderParse.ProxyAuthorization?.Scheme?.ToLower())
                         {
                             case "basic":
-                                string parameter = Encoding.UTF8.GetString(Convert.FromBase64String(_client_HeaderParse.ProxyAuthorization.Parameter));
+                                if (string.IsNullOrWhiteSpace(_client_HeaderParse?.ProxyAuthorization?.Parameter))
+                                    throw new InvalidDataException($"ProxyAuthorization Parameter is empty");
+
+                                string parameter = Encoding.UTF8.GetString(Convert.FromBase64String(_client_HeaderParse!.ProxyAuthorization!.Parameter!));
                                 string[] split = parameter.Split(':');
                                 if (split.Length == 2 &&
                                     split.All(x => !string.IsNullOrWhiteSpace(x)) &&
@@ -109,7 +112,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task<bool> _HttpsTransfer(IConnectSource connectSource)
             {
-                if (_client_HeaderParse is null) 
+                if (_client_HeaderParse is null)
                     throw new InvalidOperationException();
 
                 await _WriteResponse(true, "200 Connection established");
@@ -117,7 +120,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 using var remote_stream = await connectSource.GetStreamAsync();
                 await new StreamTransferHelper(_clientStream, remote_stream)
 #if DEBUG
-                    .DebugName(_clientEndPoint.ToString(), _client_HeaderParse.Uri.ToString())
+                    .DebugName(_clientEndPoint, _client_HeaderParse?.Uri)
 #endif
                     .WaitUntilDisconnect(_cancellationToken);
                 return true;
@@ -125,19 +128,16 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task<bool> _HttpTransfer(IConnectSource connectSource)
             {
-                if (_client_HeaderParse is null) 
-                    throw new InvalidOperationException();
-
                 using Stream target_Stream = await connectSource.GetStreamAsync();
 
                 //send header to target
                 List<string> headerLines = new List<string>();
-                headerLines.Add($"{_client_HeaderParse.Method} {_client_HeaderParse.Uri.AbsolutePath} HTTP/{_client_HeaderParse.Version}");
-                if (!_client_HeaderLines.Any(x => x.StartsWith("host: ", StringComparison.OrdinalIgnoreCase)))
+                headerLines.Add($"{_client_HeaderParse!.Method} {_client_HeaderParse.Uri!.AbsolutePath} HTTP/{_client_HeaderParse!.Version}");
+                if (!_client_HeaderLines!.Any(x => x.StartsWith("host: ", StringComparison.OrdinalIgnoreCase)))
                 {
                     headerLines.Add($"Host: {_client_HeaderParse.Uri.Host}");
                 }
-                foreach (var line in _client_HeaderLines.Skip(1)
+                foreach (var line in _client_HeaderLines!.Skip(1)
                     .Where(x => !x.StartsWith("Proxy-", StringComparison.OrdinalIgnoreCase)))
                 {
                     headerLines.Add(line);

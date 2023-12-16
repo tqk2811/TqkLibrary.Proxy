@@ -21,7 +21,9 @@ namespace TqkLibrary.Proxy.Helpers
             this.DSTPORT = (UInt16)uri.Port;
         }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private Socks5_Request()
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
         }
 
@@ -51,7 +53,7 @@ namespace TqkLibrary.Proxy.Helpers
             yield return VER;
             yield return (byte)CMD;
             yield return (byte)RSV;
-            foreach (byte b in DSTADDR.GetBytes())
+            foreach (byte b in DSTADDR!.GetBytes())
             {
                 yield return b;
             }

@@ -15,7 +15,7 @@ namespace TqkLibrary.Proxy.Helpers
     {
         internal Socks5_Greeting(IEnumerable<Socks5_Auth> socks5_Auths)
         {
-            if(socks5_Auths is null) throw new ArgumentNullException(nameof(socks5_Auths));
+            if (socks5_Auths is null) throw new ArgumentNullException(nameof(socks5_Auths));
             this.Auths = socks5_Auths.ToArray();
             if (this.AuthCount == 0) throw new InvalidDataException($"{nameof(socks5_Auths)} is empty");
         }
@@ -26,7 +26,7 @@ namespace TqkLibrary.Proxy.Helpers
 
         internal byte VER { get; private set; } = 0x05;
         internal int AuthCount { get { return Auths.Count(); } }
-        internal IEnumerable<Socks5_Auth> Auths { get; private set; }
+        internal IEnumerable<Socks5_Auth> Auths { get; private set; } = Enumerable.Empty<Socks5_Auth>();
 
 
         internal static async Task<Socks5_Greeting> ReadAsync(Stream stream, CancellationToken cancellationToken = default)

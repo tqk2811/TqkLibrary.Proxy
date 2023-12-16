@@ -46,7 +46,7 @@ namespace TqkLibrary.Proxy.Filters
         protected readonly List<HttpProxyAuthentication> _httpProxyAuthentications = new List<HttpProxyAuthentication>();
         public virtual HttpProxyServerFilter WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
             => this.WithAuthentications(httpProxyAuthentications?.AsEnumerable());
-        public virtual HttpProxyServerFilter WithAuthentications(IEnumerable<HttpProxyAuthentication> httpProxyAuthentications)
+        public virtual HttpProxyServerFilter WithAuthentications(IEnumerable<HttpProxyAuthentication>? httpProxyAuthentications)
         {
             if (httpProxyAuthentications is null) throw new ArgumentNullException(nameof(httpProxyAuthentications));
             _httpProxyAuthentications.AddRange(httpProxyAuthentications.Where(x => x is not null));

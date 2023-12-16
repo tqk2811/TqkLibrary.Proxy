@@ -16,7 +16,7 @@ namespace TqkLibrary.Proxy.Authentications
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public override abstract bool Equals(object obj);
+        public override abstract bool Equals(object? obj);
         /// <summary>
         /// 
         /// </summary>

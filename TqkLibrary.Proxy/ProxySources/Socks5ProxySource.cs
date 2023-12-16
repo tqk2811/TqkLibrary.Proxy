@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
@@ -9,33 +10,35 @@ namespace TqkLibrary.Proxy.ProxySources
     public partial class Socks5ProxySource : IProxySource, ISocks5Proxy
     {
         public IPEndPoint IPEndPoint { get; }
-        public NetworkCredential NetworkCredential { get; }
+        public HttpProxyAuthentication? HttpProxyAuthentication { get; }
         public Socks5ProxySource(IPEndPoint iPEndPoint)
         {
             this.IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
         }
-        public Socks5ProxySource(IPEndPoint iPEndPoint, NetworkCredential networkCredential) : this(iPEndPoint)
+        public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication) : this(iPEndPoint)
         {
-            this.NetworkCredential = networkCredential ?? throw new ArgumentNullException(nameof(networkCredential));
+            this.HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
         public bool IsSupportUdp => true;
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => true;
 
-        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
+        public IConnectSource GetConnectSource()
         {
-            return new Socks5ProxySourceTunnel(this, cancellationToken).InitBindAsync(address);
+            return new ConnectTunnel(this);
         }
 
-        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public IBindSource GetBindSource()
         {
-            return new Socks5ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
+            throw new NotSupportedException();
+            //return new BindTunnel(this);
         }
 
-        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        public IUdpAssociateSource GetUdpAssociateSource()
         {
-            return new Socks5ProxySourceTunnel(this, cancellationToken).InitUdpAssociateAsync(address);
+            throw new NotSupportedException();
+            //return new UdpTunnel(this);
         }
     }
 }

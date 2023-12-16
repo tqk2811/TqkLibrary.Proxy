@@ -11,7 +11,7 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         readonly IPEndPoint iPEndPoint;
         readonly string userId;
-        public Socks4ProxySource(IPEndPoint iPEndPoint, string userId = null)
+        public Socks4ProxySource(IPEndPoint iPEndPoint, string? userId = null)
         {
             this.iPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
             this.userId = userId ?? string.Empty;
@@ -22,17 +22,18 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => false;
         public bool IsSupportBind => true;
 
-        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public IConnectSource GetConnectSource()
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
+            return new ConnectTunnel(this);
         }
 
-        public Task<IBindSource> InitBindAsync(Uri address,CancellationToken cancellationToken = default)
+        public IBindSource GetBindSource()
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitBindAsync(address);
+            throw new NotSupportedException();
+            //return new BindTunnel(this);
         }
 
-        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        public IUdpAssociateSource GetUdpAssociateSource()
         {
             throw new NotSupportedException();
         }

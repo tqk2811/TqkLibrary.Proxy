@@ -17,7 +17,7 @@ namespace TqkLibrary.Proxy.Helpers
     internal class Socks4_Request
     {
         const long socks4aDomain = 0x00000001; //0.0.0.x with x non-zero
-        public Socks4_Request(Socks4_CMD socks4_CMD, Uri uri, string id = null)
+        public Socks4_Request(Socks4_CMD socks4_CMD, Uri uri, string? id = null)
         {
             if (uri is null) throw new ArgumentNullException(nameof(uri));
 
@@ -48,7 +48,7 @@ namespace TqkLibrary.Proxy.Helpers
         public byte VER { get; private set; } = 0x04;
         public Socks4_CMD CMD { get; private set; }
         public UInt16 DSTPORT { get; private set; }
-        public IPAddress DSTIP { get; private set; }
+        public IPAddress DSTIP { get; private set; } = IPAddress.None;
         public string ID { get; private set; } = string.Empty;
         /// <summary>
         /// for socks4a

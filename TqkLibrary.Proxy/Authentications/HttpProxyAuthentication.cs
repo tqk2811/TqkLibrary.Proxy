@@ -15,7 +15,7 @@ namespace TqkLibrary.Proxy.Authentications
         public string UserName { get; }
         public string Password { get; set; }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(this, obj))
                 return true;

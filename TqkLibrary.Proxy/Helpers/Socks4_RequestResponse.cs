@@ -51,7 +51,7 @@ namespace TqkLibrary.Proxy.Helpers
         public byte VN { get; private set; }
         public Socks4_REP REP { get; private set; }
         public UInt16 DSTPORT { get; private set; }
-        public IPAddress DSTIP { get; private set; }
+        public IPAddress DSTIP { get; private set; } = IPAddress.None;
         public IPEndPoint IPEndPoint { get { return new IPEndPoint(DSTIP, DSTPORT); } }
 
         internal static async Task<Socks4_RequestResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
@@ -77,6 +77,11 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{REP}";
         }
     }
     internal static class Socks4_RequestResponse_Extension

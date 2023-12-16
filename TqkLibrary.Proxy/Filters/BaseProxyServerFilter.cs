@@ -14,6 +14,17 @@ namespace TqkLibrary.Proxy.Filters
     /// </summary>
     public abstract class BaseProxyServerFilter
     {
+        readonly BaseProxyServerFilter? _parent;
+        public BaseProxyServerFilter()
+        {
+
+        }
+        public BaseProxyServerFilter(BaseProxyServerFilter parent)
+        {
+            this._parent = parent ?? throw new ArgumentNullException(nameof(parent));
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -22,7 +33,8 @@ namespace TqkLibrary.Proxy.Filters
         /// <returns></returns>
         public virtual Task<bool> IsAcceptClientFilterAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(true);
+            if (_parent is not null) return _parent.IsAcceptClientFilterAsync(tcpClient, cancellationToken);
+            else return Task.FromResult(true);
         }
 
         /// <summary>
@@ -33,7 +45,20 @@ namespace TqkLibrary.Proxy.Filters
         /// <returns></returns>
         public virtual Task<Stream> StreamFilterAsync(Stream networkStream, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(networkStream);
+            if (_parent is not null) return _parent.StreamFilterAsync(networkStream, cancellationToken);
+            else return Task.FromResult(networkStream);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public virtual Task<bool> IsAcceptDomainFilterAsync(Uri uri, CancellationToken cancellationToken = default)
+        {
+            if (_parent is not null) return _parent.IsAcceptDomainFilterAsync(uri, cancellationToken);
+            else return Task.FromResult(true);
         }
     }
 }

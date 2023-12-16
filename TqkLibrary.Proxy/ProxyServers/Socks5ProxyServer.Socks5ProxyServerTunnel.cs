@@ -84,19 +84,26 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
                 Uri uri = await _Read_DSTADDR_DSTPORT_Async();
-                switch ((Socks5_CMD)data_buffer[1])
+                if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
                 {
-                    case Socks5_CMD.EstablishStreamConnection:
-                        await _EstablishStreamConnectionAsync(uri);
-                        break;
+                    switch ((Socks5_CMD)data_buffer[1])
+                    {
+                        case Socks5_CMD.EstablishStreamConnection:
+                            await _EstablishStreamConnectionAsync(uri);
+                            break;
 
-                    case Socks5_CMD.EstablishPortBinding:
-                        await _EstablishPortBinding(uri);
-                        break;
+                        case Socks5_CMD.EstablishPortBinding:
+                            await _EstablishPortBinding(uri);
+                            break;
 
-                    case Socks5_CMD.AssociateUDP:
-                    default:
-                        throw new NotSupportedException($"{nameof(Socks5_CMD)}: {data_buffer[1]:X2}");
+                        case Socks5_CMD.AssociateUDP:
+                        default:
+                            throw new NotSupportedException($"{nameof(Socks5_CMD)}: {data_buffer[1]:X2}");
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
             }
 
@@ -104,7 +111,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] buffer = await _clientStream.ReadBytesAsync(1);
 
-                IPAddress ipAddress = null;
+                IPAddress? ipAddress = null;
                 string domain = string.Empty;
                 switch ((Socks5_ATYP)buffer[0])
                 {
@@ -127,7 +134,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
                 //read des port
                 buffer = await _clientStream.ReadBytesAsync(2);
-                UInt16 DSTPORT = BitConverter.ToUInt16(buffer, 2);
+                UInt16 DSTPORT = BitConverter.ToUInt16(buffer.Reverse().ToArray(), 0);
 
                 if (string.IsNullOrWhiteSpace(domain))
                 {
@@ -174,32 +181,26 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
             async Task _EstablishStreamConnectionAsync(Uri uri)
             {
-                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                using Stream session_stream = connectSource?.GetStream();
+                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                await connectSource.InitAsync(uri, _cancellationToken);
+                using Stream session_stream = await connectSource.GetStreamAsync();
+                //send response to client
+                await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
-                if (session_stream == null)
-                {
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
-                    return;
-                }
-                else
-                {
-                    //send response to client
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
-
-                    //transfer until disconnect
-                    await new StreamTransferHelper(_clientStream, session_stream)
+                //transfer until disconnect
+                await new StreamTransferHelper(_clientStream, session_stream)
 #if DEBUG
-                        .DebugName(_clientEndPoint.ToString(), uri.ToString())
+                    .DebugName(_clientEndPoint, uri)
 #endif
-                        .WaitUntilDisconnect(_cancellationToken);
-                }
+                    .WaitUntilDisconnect(_cancellationToken);
             }
 
             async Task _EstablishPortBinding(Uri uri)
             {
-                using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(uri, _cancellationToken);
-                IPEndPoint listen_endpoint = await bindSource?.InitListenAsync(_cancellationToken);
+                using IBindSource bindSource = _proxyServer.ProxySource.GetBindSource();
+                await bindSource.InitAsync(uri, _cancellationToken);
+
+                IPEndPoint listen_endpoint = await bindSource.InitListenAsync(_cancellationToken);
 
                 await _WriteReplyConnectionRequestAsync(
                     Socks5_STATUS.RequestGranted,
@@ -210,7 +211,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, target_stream)
 #if DEBUG
-                    .DebugName(_clientEndPoint.ToString(), listen_endpoint.ToString())
+                    .DebugName(_clientEndPoint, listen_endpoint)
 #endif
                     .WaitUntilDisconnect(_cancellationToken);
             }

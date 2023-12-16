@@ -9,7 +9,29 @@ namespace TqkLibrary.Proxy.Filters
 {
     public class Socks5ProxyServerFilter : BaseProxyServerFilter
     {
-        public virtual async Task<Socks5_Auth> ChoseAuthAsync(IEnumerable<Socks5_Auth> socks5_Auths, CancellationToken cancellationToken = default)
+        readonly Socks5ProxyServerFilter? _parent;
+        public Socks5ProxyServerFilter()
+        {
+
+        }
+        public Socks5ProxyServerFilter(Socks5ProxyServerFilter parent) : base(parent)
+        {
+            _parent = parent;
+        }
+
+        public virtual Task<Socks5_Auth> ChoseAuthAsync(IEnumerable<Socks5_Auth> socks5_Auths, CancellationToken cancellationToken = default)
+        {
+            if (_parent is not null) return _parent.ChoseAuthAsync(socks5_Auths, cancellationToken);
+            else return Task.FromResult(_ChoseAuthAsync(socks5_Auths, cancellationToken));
+        }
+
+
+
+
+        /*=========================================================================*/
+
+
+        Socks5_Auth _ChoseAuthAsync(IEnumerable<Socks5_Auth> socks5_Auths, CancellationToken cancellationToken = default)
         {
             if (socks5_Auths is not null && socks5_Auths.Any())
             {

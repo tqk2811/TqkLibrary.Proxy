@@ -20,22 +20,16 @@
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
-        Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default);
+        IConnectSource GetConnectSource();
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="address"><see cref="Uri.HostNameType"/> must be <see cref="UriHostNameType.IPv4"/> or <see cref="UriHostNameType.IPv6"/></param>
-        /// <returns></returns>
-        Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default);
+        IBindSource GetBindSource();
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="address"><param name="address"><see cref="Uri.HostNameType"/> must be <see cref="UriHostNameType.IPv4"/> or <see cref="UriHostNameType.IPv6"/></param></param>
-        /// <returns></returns>
-        Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default);
+        IUdpAssociateSource GetUdpAssociateSource();
     }
 }

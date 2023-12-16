@@ -44,8 +44,8 @@ namespace TqkLibrary.Proxy.Helpers
 
         }
 
-        internal string Domain { get; private set; }
-        internal IPAddress IPAddress { get; private set; }
+        internal string Domain { get; private set; } = string.Empty;
+        internal IPAddress IPAddress { get; private set; } = IPAddress.None;
         internal Socks5_ATYP ATYP { get; private set; }
 
         internal static async Task<Socks5_DSTADDR> ReadAsync(Stream stream, CancellationToken cancellationToken = default)

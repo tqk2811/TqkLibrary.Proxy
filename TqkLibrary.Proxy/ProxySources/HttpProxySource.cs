@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -8,35 +9,35 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class HttpProxySource : IProxySource, IHttpProxy
     {
-        readonly Uri proxy;
-        readonly NetworkCredential networkCredential;
+        readonly Uri _proxy;
+        public HttpProxyAuthentication? HttpProxyAuthentication { get; set; }
         public HttpProxySource(Uri proxy)
         {
-            this.proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
+            this._proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
         }
         /// <summary>
         /// Self host
         /// </summary>
-        public HttpProxySource(Uri proxy, NetworkCredential networkCredential) : this(proxy)
+        public HttpProxySource(Uri proxy, HttpProxyAuthentication httpProxyAuthentication) : this(proxy)
         {
-            this.networkCredential = networkCredential ?? throw new ArgumentNullException(nameof(networkCredential));
+            this.HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => false;
 
-        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public IConnectSource GetConnectSource()
         {
-            return new Socks4ProxySourceTunnel(this, cancellationToken).InitConnectAsync(address);
+            return new ConnectTunnel(this);
         }
 
-        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
+        public IBindSource GetBindSource()
         {
             throw new NotSupportedException();
         }
 
-        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        public IUdpAssociateSource GetUdpAssociateSource()
         {
             throw new NotSupportedException();
         }

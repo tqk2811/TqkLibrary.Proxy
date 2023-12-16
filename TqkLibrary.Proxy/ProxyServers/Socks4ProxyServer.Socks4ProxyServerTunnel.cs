@@ -34,7 +34,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             internal override async Task ProxyWorkAsync()
             {
                 Socks4_Request socks4_Request = await _clientStream.Read_Socks4_Request_Async(_cancellationToken);
-                if (socks4_Request.IsDomain && 
+                if (socks4_Request.IsDomain &&
                     !await _proxyServer.Filter.IsUseSocks4AAsync(_cancellationToken))//socks4a
                 {
                     await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
@@ -48,7 +48,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //    return;
                 //}
 
-                IPAddress target_ip = null;
+                IPAddress? target_ip = null;
                 if (socks4_Request.IsDomain)
                 {
                     if (string.IsNullOrWhiteSpace(socks4_Request.DOMAIN))
@@ -57,9 +57,18 @@ namespace TqkLibrary.Proxy.ProxyServers
                         return;
                     }
 
-                    //ipv4 only because need to response
-                    target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
-                    if (target_ip == null)
+                    Uri uri = new Uri($"tcp://{socks4_Request.DOMAIN}:{socks4_Request.DSTPORT}");
+                    if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                    {
+                        //ipv4 only because need to response
+                        target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
+                        if (target_ip is null)
+                        {
+                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                            return;
+                        }
+                    }
+                    else
                     {
                         await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                         return;
@@ -67,7 +76,16 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
                 else
                 {
-                    target_ip = socks4_Request.DSTIP;
+                    Uri uri = new Uri($"tcp://{socks4_Request.DSTIP}:{socks4_Request.DSTPORT}");
+                    if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                    {
+                        target_ip = socks4_Request.DSTIP;
+                    }
+                    else
+                    {
+                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                        return;
+                    }
                 }
 
                 //connect to target
@@ -101,39 +119,20 @@ namespace TqkLibrary.Proxy.ProxyServers
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                IConnectSource connectSource = null;
-                Stream session_stream = null;
-                try
-                {
-                    try
-                    {
-                        connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                        session_stream = connectSource.GetStream();
-                    }
-                    catch (Exception ex)
-                    {
-#if DEBUG
-                        Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_EstablishStreamConnectionAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                        await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                        return;
-                    }
+                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                await connectSource.InitAsync(uri, _cancellationToken);
 
-                    //send response to client
-                    await _WriteReplyAsync(Socks4_REP.RequestGranted);
+                using Stream session_stream = await connectSource.GetStreamAsync();
 
-                    //transfer until disconnect
-                    await new StreamTransferHelper(_clientStream, session_stream)
+                //send response to client
+                await _WriteReplyAsync(Socks4_REP.RequestGranted);
+
+                //transfer until disconnect
+                await new StreamTransferHelper(_clientStream, session_stream)
 #if DEBUG
-                        .DebugName(_clientEndPoint.ToString(), uri.ToString())
+                    .DebugName(_clientEndPoint, uri)
 #endif
-                        .WaitUntilDisconnect(_cancellationToken);
-                }
-                finally
-                {
-                    session_stream?.Dispose();
-                    connectSource?.Dispose();
-                }
+                    .WaitUntilDisconnect(_cancellationToken);
             }
 
             Task _WriteReplyAsync(Socks4_REP rep) => _WriteReplyAsync(rep, IPAddress.Any, 0);

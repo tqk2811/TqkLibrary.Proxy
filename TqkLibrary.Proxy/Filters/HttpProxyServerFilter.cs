@@ -7,20 +7,14 @@ namespace TqkLibrary.Proxy.Filters
     /// </summary>
     public class HttpProxyServerFilter : BaseProxyServerFilter
     {
+        readonly HttpProxyServerFilter? _parent;
         public HttpProxyServerFilter()
         {
 
         }
-
-
-        protected readonly List<HttpProxyAuthentication> _httpProxyAuthentications = new List<HttpProxyAuthentication>();
-        public virtual HttpProxyServerFilter WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
-            => this.WithAuthentications(httpProxyAuthentications?.AsEnumerable());
-        public virtual HttpProxyServerFilter WithAuthentications(IEnumerable<HttpProxyAuthentication> httpProxyAuthentications)
+        public HttpProxyServerFilter(HttpProxyServerFilter parent) : base(parent)
         {
-            if (httpProxyAuthentications is null) throw new ArgumentNullException(nameof(httpProxyAuthentications));
-            _httpProxyAuthentications.AddRange(httpProxyAuthentications.Where(x => x is not null));
-            return this;
+            this._parent = parent;
         }
 
         /// <summary>
@@ -30,7 +24,8 @@ namespace TqkLibrary.Proxy.Filters
         /// <returns></returns>
         public virtual Task<bool> IsNeedAuthenticationAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_httpProxyAuthentications.Any());
+            if (_parent is not null) return _parent.IsNeedAuthenticationAsync(cancellationToken);
+            else return Task.FromResult(false);
         }
 
         /// <summary>
@@ -39,25 +34,13 @@ namespace TqkLibrary.Proxy.Filters
         /// <param name="httpProxyAuthentication"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual async Task<bool> CheckAuthenticationAsync(
+        public virtual Task<bool> CheckAuthenticationAsync(
             HttpProxyAuthentication httpProxyAuthentication,
             CancellationToken cancellationToken = default
             )
         {
-            if (_httpProxyAuthentications.Any())
-            {
-                if (httpProxyAuthentication is null)
-                    return false;
-
-                if (_httpProxyAuthentications.Any(x => x?.Equals(httpProxyAuthentication) == true))
-                    return true;
-
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            if (_parent is not null) return _parent.CheckAuthenticationAsync(httpProxyAuthentication, cancellationToken);
+            else return Task.FromResult(true);
         }
     }
 }

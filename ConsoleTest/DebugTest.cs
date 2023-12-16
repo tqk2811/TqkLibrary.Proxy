@@ -24,7 +24,7 @@ namespace ConsoleTest
             NetworkCredential networkCredential = new NetworkCredential("admin", "admin");
             credentialCache.Add(new Uri($"http://{address}"), "Basic", networkCredential);
 
-            HttpProxyServerFilter filter = new HttpProxyServerFilter();
+            HttpAuthenticationProxyServerFilter filter = new HttpAuthenticationProxyServerFilter();
             filter.WithAuthentications(networkCredential);
 
             HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource, filter);

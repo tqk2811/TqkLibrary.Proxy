@@ -2,6 +2,8 @@
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.Exceptions;
+using System.Threading;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -9,58 +11,35 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         class ConnectTunnel : BaseTunnel, IConnectSource
         {
-            internal ConnectTunnel(
-                Socks5ProxySource proxySource,
-                CancellationToken cancellationToken = default
-                )
-                : base(
-                     proxySource,
-                     cancellationToken
-                     )
+            internal ConnectTunnel(Socks5ProxySource proxySource) : base(proxySource)
             {
 
             }
 
+            public async Task InitAsync(Uri address, CancellationToken cancellationToken = default)
+            {
+                if (address is null)
+                    throw new ArgumentNullException(nameof(address));
+                CheckIsDisposed();
+
+                await base.InitAsync(cancellationToken);
+
+                Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishStreamConnection, address);
+                await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);
+                await _stream!.FlushAsync(cancellationToken);
+                Socks5_RequestResponse socks5_RequestResponse = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
+                if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
+                {
+                    throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
+                }
+            }
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
+                if (this._stream is null)
+                    throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(InitAsync)} first");
+                CheckIsDisposed();
+
                 return Task.FromResult(this._stream);
-            }
-
-            internal async Task<IConnectSource> InitConnectAsync(Uri address)
-            {
-                try
-                {
-                    await InitAsync();
-                    if (await _ConnectionRequestAsync(address))
-                    {
-                        return this;
-                    }
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(InitConnectAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                }
-                this.Dispose();
-                return null;
-            }
-
-            async Task<bool> _ConnectionRequestAsync(Uri address)
-            {
-                Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishStreamConnection, address);
-                await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
-                await _stream.FlushAsync(_cancellationToken);
-
-                Socks5_RequestResponse socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
-                if (socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
             }
         }
     }

@@ -10,27 +10,32 @@ using TqkLibrary.Proxy.Interfaces;
 namespace TqkLibrary.Proxy.ProxySources
 {
     internal abstract class BaseProxySourceTunnel<T> : IDisposable
-        where T : IProxySource
+        where T : class, IProxySource
     {
         protected readonly T _proxySource;
-        protected readonly CancellationToken _cancellationToken;
-        protected BaseProxySourceTunnel(T proxySource, CancellationToken cancellationToken = default)
+        private bool _IsDisposed = false;
+        protected BaseProxySourceTunnel(T proxySource)
         {
             this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
-            this._cancellationToken = cancellationToken;
         }
         ~BaseProxySourceTunnel()
         {
             Dispose(false);
         }
-        public virtual void Dispose()
+        public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
         protected virtual void Dispose(bool isDisposing)
         {
+            _IsDisposed = true;
+        }
 
+        protected void CheckIsDisposed()
+        {
+            if (_IsDisposed)
+                throw new ObjectDisposedException(this.GetType().FullName);
         }
     }
 }

@@ -111,7 +111,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] buffer = await _clientStream.ReadBytesAsync(1);
 
-                IPAddress ipAddress = null;
+                IPAddress? ipAddress = null;
                 string domain = string.Empty;
                 switch ((Socks5_ATYP)buffer[0])
                 {
@@ -181,20 +181,9 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
             async Task _EstablishStreamConnectionAsync(Uri uri)
             {
-                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                if (connectSource is null)
-                {
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
-                    return;
-                }
-
+                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                await connectSource.InitAsync(uri, _cancellationToken);
                 using Stream session_stream = await connectSource.GetStreamAsync();
-                if (session_stream is null)
-                {
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
-                    return;
-                }
-
                 //send response to client
                 await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
@@ -208,12 +197,8 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task _EstablishPortBinding(Uri uri)
             {
-                using IBindSource bindSource = await _proxyServer.ProxySource.InitBindAsync(uri, _cancellationToken);
-                if(bindSource is null)
-                {
-                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
-                    return;
-                }
+                using IBindSource bindSource = _proxyServer.ProxySource.GetBindSource();
+                await bindSource.InitAsync(uri, _cancellationToken);
 
                 IPEndPoint listen_endpoint = await bindSource.InitListenAsync(_cancellationToken);
 

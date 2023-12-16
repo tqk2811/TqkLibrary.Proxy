@@ -4,7 +4,7 @@ namespace TqkLibrary.Proxy.Filters
 {
     public class HttpAuthenticationProxyServerFilter : HttpProxyServerFilter
     {
-        readonly HttpProxyServerFilter _parent;
+        readonly HttpProxyServerFilter? _parent;
         public HttpAuthenticationProxyServerFilter()
         {
 

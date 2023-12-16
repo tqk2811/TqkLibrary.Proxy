@@ -9,7 +9,7 @@ namespace TqkLibrary.Proxy.Filters
     public class Socks4ProxyServerFilter : BaseProxyServerFilter
     {
         const bool _IsSupportSock4A = false;
-        readonly Socks4ProxyServerFilter _parent;
+        readonly Socks4ProxyServerFilter? _parent;
         public Socks4ProxyServerFilter()
         {
 

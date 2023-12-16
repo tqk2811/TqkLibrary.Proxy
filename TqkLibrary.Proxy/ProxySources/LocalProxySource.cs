@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
@@ -32,19 +33,21 @@ namespace TqkLibrary.Proxy.ProxySources
         public IPAddress? BindIpAddress { get; set; }
         public UInt16 BindListenPort { get; set; } = 0;
 
-        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public IConnectSource GetConnectSource()
         {
-            return new ConnectTunnel(this, address, cancellationToken).InitConnectAsync();
+            return new ConnectTunnel(this);
         }
 
-        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
+        public IBindSource GetBindSource()
         {
-            return BindTunnel._InitBindAsync(this, address, cancellationToken);
+            throw new NotSupportedException();
+            //return new BindTunnel(this);
         }
 
-        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        public IUdpAssociateSource GetUdpAssociateSource()
         {
-            return new UdpTunnel(this, cancellationToken).InitUdpAsync(address);
+            throw new NotSupportedException();
+            //return new UdpTunnel(this);
         }
     }
 }

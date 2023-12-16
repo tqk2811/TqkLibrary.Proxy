@@ -7,7 +7,7 @@ namespace TqkLibrary.Proxy.Filters
     /// </summary>
     public class HttpProxyServerFilter : BaseProxyServerFilter
     {
-        readonly HttpProxyServerFilter _parent;
+        readonly HttpProxyServerFilter? _parent;
         public HttpProxyServerFilter()
         {
 

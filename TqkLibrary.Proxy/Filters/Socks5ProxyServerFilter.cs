@@ -9,7 +9,7 @@ namespace TqkLibrary.Proxy.Filters
 {
     public class Socks5ProxyServerFilter : BaseProxyServerFilter
     {
-        readonly Socks5ProxyServerFilter _parent;
+        readonly Socks5ProxyServerFilter? _parent;
         public Socks5ProxyServerFilter()
         {
 

@@ -2,7 +2,7 @@
 
 namespace TqkLibrary.Proxy.Interfaces
 {
-    public interface IUdpAssociateSource: IDisposable
+    public interface IUdpAssociateSource : IBaseSource
     {
 
     }

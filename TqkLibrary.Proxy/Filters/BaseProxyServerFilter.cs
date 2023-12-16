@@ -14,7 +14,7 @@ namespace TqkLibrary.Proxy.Filters
     /// </summary>
     public abstract class BaseProxyServerFilter
     {
-        readonly BaseProxyServerFilter _parent;
+        readonly BaseProxyServerFilter? _parent;
         public BaseProxyServerFilter()
         {
 

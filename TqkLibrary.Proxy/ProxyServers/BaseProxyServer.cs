@@ -27,7 +27,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
         CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-        IAsyncResult _asyncResult;
+        IAsyncResult? _asyncResult;
 
 
         protected BaseProxyServer(
@@ -86,7 +86,9 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource?.Dispose();
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 _cancellationTokenSource = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 if (createNewCancellationToken) _cancellationTokenSource = new CancellationTokenSource();
             }
         }

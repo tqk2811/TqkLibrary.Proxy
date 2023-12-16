@@ -18,16 +18,9 @@ namespace TqkLibrary.Proxy.ProxySources
         class BaseTunnel : BaseProxySourceTunnel<Socks4ProxySource>
         {
             protected readonly TcpClient _tcpClient = new TcpClient();
-            protected Stream _stream;
+            protected Stream? _stream;
 
-            internal BaseTunnel(
-                Socks4ProxySource proxySource,
-                CancellationToken cancellationToken = default
-                )
-                : base(
-                     proxySource,
-                     cancellationToken
-                     )
+            internal BaseTunnel(Socks4ProxySource proxySource) : base(proxySource)
             {
 
             }

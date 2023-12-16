@@ -10,7 +10,7 @@ namespace TqkLibrary.Proxy.ProxySources
     public partial class Socks5ProxySource : IProxySource, ISocks5Proxy
     {
         public IPEndPoint IPEndPoint { get; }
-        public HttpProxyAuthentication HttpProxyAuthentication { get; }
+        public HttpProxyAuthentication? HttpProxyAuthentication { get; }
         public Socks5ProxySource(IPEndPoint iPEndPoint)
         {
             this.IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
@@ -24,19 +24,21 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => true;
 
-        public Task<IConnectSource> InitConnectAsync(Uri address, CancellationToken cancellationToken = default)
+        public IConnectSource GetConnectSource()
         {
-            return new ConnectTunnel(this, cancellationToken).InitConnectAsync(address);
+            return new ConnectTunnel(this);
         }
 
-        public Task<IBindSource> InitBindAsync(Uri address, CancellationToken cancellationToken = default)
+        public IBindSource GetBindSource()
         {
-            return new BindTunnel(this, cancellationToken).InitBindAsync(address);
+            throw new NotSupportedException();
+            //return new BindTunnel(this);
         }
 
-        public Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address, CancellationToken cancellationToken = default)
+        public IUdpAssociateSource GetUdpAssociateSource()
         {
-            return new UdpTunnel(this, cancellationToken).InitUdpAssociateAsync(address);
+            throw new NotSupportedException();
+            //return new UdpTunnel(this);
         }
     }
 }

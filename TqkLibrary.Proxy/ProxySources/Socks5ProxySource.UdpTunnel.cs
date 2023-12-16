@@ -4,39 +4,22 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {
-        class UdpTunnel : BaseTunnel, IUdpAssociateSource
-        {
-            internal UdpTunnel(
-                Socks5ProxySource proxySource,
-                CancellationToken cancellationToken = default
-                )
-                : base(
-                     proxySource,
-                     cancellationToken
-                     )
-            {
+        //class UdpTunnel : BaseTunnel, IUdpAssociateSource
+        //{
+        //    internal UdpTunnel(Socks5ProxySource proxySource) : base(proxySource)
+        //    {
 
-            }
+        //    }
 
+        //    public Task InitAsync(Uri address, CancellationToken cancellationToken = default)
+        //    {
+        //        throw new NotImplementedException();
+        //    }
 
-            public async Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address)
-            {
-                try
-                {
-                    await InitAsync();
+        //    public async Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address)
+        //    {
 
-
-
-                }
-                catch (Exception ex)
-                {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(InitUdpAssociateAsync)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
-                }
-                this.Dispose();
-                return null;
-            }
-        }
+        //    }
+        //}
     }
 }

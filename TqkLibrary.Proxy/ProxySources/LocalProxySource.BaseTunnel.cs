@@ -4,14 +4,7 @@
     {
         class BaseTunnel : BaseProxySourceTunnel<LocalProxySource>
         {
-            internal BaseTunnel(
-                LocalProxySource proxySource,
-                CancellationToken cancellationToken = default
-                )
-                : base(
-                     proxySource,
-                     cancellationToken
-                     )
+            internal BaseTunnel(LocalProxySource proxySource) : base(proxySource)
             {
 
             }

@@ -48,7 +48,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //    return;
                 //}
 
-                IPAddress target_ip = null;
+                IPAddress? target_ip = null;
                 if (socks4_Request.IsDomain)
                 {
                     if (string.IsNullOrWhiteSpace(socks4_Request.DOMAIN))
@@ -62,7 +62,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     {
                         //ipv4 only because need to response
                         target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
-                        if (target_ip == null)
+                        if (target_ip is null)
                         {
                             await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                             return;
@@ -119,12 +119,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                using IConnectSource connectSource = await _proxyServer.ProxySource.InitConnectAsync(uri, _cancellationToken);
-                if (connectSource is null)
-                {
-                    await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                    return;
-                }
+                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                await connectSource.InitAsync(uri, _cancellationToken);
+
                 using Stream session_stream = await connectSource.GetStreamAsync();
 
                 //send response to client

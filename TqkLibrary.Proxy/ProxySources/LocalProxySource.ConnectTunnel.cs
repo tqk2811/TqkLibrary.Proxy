@@ -7,32 +7,39 @@ using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
+using System.Threading;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource
     {
-        class ConnectTunnel : BaseProxySourceTunnel<LocalProxySource>
+        class ConnectTunnel : BaseProxySourceTunnel<LocalProxySource>, IConnectSource
         {
-            readonly Uri _address;
-            public ConnectTunnel(
-                LocalProxySource localProxySource,
-                Uri address,
-                CancellationToken cancellationToken = default)
-                : base(localProxySource, cancellationToken)
+            Stream? _stream = null;
+            public ConnectTunnel(LocalProxySource localProxySource) : base(localProxySource)
             {
-                this._address = address ?? throw new ArgumentNullException(nameof(address));
+
+            }
+            protected override void Dispose(bool isDisposing)
+            {
+                _stream?.Dispose();
+                _stream = null;
+                base.Dispose(isDisposing);
             }
 
-            public async Task<IConnectSource> InitConnectAsync()
+            public async Task InitAsync(Uri address, CancellationToken cancellationToken = default)
             {
-                switch (_address.HostNameType)
+                if (address is null)
+                    throw new ArgumentNullException(nameof(address));
+                CheckIsDisposed();
+
+                switch (address.HostNameType)
                 {
                     case UriHostNameType.Dns://http://host/abc/def
                     case UriHostNameType.IPv4:
                     case UriHostNameType.IPv6:
                         {
-                            switch (_address.Scheme.ToLower())
+                            switch (address.Scheme.ToLower())
                             {
                                 case "http":// http proxy
                                 case "https":
@@ -46,27 +53,38 @@ namespace TqkLibrary.Proxy.ProxySources
                                         try
                                         {
 #if NET5_0_OR_GREATER
-                                            await remote.ConnectAsync(_address.Host, _address.Port, _cancellationToken);
+                                            await remote.ConnectAsync(address.Host, address.Port, cancellationToken);
 #else
-                                            await remote.ConnectAsync(_address.Host, _address.Port);
+                                            await remote.ConnectAsync(address.Host, address.Port);
 #endif
-                                            return new TcpStreamConnectSource(remote);
+                                            _stream = new TcpClientStreamWrapper(remote);
                                         }
                                         catch
                                         {
                                             remote.Dispose();
-                                            return null;
+                                            throw;
                                         }
                                     }
+                                    break;
 
                                 default:
-                                    throw new NotSupportedException(_address.Scheme);
+                                    throw new NotSupportedException(address.Scheme);
                             }
                         }
+                        break;
 
                     default:
-                        throw new NotSupportedException(_address.HostNameType.ToString());
+                        throw new NotSupportedException(address.HostNameType.ToString());
                 }
+            }
+
+            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            {
+                if (_stream is null)
+                    throw new InvalidOperationException($"Mustbe run {nameof(InitAsync)} first");
+                CheckIsDisposed();
+
+                return Task.FromResult(_stream);
             }
         }
     }

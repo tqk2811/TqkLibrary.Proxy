@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -47,7 +48,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 #if DEBUG
                     _client_HeaderLines.ForEach(x => Console.WriteLine($"[{nameof(HttpProxyServerTunnel)}.{nameof(ProxyWorkAsync)}] {_clientEndPoint} -> {x}"));
 #endif
-                    _client_HeaderParse = _client_HeaderLines.ParseRequest();
+                    _client_HeaderParse = HeaderRequestParse.ParseRequest(_client_HeaderLines);
 
                     //Check Proxy-Authorization
                     if (await _proxyServer.Filter.IsNeedAuthenticationAsync(_cancellationToken))

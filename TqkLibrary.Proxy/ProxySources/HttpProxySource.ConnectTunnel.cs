@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Exceptions;
+using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -78,7 +79,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 response_HeaderLines.ForEach(x =>
                     Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} -> {x}"));
 #endif
-                var headerResponseParse = response_HeaderLines.ParseResponse();
+                var headerResponseParse = HeaderResponseParse.ParseResponse(response_HeaderLines);
 
                 return headerResponseParse.HttpStatusCode == HttpStatusCode.OK;
             }

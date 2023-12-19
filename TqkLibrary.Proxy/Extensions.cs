@@ -13,6 +13,21 @@ namespace TqkLibrary.Proxy
         {
             return self.IndexOf(value, stringComparison) >= 0;
         }
+        public static IEnumerable<T> Append<T>(this IEnumerable<T> values, params T[]? items)
+        {
+            if (values is null) throw new ArgumentNullException(nameof(values));
+            foreach (var item in values)
+            {
+                yield return item;
+            }
+            if (items is not null)
+            {
+                foreach (var item in items)
+                {
+                    yield return item;
+                }
+            }
+        }
 #endif
         internal static IEnumerable<T> Except<T>(this IEnumerable<T> source, params T[] values)
             => source.Except(values.AsEnumerable());

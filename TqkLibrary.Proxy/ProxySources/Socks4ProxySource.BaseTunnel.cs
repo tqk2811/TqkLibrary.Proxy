@@ -31,9 +31,13 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            protected async Task _ConnectToSocksServerAsync()
+            protected async Task _ConnectToSocksServerAsync(CancellationToken cancellationToken = default)
             {
+#if NET5_0_OR_GREATER
+                await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port, cancellationToken);
+#else
                 await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port);
+#endif
                 this._stream = _tcpClient.GetStream();
             }
 

@@ -19,7 +19,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
 
-                await base._ConnectToSocksServerAsync();
+                await base._ConnectToSocksServerAsync(cancellationToken);
 
                 Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Connect, address, _proxySource.userId);
                 byte[] buffer = socks4_Request.GetByteArray();

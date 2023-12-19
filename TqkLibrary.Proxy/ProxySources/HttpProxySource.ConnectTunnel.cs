@@ -35,8 +35,11 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
                 CheckIsDisposed();
-
+#if NET5_0_OR_GREATER
+                await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port, cancellationToken);
+#else
                 await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port);
+#endif
                 _stream = _tcpClient.GetStream();
 
                 if (!await _CONNECT_Async(address, cancellationToken))

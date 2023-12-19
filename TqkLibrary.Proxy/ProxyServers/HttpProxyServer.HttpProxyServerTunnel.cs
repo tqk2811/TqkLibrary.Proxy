@@ -119,9 +119,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 using var remote_stream = await connectSource.GetStreamAsync();
                 await new StreamTransferHelper(_clientStream, remote_stream)
-#if DEBUG
                     .DebugName(_clientEndPoint, _client_HeaderParse?.Uri)
-#endif
                     .WaitUntilDisconnect(_cancellationToken);
                 return true;
             }

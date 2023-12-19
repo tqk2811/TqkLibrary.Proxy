@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             _first = first ?? throw new ArgumentNullException(nameof(first));
             _second = second ?? throw new ArgumentNullException(nameof(second));
         }
-#if DEBUG
+
         string _firstName = string.Empty;
         string _secondName = string.Empty;
         public StreamTransferHelper DebugName(object? first, object? second)
@@ -35,7 +35,6 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return this;
         }
 
-#endif
         public Task WaitUntilDisconnect(CancellationToken cancellationToken = default)
         {
             Task task_first = FirstToSecond(cancellationToken);

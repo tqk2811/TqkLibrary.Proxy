@@ -129,9 +129,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, session_stream)
-#if DEBUG
                     .DebugName(_clientEndPoint, uri)
-#endif
                     .WaitUntilDisconnect(_cancellationToken);
             }
 

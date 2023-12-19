@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using TqkLibrary.Proxy.Filters;
+using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxyServers
@@ -18,7 +18,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
 
         readonly TcpListener _tcpListener;
-        readonly BaseProxyServerFilter _baseProxyServerFilter;
+        readonly BaseProxyServerHandler _baseProxyServerHandler;
         readonly object _lock_cancellationToken = new object();
         CancellationToken _CancellationToken
         {
@@ -32,10 +32,10 @@ namespace TqkLibrary.Proxy.ProxyServers
         protected BaseProxyServer(
             IPEndPoint iPEndPoint,
             IProxySource proxySource,
-            BaseProxyServerFilter baseProxyServerFilter
+            BaseProxyServerHandler handler
             )
         {
-            this._baseProxyServerFilter = baseProxyServerFilter ?? throw new ArgumentNullException(nameof(baseProxyServerFilter));
+            this._baseProxyServerHandler = handler ?? throw new ArgumentNullException(nameof(handler));
             this.ProxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
             this._tcpListener = new TcpListener(iPEndPoint);
             this.IPEndPoint = iPEndPoint;
@@ -117,9 +117,9 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             using (tcpClient)
             {
-                if (await _baseProxyServerFilter.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
+                if (await _baseProxyServerHandler.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
                 {
-                    using Stream stream = await _baseProxyServerFilter.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
+                    using Stream stream = await _baseProxyServerHandler.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
                     await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint!, _CancellationToken);
                 }
             }

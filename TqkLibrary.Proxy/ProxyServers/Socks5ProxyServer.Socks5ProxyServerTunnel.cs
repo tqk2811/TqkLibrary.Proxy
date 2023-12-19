@@ -56,7 +56,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 Socks5_Auth[] auths = auths_buffer.Select(x => (Socks5_Auth)x).ToArray();
 
                 //-------------------Server choice-------------------//
-                Socks5_Auth choice = await _proxyServer.Filter.ChoseAuthAsync(auths, _cancellationToken);
+                Socks5_Auth choice = await _proxyServer.Handler.ChoseAuthAsync(auths, _cancellationToken);
                 await _ServerChoiceResponseAsync(choice);
                 return choice != Socks5_Auth.Reject;
             }
@@ -84,7 +84,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
                 Uri uri = await _Read_DSTADDR_DSTPORT_Async();
-                if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(uri, _cancellationToken))
                 {
                     switch ((Socks5_CMD)data_buffer[1])
                     {

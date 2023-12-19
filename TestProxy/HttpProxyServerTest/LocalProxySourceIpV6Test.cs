@@ -8,7 +8,7 @@ using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
 using TqkLibrary.Proxy.ProxyServers;
 using Newtonsoft.Json;
-using TqkLibrary.Proxy.Filters;
+using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Authentications;
 
 namespace TestProxy.HttpProxyServerTest
@@ -21,7 +21,7 @@ namespace TestProxy.HttpProxyServerTest
         static readonly HttpClientHandler httpClientHandler;
         static readonly HttpClient httpClient;
         static readonly NetworkCredential networkCredential = new NetworkCredential("user", "password");
-        static readonly HttpAuthenticationProxyServerFilter filter = new HttpAuthenticationProxyServerFilter();
+        static readonly HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler();
         static LocalProxySourceIpV6Test()
         {
             localProxySource = new LocalProxySource();
@@ -37,13 +37,13 @@ namespace TestProxy.HttpProxyServerTest
                 DefaultProxyCredentials = networkCredential,
             };
             httpClient = new HttpClient(httpClientHandler, false);
-            filter.WithAuthentications(networkCredential);
+            handler.WithAuthentications(networkCredential);
         }
 
         [TestMethod]
         public async Task HttpGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, filter);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, handler);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
@@ -56,7 +56,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpGetTwoTimes()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, filter);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, handler);
             httpProxyServer.StartListen();
 
             {
@@ -80,7 +80,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, filter);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, handler);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
@@ -97,7 +97,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsGet()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, filter);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, handler);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://httpbin.org/get");
@@ -110,7 +110,7 @@ namespace TestProxy.HttpProxyServerTest
         [TestMethod]
         public async Task HttpsPost()
         {
-            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, filter);
+            using var httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(Singleton.AddressIpv6_0), localProxySource, handler);
             httpProxyServer.StartListen();
 
             using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://httpbin.org/post");

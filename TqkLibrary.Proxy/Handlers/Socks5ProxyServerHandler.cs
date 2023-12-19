@@ -5,16 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 
-namespace TqkLibrary.Proxy.Filters
+namespace TqkLibrary.Proxy.Handlers
 {
-    public class Socks5ProxyServerFilter : BaseProxyServerFilter
+    public class Socks5ProxyServerHandler : BaseProxyServerHandler
     {
-        readonly Socks5ProxyServerFilter? _parent;
-        public Socks5ProxyServerFilter()
+        readonly Socks5ProxyServerHandler? _parent;
+        public Socks5ProxyServerHandler()
         {
 
         }
-        public Socks5ProxyServerFilter(Socks5ProxyServerFilter parent) : base(parent)
+        public Socks5ProxyServerHandler(Socks5ProxyServerHandler parent) : base(parent)
         {
             _parent = parent;
         }

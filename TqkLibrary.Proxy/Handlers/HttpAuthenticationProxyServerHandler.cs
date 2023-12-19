@@ -1,15 +1,15 @@
 ﻿using TqkLibrary.Proxy.Authentications;
 
-namespace TqkLibrary.Proxy.Filters
+namespace TqkLibrary.Proxy.Handlers
 {
-    public class HttpAuthenticationProxyServerFilter : HttpProxyServerFilter
+    public class HttpAuthenticationProxyServerHandler : HttpProxyServerHandler
     {
-        readonly HttpProxyServerFilter? _parent;
-        public HttpAuthenticationProxyServerFilter()
+        readonly HttpProxyServerHandler? _parent;
+        public HttpAuthenticationProxyServerHandler()
         {
 
         }
-        public HttpAuthenticationProxyServerFilter(HttpProxyServerFilter parent) : base(parent)
+        public HttpAuthenticationProxyServerHandler(HttpProxyServerHandler parent) : base(parent)
         {
             this._parent = parent;
         }
@@ -44,9 +44,9 @@ namespace TqkLibrary.Proxy.Filters
 
 
         protected readonly List<HttpProxyAuthentication> _httpProxyAuthentications = new List<HttpProxyAuthentication>();
-        public virtual HttpProxyServerFilter WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
+        public virtual HttpProxyServerHandler WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
             => this.WithAuthentications(httpProxyAuthentications?.AsEnumerable());
-        public virtual HttpProxyServerFilter WithAuthentications(IEnumerable<HttpProxyAuthentication>? httpProxyAuthentications)
+        public virtual HttpProxyServerHandler WithAuthentications(IEnumerable<HttpProxyAuthentication>? httpProxyAuthentications)
         {
             if (httpProxyAuthentications is null) throw new ArgumentNullException(nameof(httpProxyAuthentications));
             _httpProxyAuthentications.AddRange(httpProxyAuthentications.Where(x => x is not null));

@@ -51,7 +51,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     _client_HeaderParse = HeaderRequestParse.ParseRequest(_client_HeaderLines);
 
                     //Check Proxy-Authorization
-                    if (await _proxyServer.Filter.IsNeedAuthenticationAsync(_cancellationToken))
+                    if (await _proxyServer.Handler.IsNeedAuthenticationAsync(_cancellationToken))
                     {
                         switch (_client_HeaderParse.ProxyAuthorization?.Scheme?.ToLower())
                         {
@@ -63,7 +63,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                                 string[] split = parameter.Split(':');
                                 if (split.Length == 2 &&
                                     split.All(x => !string.IsNullOrWhiteSpace(x)) &&
-                                    await _proxyServer.Filter.CheckAuthenticationAsync(new HttpProxyAuthentication(split[0], split[1]), _cancellationToken))
+                                    await _proxyServer.Handler.CheckAuthenticationAsync(new HttpProxyAuthentication(split[0], split[1]), _cancellationToken))
                                 {
                                     break;//allow
                                 }
@@ -88,7 +88,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                     client_isKeepAlive = _client_HeaderParse.IsKeepAlive;
 
-                    if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(_client_HeaderParse.Uri, _cancellationToken))
+                    if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(_client_HeaderParse.Uri, _cancellationToken))
                     {
                         using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
                         await connectSource.InitAsync(_client_HeaderParse.Uri, _cancellationToken);

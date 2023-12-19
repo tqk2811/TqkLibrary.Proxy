@@ -15,6 +15,7 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         class ConnectTunnel : BaseProxySourceTunnel<LocalProxySource>, IConnectSource
         {
+            readonly TcpClient _tcpClient = new TcpClient();
             Stream? _stream = null;
             public ConnectTunnel(LocalProxySource localProxySource) : base(localProxySource)
             {
@@ -24,6 +25,7 @@ namespace TqkLibrary.Proxy.ProxySources
             {
                 _stream?.Dispose();
                 _stream = null;
+                _tcpClient.Dispose();
                 base.Dispose(isDisposing);
             }
 
@@ -49,21 +51,12 @@ namespace TqkLibrary.Proxy.ProxySources
 
                                 case "tcp":// socks4 / socks5
                                     {
-                                        TcpClient remote = new TcpClient();
-                                        try
-                                        {
 #if NET5_0_OR_GREATER
-                                            await remote.ConnectAsync(address.Host, address.Port, cancellationToken);
+                                        await _tcpClient.ConnectAsync(address.Host, address.Port, cancellationToken);
 #else
-                                            await remote.ConnectAsync(address.Host, address.Port);
+                                        await _tcpClient.ConnectAsync(address.Host, address.Port);
 #endif
-                                            _stream = new TcpClientStreamWrapper(remote);
-                                        }
-                                        catch
-                                        {
-                                            remote.Dispose();
-                                            throw;
-                                        }
+                                        _stream = _tcpClient.GetStream();
                                     }
                                     break;
 

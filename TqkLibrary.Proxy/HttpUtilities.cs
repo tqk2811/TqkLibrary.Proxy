@@ -9,16 +9,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-/* Unmerged change from project 'TqkLibrary.Proxy (net6.0)'
-Before:
-using TqkLibrary.Proxy.StreamHeplers;
-After:
-using TqkLibrary;
-using TqkLibrary.Proxy;
-using TqkLibrary.Proxy;
-using TqkLibrary.Proxy.StreamHeplers;
-*/
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy
@@ -40,7 +30,7 @@ namespace TqkLibrary.Proxy
             return 0;
         }
 
-        internal static async Task<List<string>> ReadHeader(this Stream stream, CancellationToken cancellationToken = default)
+        internal static async Task<IReadOnlyList<string>> ReadHeadersAsync(this Stream stream, CancellationToken cancellationToken = default)
         {
             List<string> lines = new List<string>();
             while (true)

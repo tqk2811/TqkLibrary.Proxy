@@ -30,7 +30,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
             }
 
-            List<string>? _client_HeaderLines = null;
+            IReadOnlyList<string>? _client_HeaderLines = null;
             HeaderRequestParse? _client_HeaderParse = null;
 
             internal override async Task ProxyWorkAsync()
@@ -41,7 +41,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     should_continue = false;
 
-                    _client_HeaderLines = await _clientStream.ReadHeader(_cancellationToken);
+                    _client_HeaderLines = await _clientStream.ReadHeadersAsync(_cancellationToken);
                     if (_client_HeaderLines.Count == 0)
                         return;//client stream closed
 
@@ -163,7 +163,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 //-----------------------------------------------------
                 //read header from target, and send back to client
-                List<string> target_response_HeaderLines = await target_Stream.ReadHeader(_cancellationToken);
+                IReadOnlyList<string> target_response_HeaderLines = await target_Stream.ReadHeadersAsync(_cancellationToken);
                 int ContentLength = target_response_HeaderLines.GetContentLength();
                 foreach (var line in target_response_HeaderLines)
                 {

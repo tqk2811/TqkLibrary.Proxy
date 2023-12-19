@@ -39,7 +39,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port);
                 _stream = _tcpClient.GetStream();
 
-                if (!await _CONNECT_Async(address))
+                if (!await _CONNECT_Async(address, cancellationToken))
                 {
                     throw new InitConnectSourceFailedException();
                 }
@@ -53,7 +53,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 return Task.FromResult(this._stream);
             }
 
-            async Task<bool> _CONNECT_Async(Uri address)
+            async Task<bool> _CONNECT_Async(Uri address, CancellationToken cancellationToken = default)
             {
                 if (this._stream is null)
                     throw new InvalidOperationException();
@@ -73,6 +73,8 @@ namespace TqkLibrary.Proxy.ProxySources
                 await _stream.WriteLineAsync();
                 await _stream.FlushAsync();
 
+                IReadOnlyList<string> response_HeaderLines = await _stream.ReadHeadersAsync(cancellationToken);
+                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->", response_HeaderLines.ToArray());
 
                 List<string> response_HeaderLines = await _stream.ReadHeader();
 #if DEBUG

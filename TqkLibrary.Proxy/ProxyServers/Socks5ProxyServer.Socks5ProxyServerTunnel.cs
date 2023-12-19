@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 using TqkLibrary.Proxy.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
@@ -163,9 +164,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 memoryStream.WriteByte((byte)(listen_port >> 8));
                 memoryStream.WriteByte((byte)listen_port);
                 byte[] rep_buffer = memoryStream.ToArray();
-#if DEBUG
-                Console.WriteLine($"[{nameof(Socks5ProxyServerTunnel)}.{nameof(_WriteReplyConnectionRequestAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
-#endif
+
+                _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+
                 await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
                 await _clientStream.FlushAsync(_cancellationToken);
             }

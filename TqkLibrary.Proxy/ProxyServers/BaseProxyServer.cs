@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -17,6 +18,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         public int Timeout { get; set; } = 30000;
 
 
+        protected readonly ILogger? _logger;
         readonly TcpListener _tcpListener;
         readonly BaseProxyServerHandler _baseProxyServerHandler;
         readonly object _lock_cancellationToken = new object();
@@ -39,6 +41,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             this.ProxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
             this._tcpListener = new TcpListener(iPEndPoint);
             this.IPEndPoint = iPEndPoint;
+            _logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
         }
         ~BaseProxyServer()
         {
@@ -85,9 +88,6 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 _cancellationTokenSource?.Cancel();
                 _cancellationTokenSource?.Dispose();
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                _cancellationTokenSource = null;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 if (createNewCancellationToken) _cancellationTokenSource = new CancellationTokenSource();
             }
         }
@@ -105,9 +105,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
                 catch (Exception ex)
                 {
-#if DEBUG
-                    Console.WriteLine($"[{nameof(BaseProxyServer)}.{nameof(_MainLoopListen)}] {ex.GetType().FullName}: {ex.Message}, {ex.StackTrace}");
-#endif
+                    _logger?.LogCritical(ex, nameof(_MainLoopListen));
                 }
             }
         }
@@ -115,13 +113,28 @@ namespace TqkLibrary.Proxy.ProxyServers
 
         private async Task _PreProxyWorkAsync(TcpClient tcpClient)
         {
-            using (tcpClient)
+            try
             {
-                if (await _baseProxyServerHandler.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
+                using (tcpClient)
                 {
-                    using Stream stream = await _baseProxyServerHandler.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
-                    await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint!, _CancellationToken);
+                    if (await _baseProxyServerHandler.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
+                    {
+                        using Stream stream = await _baseProxyServerHandler.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
+                        await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint!, _CancellationToken);
+                    }
                 }
+            }
+            catch(ObjectDisposedException ode)
+            {
+                _logger?.LogInformation(ode, nameof(_PreProxyWorkAsync));
+            }
+            catch (OperationCanceledException oce)
+            {
+                _logger?.LogInformation(oce, nameof(_PreProxyWorkAsync));
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogCritical(ex, nameof(_PreProxyWorkAsync));
             }
         }
 

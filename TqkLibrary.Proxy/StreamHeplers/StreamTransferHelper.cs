@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -9,6 +10,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
 {
     internal class StreamTransferHelper
     {
+        readonly ILogger<StreamTransferHelper>? _logger = Singleton.LoggerFactory?.CreateLogger<StreamTransferHelper>();
+
         const int BUFFER_SIZE = 4096;
 
         readonly Stream _first;
@@ -51,18 +54,16 @@ namespace TqkLibrary.Proxy.StreamHeplers
                     if (!_first.CanRead) return;
                     int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_second.CanWrite) return;
-#if DEBUG
-                    Console.WriteLine($"[{_firstName} -> {_secondName}] {byte_read} bytes");
-#endif
+
+                    _logger?.LogInformation($"[{_firstName} -> {_secondName}] {byte_read} bytes");
+
                     if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken);
                     else return;
                 }
             }
             catch (Exception ex)
             {
-#if DEBUG
-                Console.WriteLine($"[{nameof(StreamTransferHelper)}] {ex.GetType().FullName}: {ex.Message}");
-#endif
+                _logger?.LogInformation(ex, $"[{_firstName} -> {_secondName}]");
             }
         }
         async Task SecondToFirst(CancellationToken cancellationToken = default)
@@ -74,18 +75,16 @@ namespace TqkLibrary.Proxy.StreamHeplers
                     if (!_second.CanRead) return;
                     int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_first.CanWrite) return;
-#if DEBUG
-                    Console.WriteLine($"[{_firstName} <- {_secondName}] {byte_read} bytes");
-#endif
+
+                    _logger?.LogInformation($"[{_firstName} <- {_secondName}] {byte_read} bytes");
+
                     if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken);
                     else return;
                 }
             }
             catch (Exception ex)
             {
-#if DEBUG
-                Console.WriteLine($"[{nameof(StreamTransferHelper)}] {ex.GetType().FullName}: {ex.Message}");
-#endif
+                _logger?.LogInformation(ex, $"[{_firstName} <- {_secondName}]");
             }
         }
 

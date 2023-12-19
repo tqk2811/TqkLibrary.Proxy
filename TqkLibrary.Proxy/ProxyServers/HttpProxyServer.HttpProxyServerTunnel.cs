@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -45,7 +46,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     if (_client_HeaderLines.Count == 0)
                         return;//client stream closed
 
-
+                    _logger?.LogInformation($"{_clientEndPoint} -> ", _client_HeaderLines.ToArray());
 
                     _client_HeaderParse = HeaderRequestParse.ParseRequest(_client_HeaderLines);
 
@@ -141,6 +142,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
                 await target_Stream.WriteLineAsync(string.Join("\r\n", headerLines), _cancellationToken);
+                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} <- ", headerLines.ToArray());
 
                 await target_Stream.WriteLineAsync(_cancellationToken);
 
@@ -156,11 +158,13 @@ namespace TqkLibrary.Proxy.ProxyServers
                 int ContentLength = target_response_HeaderLines.GetContentLength();
 
                 await _clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
+                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} -> ", target_response_HeaderLines.ToArray());
 
                 await _clientStream.WriteLineAsync(_cancellationToken);
 
                 //Transfer content from target to client if have
                 await target_Stream.TransferAsync(_clientStream, ContentLength, cancellationToken: _cancellationToken);
+                _logger?.LogInformation($"[{_clientEndPoint} <- {_client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 
                 await _clientStream.FlushAsync(_cancellationToken);
 
@@ -194,7 +198,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
                 return _WriteResponse(headers, b_content);
-                }
+            }
 
 
             /// <summary>
@@ -210,17 +214,19 @@ namespace TqkLibrary.Proxy.ProxyServers
             /// <param name="body"></param>
             /// <returns>true is keep alive</returns>
             async Task<bool> _WriteResponse(IEnumerable<string> headers, byte[]? body = null)
-                {
+            {
                 if (body is not null && !headers.Any(x => x.StartsWith("content-length:", StringComparison.InvariantCulture)))
                 {
                     headers = headers.Append($"Content-Length: {body.Length}");
                 }
 
                 await _clientStream.WriteHeadersAsync(headers, _cancellationToken);
+                _logger?.LogInformation($"{_clientEndPoint} <-", headers.ToArray());
 
                 if (body is not null)
                 {
                     await _clientStream.WriteAsync(body, _cancellationToken);
+                    _logger?.LogInformation($"{_clientEndPoint} <- bytes {body.Length}");
                 }
 
                 await _clientStream.FlushAsync(_cancellationToken);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -149,9 +150,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 rep_buffer[2] = (byte)(listen_port >> 8);
                 rep_buffer[3] = (byte)listen_port;
                 listen_ip.GetAddressBytes().CopyTo(rep_buffer, 4);
-#if DEBUG
-                Console.WriteLine($"[{nameof(Socks4ProxyServerTunnel)}.{nameof(_WriteReplyAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
-#endif
+
+                _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+
                 await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
                 await _clientStream.FlushAsync(_cancellationToken);
             }

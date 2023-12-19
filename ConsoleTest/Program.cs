@@ -1,6 +1,9 @@
 ﻿using ConsoleTest;
 using System.Net.Sockets;
 using System.Net;
+using Microsoft.Extensions.Logging;
+
+TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
 
 Uri uri0 = new Uri("http://127.0.0.1:13566");
 Uri uri1 = new Uri("http://[::1]:13566");

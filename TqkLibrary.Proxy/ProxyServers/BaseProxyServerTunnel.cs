@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -13,12 +14,14 @@ namespace TqkLibrary.Proxy.ProxyServers
         protected readonly Stream _clientStream;
         protected readonly EndPoint _clientEndPoint;
         protected readonly CancellationToken _cancellationToken;
+        protected readonly ILogger? _logger;
         protected BaseProxyServerTunnel(T proxyServer, Stream clientStream, EndPoint clientEndPoint, CancellationToken cancellationToken = default)
         {
             this._proxyServer = proxyServer ?? throw new ArgumentNullException(nameof(proxyServer));
             this._clientStream = clientStream ?? throw new ArgumentNullException(nameof(clientStream));
             this._clientEndPoint = clientEndPoint ?? throw new ArgumentNullException(nameof(clientEndPoint));
             this._cancellationToken = cancellationToken;
+            this._logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
         }
 
         internal abstract Task ProxyWorkAsync();

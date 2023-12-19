@@ -50,7 +50,13 @@ namespace TqkLibrary.Proxy.Helpers
 
         public byte VN { get; private set; }
         public Socks4_REP REP { get; private set; }
+        /// <summary>
+        /// destination port, meaningful if granted in BIND, otherwise ignore
+        /// </summary>
         public UInt16 DSTPORT { get; private set; }
+        /// <summary>
+        /// destination IP, as above – the ip:port the client should bind to
+        /// </summary>
         public IPAddress DSTIP { get; private set; } = IPAddress.None;
         public IPEndPoint IPEndPoint { get { return new IPEndPoint(DSTIP, DSTPORT); } }
 

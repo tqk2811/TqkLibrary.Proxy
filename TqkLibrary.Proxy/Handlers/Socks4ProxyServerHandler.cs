@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TqkLibrary.Proxy.Filters
+namespace TqkLibrary.Proxy.Handlers
 {
-    public class Socks4ProxyServerFilter : BaseProxyServerFilter
+    public class Socks4ProxyServerHandler : BaseProxyServerHandler
     {
         const bool _IsSupportSock4A = false;
-        readonly Socks4ProxyServerFilter? _parent;
-        public Socks4ProxyServerFilter()
+        readonly Socks4ProxyServerHandler? _parent;
+        public Socks4ProxyServerHandler()
         {
 
         }
-        public Socks4ProxyServerFilter(Socks4ProxyServerFilter parent) : base(parent)
+        public Socks4ProxyServerHandler(Socks4ProxyServerHandler parent) : base(parent)
         {
             this._parent = parent;
         }

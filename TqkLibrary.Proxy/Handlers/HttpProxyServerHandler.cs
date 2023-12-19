@@ -1,18 +1,18 @@
 ﻿using TqkLibrary.Proxy.Authentications;
 
-namespace TqkLibrary.Proxy.Filters
+namespace TqkLibrary.Proxy.Handlers
 {
     /// <summary>
     /// 
     /// </summary>
-    public class HttpProxyServerFilter : BaseProxyServerFilter
+    public class HttpProxyServerHandler : BaseProxyServerHandler
     {
-        readonly HttpProxyServerFilter? _parent;
-        public HttpProxyServerFilter()
+        readonly HttpProxyServerHandler? _parent;
+        public HttpProxyServerHandler()
         {
 
         }
-        public HttpProxyServerFilter(HttpProxyServerFilter parent) : base(parent)
+        public HttpProxyServerHandler(HttpProxyServerHandler parent) : base(parent)
         {
             this._parent = parent;
         }

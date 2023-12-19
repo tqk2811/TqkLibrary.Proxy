@@ -84,7 +84,10 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return stream.WriteAsync(line_break, 0, line_break.Length, cancellationToken);
         }
 
-
+        internal static Task WriteHeadersAsync(this Stream stream, IEnumerable<string> headers, CancellationToken cancellationToken = default)
+        {
+            return stream.WriteLineAsync(string.Join("\r\n", headers) + "\r\n", cancellationToken);
+        }
 
 
         internal static async Task<string> ReadLineAsync(this Stream stream, CancellationToken cancellationToken = default)

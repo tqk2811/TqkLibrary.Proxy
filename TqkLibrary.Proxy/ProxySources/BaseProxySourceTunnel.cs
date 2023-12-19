@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -12,11 +13,13 @@ namespace TqkLibrary.Proxy.ProxySources
     internal abstract class BaseProxySourceTunnel<T> : IDisposable
         where T : class, IProxySource
     {
+        protected readonly ILogger? _logger;
         protected readonly T _proxySource;
         private bool _IsDisposed = false;
         protected BaseProxySourceTunnel(T proxySource)
         {
             this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
+            _logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
         }
         ~BaseProxySourceTunnel()
         {

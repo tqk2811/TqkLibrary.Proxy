@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 using TqkLibrary.Proxy.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
@@ -56,7 +57,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 Socks5_Auth[] auths = auths_buffer.Select(x => (Socks5_Auth)x).ToArray();
 
                 //-------------------Server choice-------------------//
-                Socks5_Auth choice = await _proxyServer.Filter.ChoseAuthAsync(auths, _cancellationToken);
+                Socks5_Auth choice = await _proxyServer.Handler.ChoseAuthAsync(auths, _cancellationToken);
                 await _ServerChoiceResponseAsync(choice);
                 return choice != Socks5_Auth.Reject;
             }
@@ -84,7 +85,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 byte[] data_buffer = await _clientStream.ReadBytesAsync(3);
                 Uri uri = await _Read_DSTADDR_DSTPORT_Async();
-                if (await _proxyServer.Filter.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(uri, _cancellationToken))
                 {
                     switch ((Socks5_CMD)data_buffer[1])
                     {
@@ -163,9 +164,9 @@ namespace TqkLibrary.Proxy.ProxyServers
                 memoryStream.WriteByte((byte)(listen_port >> 8));
                 memoryStream.WriteByte((byte)listen_port);
                 byte[] rep_buffer = memoryStream.ToArray();
-#if DEBUG
-                Console.WriteLine($"[{nameof(Socks5ProxyServerTunnel)}.{nameof(_WriteReplyConnectionRequestAsync)}] {_clientEndPoint} << 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
-#endif
+
+                _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+
                 await _clientStream.WriteAsync(rep_buffer, _cancellationToken);
                 await _clientStream.FlushAsync(_cancellationToken);
             }
@@ -189,9 +190,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, session_stream)
-#if DEBUG
                     .DebugName(_clientEndPoint, uri)
-#endif
                     .WaitUntilDisconnect(_cancellationToken);
             }
 
@@ -210,9 +209,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 Stream target_stream = await bindSource.WaitConnectionAsync(_cancellationToken);
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, target_stream)
-#if DEBUG
                     .DebugName(_clientEndPoint, listen_endpoint)
-#endif
                     .WaitUntilDisconnect(_cancellationToken);
             }
 

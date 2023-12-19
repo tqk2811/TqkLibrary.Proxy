@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,10 @@ namespace TestProxy
 {
     internal static class Singleton
     {
+        static Singleton()
+        {
+            TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
+        }
         internal const string Address0 = "127.0.0.1:13566";
         internal const string Address1 = "127.0.0.1:13567";
 

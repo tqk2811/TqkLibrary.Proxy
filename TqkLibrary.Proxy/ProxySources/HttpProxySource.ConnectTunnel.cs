@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -35,11 +36,14 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
                 CheckIsDisposed();
-
+#if NET5_0_OR_GREATER
+                await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port, cancellationToken);
+#else
                 await _tcpClient.ConnectAsync(_proxySource._proxy.Host, _proxySource._proxy.Port);
+#endif
                 _stream = _tcpClient.GetStream();
 
-                if (!await _CONNECT_Async(address))
+                if (!await _CONNECT_Async(address, cancellationToken))
                 {
                     throw new InitConnectSourceFailedException();
                 }
@@ -53,32 +57,29 @@ namespace TqkLibrary.Proxy.ProxySources
                 return Task.FromResult(this._stream);
             }
 
-            async Task<bool> _CONNECT_Async(Uri address)
+            async Task<bool> _CONNECT_Async(Uri address, CancellationToken cancellationToken = default)
             {
                 if (this._stream is null)
                     throw new InvalidOperationException();
 
-                await _stream.WriteLineAsync($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
-#if DEBUG
-                Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- CONNECT {address.Host}:{address.Port} HTTP/1.1");
-#endif
+                List<string> headers = new List<string>();
+                headers.Add($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
                 if (_proxySource.HttpProxyAuthentication is not null)
                 {
                     string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.HttpProxyAuthentication.UserName}:{_proxySource.HttpProxyAuthentication.Password}"));
-                    await _stream.WriteLineAsync($"Proxy-Authorization: Basic {data}");
-#if DEBUG
-                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <- Proxy-Authorization: Basic {data}");
-#endif
+                    headers.Add($"Proxy-Authorization: Basic {data}");
                 }
-                await _stream.WriteLineAsync();
-                await _stream.FlushAsync();
 
+                await _stream.WriteHeadersAsync(headers, cancellationToken);
+                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-", headers.ToArray());
 
-                List<string> response_HeaderLines = await _stream.ReadHeader();
-#if DEBUG
-                response_HeaderLines.ForEach(x =>
-                    Console.WriteLine($"[{nameof(ConnectTunnel)}.{nameof(_CONNECT_Async)}] {_proxySource._proxy.Host}:{_proxySource._proxy.Port} -> {x}"));
-#endif
+                await _stream.FlushAsync(cancellationToken);
+
+                //-----------------------///
+
+                IReadOnlyList<string> response_HeaderLines = await _stream.ReadHeadersAsync(cancellationToken);
+                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->", response_HeaderLines.ToArray());
+
                 var headerResponseParse = HeaderResponseParse.ParseResponse(response_HeaderLines);
 
                 return headerResponseParse.HttpStatusCode == HttpStatusCode.OK;

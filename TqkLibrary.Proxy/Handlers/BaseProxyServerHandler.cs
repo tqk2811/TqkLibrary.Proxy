@@ -7,19 +7,19 @@ using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Authentications;
 
-namespace TqkLibrary.Proxy.Filters
+namespace TqkLibrary.Proxy.Handlers
 {
     /// <summary>
     /// 
     /// </summary>
-    public abstract class BaseProxyServerFilter
+    public abstract class BaseProxyServerHandler
     {
-        readonly BaseProxyServerFilter? _parent;
-        public BaseProxyServerFilter()
+        readonly BaseProxyServerHandler? _parent;
+        public BaseProxyServerHandler()
         {
 
         }
-        public BaseProxyServerFilter(BaseProxyServerFilter parent)
+        public BaseProxyServerHandler(BaseProxyServerHandler parent)
         {
             this._parent = parent ?? throw new ArgumentNullException(nameof(parent));
         }

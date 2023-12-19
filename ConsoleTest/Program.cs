@@ -1,6 +1,9 @@
 ﻿using ConsoleTest;
 using System.Net.Sockets;
 using System.Net;
+using Microsoft.Extensions.Logging;
+
+TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
 
 Uri uri0 = new Uri("http://127.0.0.1:13566");
 Uri uri1 = new Uri("http://[::1]:13566");
@@ -20,8 +23,8 @@ var ip = iPHostEntry
         .AddressList
         .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
 
-TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
-tcpListener.Start();
-
+//TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
+//tcpListener.Start();
+await ProxyWraper.RunAsync();
 //await DebugTest.Test();
-RealTest.HttpProxyServerTest();
+//RealTest.HttpProxyServerTest();

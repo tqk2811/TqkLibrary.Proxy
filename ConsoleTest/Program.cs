@@ -23,8 +23,8 @@ var ip = iPHostEntry
         .AddressList
         .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
 
-TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
-tcpListener.Start();
-
+//TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
+//tcpListener.Start();
+await ProxyWraper.RunAsync();
 //await DebugTest.Test();
-RealTest.HttpProxyServerTest();
+//RealTest.HttpProxyServerTest();

@@ -120,7 +120,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 await new StreamTransferHelper(_clientStream, remote_stream)
                     .DebugName(_clientEndPoint, _client_HeaderParse?.Uri)
                     .WaitUntilDisconnect(_cancellationToken);
-                return true;
+                return false;
             }
 
             async Task<bool> _HttpTransfer(IConnectSource connectSource)

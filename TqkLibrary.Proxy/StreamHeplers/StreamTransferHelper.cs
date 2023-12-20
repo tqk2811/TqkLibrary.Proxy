@@ -25,16 +25,16 @@ namespace TqkLibrary.Proxy.StreamHeplers
             _second = second ?? throw new ArgumentNullException(nameof(second));
         }
 
-        string _firstName = string.Empty;
-        string _secondName = string.Empty;
+        string _firstName = "first";
+        string _secondName = "second";
         public StreamTransferHelper DebugName(object? first, object? second)
         {
             return DebugName(first?.ToString(), second?.ToString());
         }
         public StreamTransferHelper DebugName(string? firstName, string? secondName)
         {
-            this._firstName = firstName ?? string.Empty;
-            this._secondName = secondName ?? string.Empty;
+            this._firstName = firstName ?? "first";
+            this._secondName = secondName ?? "second";
             return this;
         }
 

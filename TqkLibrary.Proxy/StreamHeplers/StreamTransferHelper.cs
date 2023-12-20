@@ -42,7 +42,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
         {
             Task task_first = FirstToSecond(cancellationToken);
             Task task_second = SecondToFirst(cancellationToken);
-            return Task.WhenAny(task_first, task_second);
+            return Task.WhenAll(task_first, task_second);
         }
 
         async Task FirstToSecond(CancellationToken cancellationToken = default)

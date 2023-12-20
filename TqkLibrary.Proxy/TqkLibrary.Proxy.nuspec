@@ -6,29 +6,29 @@
 		<version>1.0.0-build$buildDay$$buildIndex$</version>
 		<description>my private lib</description>
 		<authors>tqk2811</authors>
-		<projectUrl>https://github.com/tqk2811/TqkLibrary.Adb</projectUrl>
-		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Adb.git"/>
+		<projectUrl>https://github.com/tqk2811/TqkLibrary.Proxy</projectUrl>
+		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Proxy.git"/>
 		<license type="expression">MIT</license>
 		<dependencies>
 			<group targetFramework="net462">
-				<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-				<PackageReference Include="System.Net.Http" Version="4.3.4" />
+				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
+				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
 			<group targetFramework="netstandard2.0">
-				<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-				<PackageReference Include="System.Net.Http" Version="4.3.4" />
+				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
+				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
 			<group targetFramework="net5.0">
-				<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-				<PackageReference Include="System.Net.Http" Version="4.3.4" />
+				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
+				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
 			<group targetFramework="net6.0">
-				<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-				<PackageReference Include="System.Net.Http" Version="4.3.4" />
+				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
+				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
 			<group targetFramework="net7.0">
-				<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-				<PackageReference Include="System.Net.Http" Version="4.3.4" />
+				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
+				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
 		</dependencies>
 	</metadata>

@@ -13,7 +13,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public abstract class BaseProxyServer : IProxyServer
     {
-        public IPEndPoint IPEndPoint { get; }
+        public IPEndPoint? IPEndPoint { get { return _tcpListener.LocalEndpoint as IPEndPoint; } }
         public IProxySource ProxySource { get; private set; }
         public int Timeout { get; set; } = 30000;
 
@@ -40,7 +40,6 @@ namespace TqkLibrary.Proxy.ProxyServers
             this._baseProxyServerHandler = handler ?? throw new ArgumentNullException(nameof(handler));
             this.ProxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
             this._tcpListener = new TcpListener(iPEndPoint);
-            this.IPEndPoint = iPEndPoint;
             _logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
         }
         ~BaseProxyServer()

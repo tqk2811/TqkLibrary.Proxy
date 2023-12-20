@@ -92,13 +92,14 @@ namespace TqkLibrary.Proxy.ProxyServers
                     {
                         using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
                         await connectSource.InitAsync(_client_HeaderParse.Uri, _cancellationToken);
+                        using Stream source_stream = await connectSource.GetStreamAsync();
                         if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
                         {
-                            should_continue = await _HttpsTransfer(connectSource);
+                            should_continue = await _HttpsTransfer(source_stream);
                         }
                         else
                         {
-                            should_continue = await _HttpTransfer(connectSource);
+                            should_continue = await _HttpTransfer(source_stream);
                         }
                     }
                     else
@@ -110,23 +111,23 @@ namespace TqkLibrary.Proxy.ProxyServers
                 while ((client_isKeepAlive || should_continue));
             }
 
-            async Task<bool> _HttpsTransfer(IConnectSource connectSource)
+            async Task<bool> _HttpsTransfer(Stream source_stream)
             {
                 if (_client_HeaderParse is null)
                     throw new InvalidOperationException();
 
                 await _WriteResponse(200, "Connection established", true);
 
-                using var remote_stream = await connectSource.GetStreamAsync();
-                await new StreamTransferHelper(_clientStream, remote_stream)
+                await new StreamTransferHelper(_clientStream, source_stream)
                     .DebugName(_clientEndPoint, _client_HeaderParse?.Uri)
                     .WaitUntilDisconnect(_cancellationToken);
                 return false;
             }
 
-            async Task<bool> _HttpTransfer(IConnectSource connectSource)
+            async Task<bool> _HttpTransfer(Stream source_stream)
             {
-                using Stream target_Stream = await connectSource.GetStreamAsync();
+                if (_client_HeaderParse is null || _client_HeaderLines is null)
+                    throw new InvalidOperationException();
 
                 //send header to target
                 List<string> headerLines = new List<string>();
@@ -141,20 +142,20 @@ namespace TqkLibrary.Proxy.ProxyServers
                     headerLines.Add(line);
                 }
 
-                await target_Stream.WriteLineAsync(string.Join("\r\n", headerLines), _cancellationToken);
+                await source_stream.WriteLineAsync(string.Join("\r\n", headerLines), _cancellationToken);
                 _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} <- ", headerLines.ToArray());
 
-                await target_Stream.WriteLineAsync(_cancellationToken);
+                await source_stream.WriteLineAsync(_cancellationToken);
 
                 //Transfer content from client to target if have
-                await _clientStream.TransferAsync(target_Stream, _client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
+                await _clientStream.TransferAsync(source_stream, _client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
                 _logger?.LogInformation($"[{_clientEndPoint} -> {_client_HeaderParse.Uri.Host}] {_client_HeaderParse.ContentLength} bytes");
 
-                await target_Stream.FlushAsync(_cancellationToken);
+                await source_stream.FlushAsync(_cancellationToken);
 
                 //-----------------------------------------------------
                 //read header from target, and send back to client
-                IReadOnlyList<string> target_response_HeaderLines = await target_Stream.ReadHeadersAsync(_cancellationToken);
+                IReadOnlyList<string> target_response_HeaderLines = await source_stream.ReadHeadersAsync(_cancellationToken);
                 int ContentLength = target_response_HeaderLines.GetContentLength();
 
                 await _clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
@@ -163,7 +164,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 await _clientStream.WriteLineAsync(_cancellationToken);
 
                 //Transfer content from target to client if have
-                await target_Stream.TransferAsync(_clientStream, ContentLength, cancellationToken: _cancellationToken);
+                await source_stream.TransferAsync(_clientStream, ContentLength, cancellationToken: _cancellationToken);
                 _logger?.LogInformation($"[{_clientEndPoint} <- {_client_HeaderParse.Uri.Host}] {ContentLength} bytes");
 
                 await _clientStream.FlushAsync(_cancellationToken);

@@ -46,7 +46,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     if (_client_HeaderLines.Count == 0)
                         return;//client stream closed
 
-                    _logger?.LogInformation($"{_clientEndPoint} -> ", _client_HeaderLines.ToArray());
+                    _logger?.LogInformation($"{_clientEndPoint} -> \r\n{string.Join("\r\n", _client_HeaderLines)}");
 
                     _client_HeaderParse = HeaderRequestParse.ParseRequest(_client_HeaderLines);
 
@@ -143,7 +143,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
                 await source_stream.WriteLineAsync(string.Join("\r\n", headerLines), _cancellationToken);
-                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} <- ", headerLines.ToArray());
+                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} <- \r\n{string.Join("\r\n", headerLines)}");
 
                 await source_stream.WriteLineAsync(_cancellationToken);
 
@@ -159,7 +159,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 int ContentLength = target_response_HeaderLines.GetContentLength();
 
                 await _clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
-                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} -> ", target_response_HeaderLines.ToArray());
+                _logger?.LogInformation($"{_client_HeaderParse.Uri.Host} ->\r\n{string.Join("\r\n", target_response_HeaderLines)}");
 
                 await _clientStream.WriteLineAsync(_cancellationToken);
 
@@ -222,7 +222,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
 
                 await _clientStream.WriteHeadersAsync(headers, _cancellationToken);
-                _logger?.LogInformation($"{_clientEndPoint} <-", headers.ToArray());
+                _logger?.LogInformation($"{_clientEndPoint} <-\r\n{string.Join("\r\n", headers)}");
 
                 if (body is not null)
                 {

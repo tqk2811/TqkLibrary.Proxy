@@ -71,14 +71,14 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
 
                 await _stream.WriteHeadersAsync(headers, cancellationToken);
-                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-", headers.ToArray());
+                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-\r\n{string.Join("\r\n", headers)}");
 
                 await _stream.FlushAsync(cancellationToken);
 
                 //-----------------------///
 
                 IReadOnlyList<string> response_HeaderLines = await _stream.ReadHeadersAsync(cancellationToken);
-                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->", response_HeaderLines.ToArray());
+                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->\r\n{string.Join("\r\n", response_HeaderLines)}");
 
                 var headerResponseParse = HeaderResponseParse.ParseResponse(response_HeaderLines);
 

@@ -49,9 +49,9 @@ namespace TqkLibrary.Proxy.Handlers
 
 
         protected readonly List<HttpProxyAuthentication> _httpProxyAuthentications = new List<HttpProxyAuthentication>();
-        public virtual HttpProxyServerHandler WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
+        public virtual HttpAuthenticationProxyServerHandler WithAuthentications(params HttpProxyAuthentication[] httpProxyAuthentications)
             => this.WithAuthentications(httpProxyAuthentications?.AsEnumerable());
-        public virtual HttpProxyServerHandler WithAuthentications(IEnumerable<HttpProxyAuthentication>? httpProxyAuthentications)
+        public virtual HttpAuthenticationProxyServerHandler WithAuthentications(IEnumerable<HttpProxyAuthentication>? httpProxyAuthentications)
         {
             if (httpProxyAuthentications is null) throw new ArgumentNullException(nameof(httpProxyAuthentications));
             _httpProxyAuthentications.AddRange(httpProxyAuthentications.Where(x => x is not null));

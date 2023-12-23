@@ -24,10 +24,10 @@ namespace ConsoleTest
             NetworkCredential networkCredential = new NetworkCredential("admin", "admin");
             credentialCache.Add(new Uri($"http://{address}"), "Basic", networkCredential);
 
-            HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler();
+            HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler(proxySource);
             handler.WithAuthentications(networkCredential);
 
-            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource, handler);
+            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), handler);
             httpProxyServer.StartListen();
 
             using HttpClientHandler httpClientHandler = new HttpClientHandler()

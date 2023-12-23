@@ -182,7 +182,8 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
             async Task _EstablishStreamConnectionAsync(Uri uri)
             {
-                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                using IConnectSource connectSource = proxySource.GetConnectSource();
                 await connectSource.InitAsync(uri, _cancellationToken);
                 using Stream session_stream = await connectSource.GetStreamAsync();
                 //send response to client
@@ -196,7 +197,8 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task _EstablishPortBinding(Uri uri)
             {
-                using IBindSource bindSource = _proxyServer.ProxySource.GetBindSource();
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                using IBindSource bindSource = proxySource.GetBindSource();
                 await bindSource.InitAsync(uri, _cancellationToken);
 
                 IPEndPoint listen_endpoint = await bindSource.InitListenAsync(_cancellationToken);

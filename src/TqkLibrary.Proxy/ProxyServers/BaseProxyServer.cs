@@ -14,7 +14,6 @@ namespace TqkLibrary.Proxy.ProxyServers
     public abstract class BaseProxyServer : IProxyServer
     {
         public IPEndPoint? IPEndPoint { get { return _tcpListener.LocalEndpoint as IPEndPoint; } }
-        public IProxySource ProxySource { get; private set; }
         public int Timeout { get; set; } = 30000;
 
 
@@ -33,12 +32,10 @@ namespace TqkLibrary.Proxy.ProxyServers
 
         protected BaseProxyServer(
             IPEndPoint iPEndPoint,
-            IProxySource proxySource,
             BaseProxyServerHandler handler
             )
         {
             this._baseProxyServerHandler = handler ?? throw new ArgumentNullException(nameof(handler));
-            this.ProxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
             this._tcpListener = new TcpListener(iPEndPoint);
             _logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
         }
@@ -70,12 +67,6 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             if (this._tcpListener.Server.IsBound)
                 this._tcpListener.Stop();
-        }
-        public void ChangeSource(IProxySource proxySource, bool isShutdownCurrentConnection = false)
-        {
-            if (proxySource is null) throw new ArgumentNullException(nameof(proxySource));
-            this.ProxySource = proxySource;
-            if (isShutdownCurrentConnection) ShutdownCurrentConnection();
         }
         public void ShutdownCurrentConnection()
         {

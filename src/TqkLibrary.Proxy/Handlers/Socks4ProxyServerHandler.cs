@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.Handlers
 {
@@ -11,6 +12,10 @@ namespace TqkLibrary.Proxy.Handlers
         const bool _IsSupportSock4A = false;
         readonly Socks4ProxyServerHandler? _parent;
         public Socks4ProxyServerHandler()
+        {
+
+        }
+        public Socks4ProxyServerHandler(IProxySource proxySource) : base(proxySource)
         {
 
         }

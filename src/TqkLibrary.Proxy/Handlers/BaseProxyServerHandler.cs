@@ -6,6 +6,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.ProxySources;
 
 namespace TqkLibrary.Proxy.Handlers
 {
@@ -15,15 +17,36 @@ namespace TqkLibrary.Proxy.Handlers
     public abstract class BaseProxyServerHandler
     {
         readonly BaseProxyServerHandler? _parent;
+        readonly IProxySource? _proxySource;
+        LocalProxySource? _localProxySource;
         public BaseProxyServerHandler()
         {
 
+        }
+        public BaseProxyServerHandler(IProxySource proxySource)
+        {
+            this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
         }
         public BaseProxyServerHandler(BaseProxyServerHandler parent)
         {
             this._parent = parent ?? throw new ArgumentNullException(nameof(parent));
         }
 
+
+        public virtual Task<IProxySource> GetProxySourceAsync(CancellationToken cancellationToken = default)
+        {
+            if (_parent is not null) return _parent.GetProxySourceAsync(cancellationToken);
+            else
+            {
+                if (_proxySource is not null)
+                    return Task.FromResult(_proxySource);
+
+                if (_localProxySource is null)
+                    _localProxySource = new LocalProxySource();
+
+                return Task.FromResult<IProxySource>(_localProxySource);
+            }
+        }
 
         /// <summary>
         /// 

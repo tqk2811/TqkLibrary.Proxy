@@ -22,7 +22,7 @@ namespace ConsoleTest
             httpProxyServer.StartListen();
             Console.WriteLine("server started");
             Console.ReadLine();
-            httpProxyServer.ChangeSource(new HttpProxySource(new Uri("http://103.178.231.186:10003")), true);
+            //httpProxyServer.ChangeSource(new HttpProxySource(new Uri("http://103.178.231.186:10003")), true);
             Console.ReadLine();
             httpProxyServer.StopListen();
             Console.ReadLine();

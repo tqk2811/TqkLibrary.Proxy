@@ -1,4 +1,5 @@
 ﻿using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.Handlers
 {
@@ -6,6 +7,10 @@ namespace TqkLibrary.Proxy.Handlers
     {
         readonly HttpProxyServerHandler? _parent;
         public HttpAuthenticationProxyServerHandler()
+        {
+
+        }
+        public HttpAuthenticationProxyServerHandler(IProxySource proxySource) : base(proxySource)
         {
 
         }

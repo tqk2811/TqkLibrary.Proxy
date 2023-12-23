@@ -89,15 +89,17 @@ namespace TqkLibrary.Proxy.ProxyServers
                     }
                 }
 
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+
                 //connect to target
                 switch (socks4_Request.CMD)
                 {
                     case Socks4_CMD.Connect:
-                        await _EstablishStreamConnectionAsync(target_ip, socks4_Request.DSTPORT);
+                        await _EstablishStreamConnectionAsync(proxySource, target_ip, socks4_Request.DSTPORT);
                         return;
 
                     case Socks4_CMD.Bind:
-                        if (_proxyServer.ProxySource.IsSupportBind)
+                        if (proxySource.IsSupportBind)
                         {
                             //not support now, write later
                             //it create listen port on this IProxySource and transfer with current connection
@@ -115,12 +117,13 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
             async Task _EstablishStreamConnectionAsync(
+                IProxySource proxySource,
                 IPAddress target_ip,
                 UInt16 target_port
                 )
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
-                using IConnectSource connectSource = _proxyServer.ProxySource.GetConnectSource();
+                using IConnectSource connectSource = proxySource.GetConnectSource();
                 await connectSource.InitAsync(uri, _cancellationToken);
 
                 using Stream session_stream = await connectSource.GetStreamAsync();

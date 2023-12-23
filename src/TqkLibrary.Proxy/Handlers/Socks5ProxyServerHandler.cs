@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.Handlers
 {
@@ -11,6 +12,10 @@ namespace TqkLibrary.Proxy.Handlers
     {
         readonly Socks5ProxyServerHandler? _parent;
         public Socks5ProxyServerHandler()
+        {
+
+        }
+        public Socks5ProxyServerHandler(IProxySource proxySource) : base(proxySource)
         {
 
         }

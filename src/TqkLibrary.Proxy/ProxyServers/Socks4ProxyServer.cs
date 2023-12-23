@@ -14,12 +14,13 @@ namespace TqkLibrary.Proxy.ProxyServers
     public partial class Socks4ProxyServer : BaseProxyServer, ISocks4Proxy
     {
         public Socks4ProxyServerHandler Handler { get; }
-        public Socks4ProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource) : this(iPEndPoint, proxySource, new Socks4ProxyServerHandler())
+        public Socks4ProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource) 
+            : this(iPEndPoint, new Socks4ProxyServerHandler(proxySource))
         {
 
         }
-        public Socks4ProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, Socks4ProxyServerHandler handler)
-            : base(iPEndPoint, proxySource, handler)
+        public Socks4ProxyServer(IPEndPoint iPEndPoint, Socks4ProxyServerHandler handler)
+            : base(iPEndPoint, handler)
         {
             this.Handler = handler;
         }

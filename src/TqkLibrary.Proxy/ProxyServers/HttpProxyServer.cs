@@ -9,12 +9,12 @@ namespace TqkLibrary.Proxy.ProxyServers
         public HttpProxyServerHandler Handler { get; }
 
         public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource)
-            : this(iPEndPoint, proxySource, new HttpProxyServerHandler())
+            : this(iPEndPoint, new HttpProxyServerHandler(proxySource))
         {
 
         }
-        public HttpProxyServer(IPEndPoint iPEndPoint, IProxySource proxySource, HttpProxyServerHandler handler) 
-            : base(iPEndPoint, proxySource, handler)
+        public HttpProxyServer(IPEndPoint iPEndPoint, HttpProxyServerHandler handler)
+            : base(iPEndPoint, handler)
         {
             this.Handler = handler;
         }

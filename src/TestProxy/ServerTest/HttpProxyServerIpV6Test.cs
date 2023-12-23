@@ -23,9 +23,9 @@ namespace TestProxy.ServerTest
         }
         protected override BaseProxyServer CreateServer(IProxySource proxySource)
         {
-            HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler();
+            HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler(proxySource);
             handler.WithAuthentications(_networkCredential);
-            return new HttpProxyServer(IPEndPoint.Parse("[::1]:0"), proxySource, handler);
+            return new HttpProxyServer(IPEndPoint.Parse("[::1]:0"), handler);
         }
         protected override HttpMessageHandler CreateHttpMessageHandler(BaseProxyServer baseProxyServer)
         {

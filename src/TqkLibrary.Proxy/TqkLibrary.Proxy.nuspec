@@ -9,6 +9,7 @@
 		<projectUrl>https://github.com/tqk2811/TqkLibrary.Proxy</projectUrl>
 		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Proxy.git"/>
 		<license type="expression">MIT</license>
+		<readme>docs\README.md</readme>
 		<dependencies>
 			<group targetFramework="net462">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
@@ -36,6 +37,7 @@
 		<file src="bin\Release\**\$id$.dll" target="lib\" />
 		<file src="bin\Release\**\$id$.pdb" target="lib\" />
 		<file src="bin\Release\**\$id$.xml" target="lib\" />
+		<file src="..\..\README.md" target="docs\" />
 		<file src="**\*.cs" target="src\" exclude="obj\**\*.cs;bin\**\*.cs"/>
 	</files>
 </package>

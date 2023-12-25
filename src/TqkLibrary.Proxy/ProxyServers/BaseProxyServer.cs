@@ -55,10 +55,11 @@ namespace TqkLibrary.Proxy.ProxyServers
         }
 
 
-        public void StartListen()
+        public void StartListen(bool allowNatTraversal = false)
         {
             if (!this._tcpListener.Server.IsBound)
             {
+                this._tcpListener.AllowNatTraversal(allowNatTraversal);
                 this._tcpListener.Start();
                 Task.Run(_MainLoopListen);
             }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using TqkLibrary.Proxy.Handlers;
@@ -62,7 +63,9 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             if (!this._tcpListener.Server.IsBound)
             {
-                if(Environment.OSVersion.Platform.ToString().StartsWith("Win"))
+#if !NET462
+                if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#endif
                 {
                     this._tcpListener.AllowNatTraversal(allowNatTraversal);
                 }
@@ -121,7 +124,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     }
                 }
             }
-            catch(ObjectDisposedException ode)
+            catch (ObjectDisposedException ode)
             {
                 _logger?.LogInformation(ode, nameof(_PreProxyWorkAsync));
             }

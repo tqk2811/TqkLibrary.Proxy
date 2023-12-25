@@ -2,7 +2,7 @@
 {
     public interface IProxyServer: IDisposable
     {
-        void StartListen();
+        void StartListen(bool allowNatTraversal = false);
         void StopListen();
         void ShutdownCurrentConnection();
     }

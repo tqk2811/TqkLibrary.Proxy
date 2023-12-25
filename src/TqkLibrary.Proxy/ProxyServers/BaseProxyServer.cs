@@ -54,12 +54,18 @@ namespace TqkLibrary.Proxy.ProxyServers
             _ShutdownCurrentConnection(false);
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="allowNatTraversal">Window Only</param>
         public void StartListen(bool allowNatTraversal = false)
         {
             if (!this._tcpListener.Server.IsBound)
             {
-                this._tcpListener.AllowNatTraversal(allowNatTraversal);
+                if(Environment.OSVersion.Platform.ToString().StartsWith("Win"))
+                {
+                    this._tcpListener.AllowNatTraversal(allowNatTraversal);
+                }
                 this._tcpListener.Start();
                 Task.Run(_MainLoopListen);
             }

@@ -22,7 +22,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new ArgumentNullException(nameof(address));
                 CheckIsDisposed();
 
-                await base.InitAsync(cancellationToken);
+                await base.ConnectAndAuthAsync(cancellationToken);
 
                 Socks5_Request socks5_Connection = Socks5_Request.CreateConnect(address);
                 await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);

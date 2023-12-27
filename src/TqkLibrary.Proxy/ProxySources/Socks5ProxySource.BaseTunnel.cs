@@ -47,7 +47,7 @@ namespace TqkLibrary.Proxy.ProxySources
             /// <exception cref="InvalidDataException"></exception>
             /// <exception cref="InvalidOperationException"></exception>
             /// <exception cref="NotSupportedException"></exception>
-            protected async Task InitAsync(CancellationToken cancellationToken = default)
+            protected async Task ConnectAndAuthAsync(CancellationToken cancellationToken = default)
             {
 #if NET5_0_OR_GREATER
                 await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port, cancellationToken);

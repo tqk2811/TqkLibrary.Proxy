@@ -63,8 +63,8 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             if (!this._tcpListener.Server.IsBound)
             {
-#if !NET462
-                if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#if NET5_0_OR_GREATER || NETSTANDARD
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 #endif
                 {
                     this._tcpListener.AllowNatTraversal(allowNatTraversal);

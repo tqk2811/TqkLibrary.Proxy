@@ -16,7 +16,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
             }
 
-            public async Task InitAsync(Uri address, CancellationToken cancellationToken = default)
+            public async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
             {
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
@@ -36,7 +36,7 @@ namespace TqkLibrary.Proxy.ProxySources
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 if (this._stream is null)
-                    throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(InitAsync)} first");
+                    throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(ConnectAsync)} first");
                 CheckIsDisposed();
 
                 return Task.FromResult(this._stream);

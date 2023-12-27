@@ -94,7 +94,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                             break;
 
                         case Socks5_CMD.EstablishPortBinding:
-                            await _EstablishPortBinding(uri);
+                            await _EstablishPortBinding();
                             break;
 
                         case Socks5_CMD.AssociateUDP:
@@ -184,7 +184,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
                 using IConnectSource connectSource = proxySource.GetConnectSource();
-                await connectSource.InitAsync(uri, _cancellationToken);
+                await connectSource.ConnectAsync(uri, _cancellationToken);
                 using Stream session_stream = await connectSource.GetStreamAsync();
                 //send response to client
                 await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
@@ -195,20 +195,19 @@ namespace TqkLibrary.Proxy.ProxyServers
                     .WaitUntilDisconnect(_cancellationToken);
             }
 
-            async Task _EstablishPortBinding(Uri uri)
+            async Task _EstablishPortBinding()
             {
                 IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
                 using IBindSource bindSource = proxySource.GetBindSource();
-                await bindSource.InitAsync(uri, _cancellationToken);
+                IPEndPoint listen_endpoint = await bindSource.BindAsync(_cancellationToken);
 
-                IPEndPoint listen_endpoint = await bindSource.InitListenAsync(_cancellationToken);
 
                 await _WriteReplyConnectionRequestAsync(
                     Socks5_STATUS.RequestGranted,
                     listen_endpoint.Address,
                     (UInt16)listen_endpoint.Port);
 
-                Stream target_stream = await bindSource.WaitConnectionAsync(_cancellationToken);
+                Stream target_stream = await bindSource.GetStreamAsync(_cancellationToken);
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, target_stream)
                     .DebugName(_clientEndPoint, listen_endpoint)

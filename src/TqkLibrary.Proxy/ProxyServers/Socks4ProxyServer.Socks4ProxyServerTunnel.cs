@@ -124,7 +124,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 Uri uri = new Uri($"http://{target_ip}:{target_port}");
                 using IConnectSource connectSource = proxySource.GetConnectSource();
-                await connectSource.InitAsync(uri, _cancellationToken);
+                await connectSource.ConnectAsync(uri, _cancellationToken);
 
                 using Stream session_stream = await connectSource.GetStreamAsync();
 

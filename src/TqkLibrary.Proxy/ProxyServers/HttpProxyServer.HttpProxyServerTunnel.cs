@@ -92,7 +92,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     {
                         IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
                         using IConnectSource connectSource = proxySource.GetConnectSource();
-                        await connectSource.InitAsync(_client_HeaderParse.Uri, _cancellationToken);
+                        await connectSource.ConnectAsync(_client_HeaderParse.Uri, _cancellationToken);
                         using Stream source_stream = await connectSource.GetStreamAsync();
                         if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
                         {

@@ -42,7 +42,7 @@ namespace TqkLibrary.Proxy.Helpers
             socks5_ConnectionResponse.STATUS = (Socks5_STATUS)buffer[1];
             socks5_ConnectionResponse.RSV = buffer[2];
             socks5_ConnectionResponse.BNDADDR = await stream.Read_Socks5_DSTADDR_Async(cancellationToken);
-            socks5_ConnectionResponse.BNDPORT = BitConverter.ToUInt16(await stream.ReadBytesAsync(2, cancellationToken), 0);
+            socks5_ConnectionResponse.BNDPORT = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(await stream.ReadBytesAsync(2, cancellationToken), 0));
             return socks5_ConnectionResponse;
         }
 
@@ -57,8 +57,10 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
-            yield return (byte)(BNDPORT >> 8);
-            yield return (byte)BNDPORT;
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.BNDPORT)))
+            {
+                yield return b;
+            }
         }
     }
     internal static class Socks5_RequestResponse_Extensions

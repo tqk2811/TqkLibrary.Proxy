@@ -66,7 +66,7 @@ namespace TqkLibrary.Proxy.Helpers
             byte[] buffer = await stream.ReadBytesAsync(8, cancellationToken);
             socks4_RequestResponse.VN = buffer[0];
             socks4_RequestResponse.REP = (Socks4_REP)buffer[1];
-            socks4_RequestResponse.DSTPORT = BitConverter.ToUInt16(buffer, 2);
+            socks4_RequestResponse.DSTPORT = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, 2));
             socks4_RequestResponse.DSTIP = new IPAddress(buffer.Skip(4).ToArray());
             return socks4_RequestResponse;
         }
@@ -77,8 +77,10 @@ namespace TqkLibrary.Proxy.Helpers
         {
             yield return this.VN;
             yield return (byte)this.REP;
-            yield return (byte)(this.DSTPORT >> 8);
-            yield return (byte)this.DSTPORT;
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.DSTPORT)))
+            {
+                yield return b;
+            }
             foreach (byte b in this.DSTIP.GetAddressBytes())
             {
                 yield return b;

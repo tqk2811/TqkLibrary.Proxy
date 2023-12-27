@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,6 +37,27 @@ namespace TqkLibrary.Proxy.Helpers
 
                 default:
                     throw new InvalidDataException($"Invalid type uri input: {uri.HostNameType}");
+            }
+        }
+        internal Socks5_DSTADDR(IPAddress iPAddress)
+        {
+            if (iPAddress is null)
+                throw new ArgumentNullException(nameof(iPAddress));
+
+            switch (iPAddress.AddressFamily)
+            {
+                case AddressFamily.InterNetwork:
+                    this.IPAddress = iPAddress;
+                    this.ATYP = Socks5_ATYP.IpV4;
+                    break;
+
+                case AddressFamily.InterNetworkV6:
+                    this.IPAddress = iPAddress;
+                    this.ATYP = Socks5_ATYP.IpV6;
+                    break;
+
+                default:
+                    throw new NotSupportedException(iPAddress.AddressFamily.ToString());
             }
         }
 

@@ -14,18 +14,40 @@ namespace TqkLibrary.Proxy.Helpers
     /// </summary>
     internal class Socks5_Request
     {
-        internal Socks5_Request(Socks5_CMD socks5_CMD, Uri uri)
-        {
-            this.CMD = socks5_CMD;
-            this.DSTADDR = new Socks5_DSTADDR(uri);
-            this.DSTPORT = (UInt16)uri.Port;
-        }
-
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private Socks5_Request()
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
         }
+
+        public static Socks5_Request CreateConnect(Uri uri)
+        {
+            return new Socks5_Request()
+            {
+                CMD = Socks5_CMD.EstablishStreamConnection,
+                DSTADDR = new Socks5_DSTADDR(uri),
+                DSTPORT = (UInt16)uri.Port,
+            };
+        }
+        public static Socks5_Request CreateBind()
+        {
+            return new Socks5_Request()
+            {
+                CMD = Socks5_CMD.EstablishPortBinding,
+                DSTADDR = new Socks5_DSTADDR(IPAddress.Any),
+                DSTPORT = 0,
+            };
+        }
+        public static Socks5_Request CreateUdp()
+        {
+            return new Socks5_Request()
+            {
+                CMD = Socks5_CMD.AssociateUDP,
+                DSTADDR = new Socks5_DSTADDR(IPAddress.Any),
+                DSTPORT = 0,
+            };
+        }
+
 
         internal byte VER { get; private set; } = 0x05;
         internal Socks5_CMD CMD { get; private set; }

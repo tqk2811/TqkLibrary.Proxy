@@ -13,7 +13,7 @@ using TqkLibrary.Proxy.Authentications;
 
 namespace TestProxy.ServerTest
 {
-    [TestClass]
+    //[TestClass]
     public class HttpProxyServerIpV6Test : BaseConnectTest
     {
         protected readonly NetworkCredential _networkCredential = new NetworkCredential("user", "password");

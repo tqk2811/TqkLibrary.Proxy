@@ -31,8 +31,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public IBindSource GetBindSource()
         {
-            throw new NotSupportedException();
-            //return new BindTunnel(this);
+            return new BindTunnel(this);
         }
 
         public IUdpAssociateSource GetUdpAssociateSource()

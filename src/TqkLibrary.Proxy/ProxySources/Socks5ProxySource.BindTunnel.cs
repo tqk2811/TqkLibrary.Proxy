@@ -3,70 +3,51 @@ using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
+using System.Threading;
+using TqkLibrary.Proxy.Exceptions;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {
-        //class BindTunnel : BaseTunnel, IBindSource
-        //{
-        //    internal BindTunnel(Socks5ProxySource proxySource) : base(proxySource)
-        //    {
+        class BindTunnel : BaseTunnel, IBindSource
+        {
+            internal BindTunnel(Socks5ProxySource proxySource) : base(proxySource)
+            {
 
-        //    }
+            }
 
-        //    public Task<IPEndPoint> InitListenAsync(CancellationToken cancellationToken = default)
-        //    {
-        //        if (_socks5_RequestResponse is null) throw new InvalidOperationException();
-        //        return Task.FromResult(_socks5_RequestResponse.IPEndPoint);
-        //    }
+            public async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
+            {
+                CheckIsDisposed();
+                await ConnectAndAuthAsync();
 
-        //    public Task<Stream> WaitConnectionAsync(CancellationToken cancellationToken = default)
-        //    {
-        //        if (_stream is null) throw new InvalidOperationException();
-        //        return Task.FromResult(_stream);
-        //    }
+                Socks5_Request socks5_Connection = Socks5_Request.CreateBind();
+                await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);
+                await _stream.FlushAsync(cancellationToken);
 
-        //    public Task InitAsync(Uri address, CancellationToken cancellationToken = default)
-        //    {
-        //        throw new NotImplementedException();
-        //    }
+                Socks5_RequestResponse socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(cancellationToken);
 
+                if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
+                {
+                    throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
+                }
+                if (socks5_RequestResponse.BNDADDR.ATYP == Socks5_ATYP.DomainName)
+                {
+                    throw new InvalidOperationException($"socks5 bind response support ipv4/ipv6 only");
+                }
 
+                return new IPEndPoint(socks5_RequestResponse.BNDADDR.IPAddress, socks5_RequestResponse.BNDPORT);
+            }
 
+            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            {
+                if (_stream is null)
+                    throw new InvalidOperationException($"Mustbe run {nameof(BindAsync)} first");
+                CheckIsDisposed();
 
-
-        //    internal async Task<IBindSource> InitBindAsync(Uri address)
-        //    {
-        //        await InitAsync();
-        //        if (await BindRequestAsync(address))
-        //        {
-        //            return this;
-        //        }
-        //        throw new Exception();
-        //    }
-
-        //    Socks5_RequestResponse? _socks5_RequestResponse = null;
-        //    async Task<bool> BindRequestAsync(Uri address)
-        //    {
-        //        if (_proxySource.IsSupportBind)
-        //        {
-        //            if (_stream is null) throw new InvalidOperationException();
-
-        //            Socks5_Request socks5_Connection = new Socks5_Request(Socks5_CMD.EstablishPortBinding, address);
-        //            await _stream.WriteAsync(socks5_Connection.GetByteArray(), _cancellationToken);
-        //            await _stream.FlushAsync(_cancellationToken);
-
-        //            _socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(_cancellationToken);
-        //            if (_socks5_RequestResponse.STATUS == Socks5_STATUS.RequestGranted)
-        //            {
-        //                return true;
-        //            }
-        //        }
-
-        //        return false;
-        //    }
-
-        //}
+                return Task.FromResult(_stream);
+            }
+        }
     }
 }

@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -58,10 +59,12 @@ namespace TqkLibrary.Proxy.ProxySources
                 TaskCompletionSource<TcpClient> tcs = new TaskCompletionSource<TcpClient>(TaskCreationOptions.RunContinuationsAsynchronously);
                 Action<TcpClient> action = (client) => tcs.TrySetResult(client);
 
-                if (_tcpClient is not null) tcs.TrySetResult(_tcpClient);
+                using CancellationTokenSource cts = new CancellationTokenSource(_proxySource.BindListenTimeout);
+                using var register = cts.Token.Register(() => tcs.TrySetException(new BindListenTimeoutException()));
                 try
                 {
                     OnEndAcceptTcpClient += action;
+                    if (_tcpClient is not null) tcs.TrySetResult(_tcpClient);
                     await tcs.Task;
                     return _tcpClient!.GetStream();
                 }

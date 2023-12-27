@@ -39,6 +39,7 @@ namespace TqkLibrary.Proxy.ProxySources
         /// window only
         /// </summary>
         public bool IsAllowNatTraversal { get; set; } = false;
+        public int BindListenTimeout { get; set; } = 30000;
 
         public IConnectSource GetConnectSource()
         {

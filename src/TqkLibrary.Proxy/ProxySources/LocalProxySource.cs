@@ -30,8 +30,15 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportUdp { get; set; } = true;
         public bool IsSupportIpv6 { get; set; } = true;
         public bool IsSupportBind { get; set; } = true;
+        /// <summary>
+        /// default or null: <see cref="IPAddress.Any"/>
+        /// </summary>
         public IPAddress? BindIpAddress { get; set; }
         public UInt16 BindListenPort { get; set; } = 0;
+        /// <summary>
+        /// window only
+        /// </summary>
+        public bool IsAllowNatTraversal { get; set; } = false;
 
         public IConnectSource GetConnectSource()
         {
@@ -40,8 +47,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public IBindSource GetBindSource()
         {
-            throw new NotSupportedException();
-            //return new BindTunnel(this);
+            return new BindTunnel(this);
         }
 
         public IUdpAssociateSource GetUdpAssociateSource()

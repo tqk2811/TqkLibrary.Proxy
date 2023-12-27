@@ -17,31 +17,47 @@ namespace TqkLibrary.Proxy.Helpers
     internal class Socks4_Request
     {
         const long socks4aDomain = 0x00000001; //0.0.0.x with x non-zero
-        public Socks4_Request(Socks4_CMD socks4_CMD, Uri uri, string? id = null)
+        private Socks4_Request()
         {
-            if (uri is null) throw new ArgumentNullException(nameof(uri));
 
+        }
+
+        public static Socks4_Request CreateConnect(Uri uri, string? id = null)
+        {
+            if (uri is null)
+                throw new ArgumentNullException(nameof(uri));
+
+            var result = new Socks4_Request()
+            {
+                CMD = Socks4_CMD.Connect,
+                DSTPORT = (UInt16)uri.Port,
+                ID = id ?? string.Empty
+            };
             switch (uri.HostNameType)
             {
                 case UriHostNameType.IPv4:
-                    this.DSTIP = IPAddress.Parse(uri.Host);
+                    result.DSTIP = IPAddress.Parse(uri.Host);
                     break;
 
                 case UriHostNameType.Dns:
-                    this.DOMAIN = uri.Host;
-                    this.DSTIP = new IPAddress(socks4aDomain);
+                    result.DOMAIN = uri.Host;
+                    result.DSTIP = new IPAddress(socks4aDomain);
                     break;
 
                 default:
                     throw new InvalidDataException($"Address input must be Ipv4 or Dns");
             }
-            this.CMD = socks4_CMD;
-            this.DSTPORT = (UInt16)uri.Port;
-            this.ID = id ?? string.Empty;
+            return result;
         }
-        private Socks4_Request()
+        public static Socks4_Request CreateBind(string? id = null)
         {
-
+            return new Socks4_Request()
+            {
+                CMD = Socks4_CMD.Bind,
+                DSTIP = IPAddress.Any,
+                DSTPORT = 0,
+                ID = id ?? string.Empty
+            };
         }
 
 

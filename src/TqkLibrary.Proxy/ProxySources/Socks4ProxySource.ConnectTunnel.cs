@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 await base._ConnectToSocksServerAsync(cancellationToken);
 
-                Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Connect, address, _proxySource.userId);
+                Socks4_Request socks4_Request = Socks4_Request.CreateConnect(address, _proxySource.userId);
                 byte[] buffer = socks4_Request.GetByteArray();
 
                 await base._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);

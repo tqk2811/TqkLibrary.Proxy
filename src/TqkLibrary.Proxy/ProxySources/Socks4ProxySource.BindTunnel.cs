@@ -8,46 +8,41 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks4ProxySource
     {
-        //class BindTunnel : BaseTunnel, IBindSource
-        //{
-        //    internal BindTunnel(Socks4ProxySource proxySource) : base(proxySource)
-        //    {
+        class BindTunnel : BaseTunnel, IBindSource
+        {
+            internal BindTunnel(Socks4ProxySource proxySource) : base(proxySource)
+            {
 
-        //    }
+            }
 
-        //    Socks4_RequestResponse? _socks4_RequestResponse;
-        //    public async Task InitAsync(Uri address, CancellationToken cancellationToken = default)
-        //    {
-        //        await _ConnectToSocksServerAsync();
+            Socks4_RequestResponse? _socks4_RequestResponse;
+            public async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
+            {
+                CheckIsDisposed();
+                await _ConnectToSocksServerAsync(cancellationToken);
 
-        //        Socks4_Request socks4_Request = new Socks4_Request(Socks4_CMD.Bind, address, _proxySource.userId);
+                Socks4_Request socks4_Request = Socks4_Request.CreateBind(_proxySource.userId);
 
-        //        byte[] buffer = socks4_Request.GetByteArray();
-        //        await this._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+                byte[] buffer = socks4_Request.GetByteArray();
+                await this._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
 
-        //        _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(cancellationToken);
-        //        if (_socks4_RequestResponse.REP != Socks4_REP.RequestGranted)
-        //        {
-        //            throw new InitConnectSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");
-        //        }
-        //    }
+                _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(cancellationToken);
+                if (_socks4_RequestResponse.REP != Socks4_REP.RequestGranted)
+                {
+                    throw new InitConnectSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");
+                }
 
-        //    public Task<IPEndPoint> InitListenAsync(CancellationToken cancellationToken = default)
-        //    {
-        //        if (_socks4_RequestResponse is null)
-        //            throw new InvalidOperationException();
+                return _socks4_RequestResponse.IPEndPoint;
+            }
 
-        //        return Task.FromResult(_socks4_RequestResponse.IPEndPoint);
-        //    }
+            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            {
+                if (_stream is null)
+                    throw new InvalidOperationException($"Mustbe run {nameof(BindAsync)} first");
+                CheckIsDisposed();
 
-        //    public Task<Stream> WaitConnectionAsync(CancellationToken cancellationToken = default)
-        //    {
-        //        if (_stream is null)
-        //            throw new InvalidOperationException();
-
-        //        return Task.FromResult(_stream);
-        //    }
-
-        //}
+                return Task.FromResult(_stream);
+            }
+        }
     }
 }

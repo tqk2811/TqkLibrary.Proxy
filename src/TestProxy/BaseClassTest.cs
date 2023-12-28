@@ -11,14 +11,11 @@ namespace TestProxy
 {
     public abstract class BaseClassTest : IDisposable
     {
-        protected readonly HttpClient _httpClient;
-        readonly BaseProxyServer _proxyServer;
-
+        protected readonly BaseProxyServer _proxyServer;
         protected BaseClassTest()
         {
             _proxyServer = CreateServer(GetProxySource());
             _proxyServer.StartListen();
-            _httpClient = new HttpClient(CreateHttpMessageHandler(_proxyServer), true);
         }
         ~BaseClassTest()
         {
@@ -31,11 +28,9 @@ namespace TestProxy
         }
         protected virtual void Dispose(bool isDisposing)
         {
-            _httpClient.Dispose();
             _proxyServer.Dispose();
         }
         protected abstract IProxySource GetProxySource();
         protected abstract BaseProxyServer CreateServer(IProxySource proxySource);
-        protected abstract HttpMessageHandler CreateHttpMessageHandler(BaseProxyServer baseProxyServer);
     }
 }

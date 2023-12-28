@@ -5,11 +5,25 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.ProxyServers;
 
 namespace TestProxy
 {
     public abstract class BaseConnectTest : BaseClassTest
     {
+        readonly HttpClient _httpClient;
+        public BaseConnectTest()
+        {
+            _httpClient = new HttpClient(CreateHttpMessageHandler(_proxyServer), true);
+        }
+        protected override void Dispose(bool isDisposing)
+        {
+            _httpClient.Dispose();
+            base.Dispose(isDisposing);
+        }
+        protected abstract HttpMessageHandler CreateHttpMessageHandler(BaseProxyServer baseProxyServer);
+
+
         [TestMethod]
         public async Task HttpGet()
         {

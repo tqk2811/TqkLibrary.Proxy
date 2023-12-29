@@ -49,6 +49,23 @@ namespace TqkLibrary.Proxy.ProxyServers
                 //    return;
                 //}
 
+
+                //connect to target
+                switch (socks4_Request.CMD)
+                {
+                    case Socks4_CMD.Connect:
+                        await _HandleConnectAsync(socks4_Request);
+                        return;
+
+                    case Socks4_CMD.Bind:
+                        await _HandleBindAsync();
+                        return;
+
+                }
+            }
+
+            async Task _HandleConnectAsync(Socks4_Request socks4_Request)
+            {
                 IPAddress? target_ip = null;
                 if (socks4_Request.IsDomain)
                 {
@@ -91,40 +108,9 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
 
-                //connect to target
-                switch (socks4_Request.CMD)
-                {
-                    case Socks4_CMD.Connect:
-                        await _EstablishStreamConnectionAsync(proxySource, target_ip, socks4_Request.DSTPORT);
-                        return;
-
-                    case Socks4_CMD.Bind:
-                        if (proxySource.IsSupportBind)
-                        {
-                            //not support now, write later
-                            //it create listen port on this IProxySource and transfer with current connection
-                            //and send reply ip:port listen
-                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                        }
-                        else
-                        {
-                            //not support
-                            await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
-                        }
-                        return;
-
-                }
-            }
-
-            async Task _EstablishStreamConnectionAsync(
-                IProxySource proxySource,
-                IPAddress target_ip,
-                UInt16 target_port
-                )
-            {
-                Uri uri = new Uri($"http://{target_ip}:{target_port}");
+                Uri uri_connect = new Uri($"http://{target_ip}:{socks4_Request.DSTPORT}");
                 using IConnectSource connectSource = proxySource.GetConnectSource();
-                await connectSource.ConnectAsync(uri, _cancellationToken);
+                await connectSource.ConnectAsync(uri_connect, _cancellationToken);
 
                 using Stream session_stream = await connectSource.GetStreamAsync();
 
@@ -133,9 +119,34 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                 //transfer until disconnect
                 await new StreamTransferHelper(_clientStream, session_stream)
-                    .DebugName(_clientEndPoint, uri)
+                    .DebugName(_clientEndPoint, uri_connect)
                     .WaitUntilDisconnect(_cancellationToken);
             }
+
+
+            async Task _HandleBindAsync()
+            {
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                if (!proxySource.IsSupportBind)
+                {
+                    await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                    return;
+                }
+
+                using IBindSource bindSource = proxySource.GetBindSource();
+                IPEndPoint iPEndPoint = await bindSource.BindAsync(_cancellationToken);
+
+                await _WriteReplyAsync(Socks4_REP.RequestGranted, iPEndPoint.Address, (UInt16)iPEndPoint.Port);
+                using Stream stream = await bindSource.GetStreamAsync(_cancellationToken);
+
+                //transfer until disconnect
+                await new StreamTransferHelper(_clientStream, stream)
+                    .DebugName(_clientEndPoint, iPEndPoint)
+                    .WaitUntilDisconnect(_cancellationToken);
+            }
+
+
+
 
             Task _WriteReplyAsync(Socks4_REP rep) => _WriteReplyAsync(rep, IPAddress.Any, 0);
 
@@ -147,12 +158,8 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (listen_ip.AddressFamily != AddressFamily.InterNetwork)
                     throw new InvalidDataException($"{nameof(listen_ip)}.{nameof(AddressFamily)} must be {nameof(AddressFamily.InterNetwork)}");
 
-                byte[] rep_buffer = new byte[8];
-                rep_buffer[0] = 0;
-                rep_buffer[1] = (byte)rep;
-                rep_buffer[2] = (byte)(listen_port >> 8);
-                rep_buffer[3] = (byte)listen_port;
-                listen_ip.GetAddressBytes().CopyTo(rep_buffer, 4);
+                Socks4_RequestResponse response = new Socks4_RequestResponse(rep, listen_ip, listen_port);
+                byte[] rep_buffer = response.GetByteArray();
 
                 _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 

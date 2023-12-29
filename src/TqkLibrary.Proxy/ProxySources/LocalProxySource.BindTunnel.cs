@@ -32,12 +32,12 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            public Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
+            public async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
             {
                 CheckIsDisposed();
                 if (_tcpListener is null)
                 {
-                    _tcpListener = new TcpListener(_proxySource.BindIpAddress ?? IPAddress.Any, _proxySource.BindListenPort);
+                    _tcpListener = new TcpListener(await _proxySource.Handler.GetListenEndPointAsync());
 #if NET5_0_OR_GREATER || NETSTANDARD
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 #endif
@@ -47,7 +47,8 @@ namespace TqkLibrary.Proxy.ProxySources
                     _tcpListener.Start();
                     _tcpListener.BeginAcceptTcpClient(OnBeginAcceptTcpClient, null);
                 }
-                return Task.FromResult((IPEndPoint)_tcpListener.LocalEndpoint);
+
+                return new IPEndPoint(await _proxySource.Handler.GetResponseIPAddressAsync(), ((IPEndPoint)_tcpListener.LocalEndpoint).Port);
             }
 
             public async Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)

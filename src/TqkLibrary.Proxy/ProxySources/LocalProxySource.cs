@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.StreamHeplers;
@@ -18,23 +19,19 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource : IProxySource, IHttpProxy
     {
+        public LocalProxySourceHandler Handler { get; }
         public LocalProxySource()
         {
-
+            Handler = new LocalProxySourceHandler();
         }
-        public LocalProxySource(IPAddress bindIpAddress)
+        public LocalProxySource(LocalProxySourceHandler handler)
         {
-            this.BindIpAddress = bindIpAddress;
+            this.Handler = handler ?? throw new ArgumentNullException(nameof(handler));
         }
 
         public bool IsSupportUdp { get; set; } = true;
         public bool IsSupportIpv6 { get; set; } = true;
         public bool IsSupportBind { get; set; } = true;
-        /// <summary>
-        /// default or null: <see cref="IPAddress.Any"/>
-        /// </summary>
-        public IPAddress? BindIpAddress { get; set; }
-        public UInt16 BindListenPort { get; set; } = 0;
         /// <summary>
         /// window only
         /// </summary>

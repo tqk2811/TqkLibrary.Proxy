@@ -34,5 +34,9 @@ namespace TestProxy.ServerTest
                 UseProxy = true,
             };
         }
+        protected override IProxySource GetSocksProxySource(BaseProxyServer baseProxyServer)
+        {
+            return new Socks4ProxySource(baseProxyServer.IPEndPoint);
+        }
     }
 }

@@ -109,7 +109,7 @@ namespace TqkLibrary.Proxy.Helpers
         {
             yield return this.VER;
             yield return (byte)this.CMD;
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.DSTPORT)))
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.DSTPORT)))
             {
                 yield return b;
             }

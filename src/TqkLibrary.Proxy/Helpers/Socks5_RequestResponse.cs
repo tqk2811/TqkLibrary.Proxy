@@ -57,7 +57,7 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder(this.BNDPORT)))
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.BNDPORT)))
             {
                 yield return b;
             }

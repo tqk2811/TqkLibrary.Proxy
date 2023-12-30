@@ -24,7 +24,7 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 => true;
+        public bool IsSupportIpv6 { get; set; } = true;
         public bool IsSupportBind => false;
 
         public IConnectSource GetConnectSource()

@@ -20,7 +20,7 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsUseSocks4A { get; set; } = true;
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => false;
-        public bool IsSupportBind => true;
+        public bool IsSupportBind { get; set; } = true;
 
         public IConnectSource GetConnectSource()
         {

@@ -20,9 +20,9 @@ namespace TqkLibrary.Proxy.ProxySources
             this.HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
-        public bool IsSupportUdp => true;
-        public bool IsSupportIpv6 => true;
-        public bool IsSupportBind => true;
+        public bool IsSupportUdp { get; set; } = true;
+        public bool IsSupportIpv6 { get; set; } = true;
+        public bool IsSupportBind { get; set; } = true;
 
         public IConnectSource GetConnectSource()
         {

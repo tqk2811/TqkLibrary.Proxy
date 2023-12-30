@@ -66,7 +66,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 Socks5_Request socks5_Request = await _clientStream.Read_Socks5_Request_Async(_cancellationToken);
                 if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(socks5_Request.Uri, _cancellationToken))
                 {
-                    switch(socks5_Request.CMD)
+                    switch (socks5_Request.CMD)
                     {
                         case Socks5_CMD.EstablishStreamConnection:
                             await _EstablishStreamConnectionAsync(socks5_Request.Uri);
@@ -122,6 +122,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task _EstablishPortBinding()
             {
                 IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                if (!proxySource.IsSupportBind)
+                {
+                    await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
+                    return;
+                }
+
                 using IBindSource bindSource = proxySource.GetBindSource();
                 IPEndPoint listen_endpoint = await bindSource.BindAsync(_cancellationToken);
 

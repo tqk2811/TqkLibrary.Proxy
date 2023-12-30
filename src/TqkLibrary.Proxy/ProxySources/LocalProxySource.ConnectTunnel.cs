@@ -29,6 +29,38 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
+            static readonly IEnumerable<string> _SupportUriSchemes = new string[]
+            {
+                Uri.UriSchemeHttp,
+                Uri.UriSchemeHttps,
+                Uri.UriSchemeFtp,
+                Uri.UriSchemeNetTcp,
+                Uri.UriSchemeNetPipe,
+                Uri.UriSchemeNews,
+                Uri.UriSchemeNntp,
+                Uri.UriSchemeFile,
+                Uri.UriSchemeGopher,
+                Uri.UriSchemeMailto,
+                "tcp",
+#if NET6_0_OR_GREATER
+                Uri.UriSchemeWs,
+                Uri.UriSchemeWss,
+                Uri.UriSchemeFtps,
+                Uri.UriSchemeSsh,
+                Uri.UriSchemeTelnet,
+                Uri.UriSchemeSftp,
+                Uri.UriSchemeNntp,
+#else
+                "ws",
+                "wss",
+                "ftps",
+                "ssh",
+                "telnet",
+                "sftp",
+                "nntp",
+#endif
+            };
+
             public async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
             {
                 if (address is null)
@@ -41,27 +73,23 @@ namespace TqkLibrary.Proxy.ProxySources
                     case UriHostNameType.IPv4:
                     case UriHostNameType.IPv6:
                         {
-                            switch (address.Scheme.ToLower())
+                            if (!_proxySource.IsSupportIpv6 && address.HostNameType == UriHostNameType.IPv6)
+                                throw new NotSupportedException($"IpV6 are not support");
+
+                            if (_SupportUriSchemes.Any(x => x.Equals(address.Scheme, StringComparison.InvariantCulture)))
                             {
-                                case "http":// http proxy
-                                case "https":
-
-                                case "ws":// for http request (not CONNECT)
-                                case "wss":
-
-                                case "tcp":// socks4 / socks5
-                                    {
+                                await _tcpClient.ConnectAsync(
+                                    address.Host, 
+                                    address.Port
 #if NET5_0_OR_GREATER
-                                        await _tcpClient.ConnectAsync(address.Host, address.Port, cancellationToken);
-#else
-                                        await _tcpClient.ConnectAsync(address.Host, address.Port);
+                                    , cancellationToken
 #endif
-                                        _stream = _tcpClient.GetStream();
-                                    }
-                                    break;
-
-                                default:
-                                    throw new NotSupportedException(address.Scheme);
+                                );
+                                _stream = _tcpClient.GetStream();
+                            }
+                            else
+                            {
+                                throw new NotSupportedException(address.Scheme);
                             }
                         }
                         break;

@@ -1,4 +1,25 @@
 # TqkLibrary.Proxy
-Note: This is unfinished project  
-HttpProxy, socks4, socks5 work well with connect.  
-But bind (socks4, socks5), and udp (socks5) i can't find software for test  
+- Source
+    - Local Source 
+        - [x] Connect  
+        - [x] Bind  
+        - [ ] Udp  
+    - Http Source
+        - [x] Connect  
+    - Socks4 Source
+        - [x] Connect  
+        - [x] Bind
+    - Socks5 Source
+        - [x] Connect
+        - [x] Bind
+        - [ ] Udp
+- Server
+    - Http Proxy Server
+        - [x] Connect  
+    - Socks4 Proxy Server
+        - [x] Connect  
+        - [x] Bind
+    - Socks5 Proxy Server
+        - [x] Connect
+        - [x] Bind
+        - [ ] Udp

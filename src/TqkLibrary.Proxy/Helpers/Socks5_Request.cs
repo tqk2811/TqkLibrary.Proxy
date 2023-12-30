@@ -54,7 +54,21 @@ namespace TqkLibrary.Proxy.Helpers
         internal byte RSV { get; private set; }
         internal Socks5_DSTADDR DSTADDR { get; private set; }
         internal UInt16 DSTPORT { get; private set; }
-
+        internal Uri Uri
+        {
+            get
+            {
+                string scheme = DSTADDR.ATYP switch
+                {
+                    Socks5_ATYP.IpV6 => "tcp",
+                    Socks5_ATYP.IpV4 => "tcp",
+                    Socks5_ATYP.DomainName => "http",
+                    _ => throw new NotSupportedException($"{DSTADDR.ATYP}"),
+                };
+                string host = DSTADDR.ATYP == Socks5_ATYP.DomainName ? DSTADDR.Domain : DSTADDR.IPAddress.ToString();
+                return new Uri($"{scheme}://{host}:{DSTPORT}");
+            }
+        }
 
         internal static async Task<Socks5_Request> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {

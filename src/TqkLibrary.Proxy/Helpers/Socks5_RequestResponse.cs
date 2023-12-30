@@ -15,11 +15,13 @@ namespace TqkLibrary.Proxy.Helpers
     /// </summary>
     internal class Socks5_RequestResponse
     {
-        internal Socks5_RequestResponse(Socks5_STATUS socks5_STATUS, Uri uri)
+        internal Socks5_RequestResponse(Socks5_STATUS socks5_STATUS, IPEndPoint iPEndPoint)
         {
+            if (iPEndPoint is null)
+                throw new ArgumentNullException(nameof(iPEndPoint));
             this.STATUS = socks5_STATUS;
-            this.BNDADDR = new Socks5_DSTADDR(uri);
-            this.BNDPORT = (UInt16)uri.Port;
+            this.BNDADDR = new Socks5_DSTADDR(iPEndPoint.Address);
+            this.BNDPORT = (UInt16)iPEndPoint.Port;
         }
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private Socks5_RequestResponse()
@@ -42,7 +44,7 @@ namespace TqkLibrary.Proxy.Helpers
             socks5_ConnectionResponse.STATUS = (Socks5_STATUS)buffer[1];
             socks5_ConnectionResponse.RSV = buffer[2];
             socks5_ConnectionResponse.BNDADDR = await stream.Read_Socks5_DSTADDR_Async(cancellationToken);
-            socks5_ConnectionResponse.BNDPORT = (UInt16)IPAddress.NetworkToHostOrder(BitConverter.ToInt16(await stream.ReadBytesAsync(2, cancellationToken), 0));
+            socks5_ConnectionResponse.BNDPORT = (UInt16)IPAddress.NetworkToHostOrder((short)BitConverter.ToUInt16(await stream.ReadBytesAsync(2, cancellationToken), 0));
             return socks5_ConnectionResponse;
         }
 

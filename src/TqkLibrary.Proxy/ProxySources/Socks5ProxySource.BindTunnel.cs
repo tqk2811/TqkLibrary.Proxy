@@ -24,9 +24,9 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 Socks5_Request socks5_Connection = Socks5_Request.CreateBind();
                 await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);
-                await _stream.FlushAsync(cancellationToken);
+                await _stream!.FlushAsync(cancellationToken);
 
-                Socks5_RequestResponse socks5_RequestResponse = await _stream.Read_Socks5_RequestResponse_Async(cancellationToken);
+                Socks5_RequestResponse socks5_RequestResponse = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
 
                 if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
                 {

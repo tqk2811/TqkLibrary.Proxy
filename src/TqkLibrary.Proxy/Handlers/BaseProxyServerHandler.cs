@@ -81,7 +81,36 @@ namespace TqkLibrary.Proxy.Handlers
         public virtual Task<bool> IsAcceptDomainFilterAsync(Uri uri, CancellationToken cancellationToken = default)
         {
             if (_parent is not null) return _parent.IsAcceptDomainFilterAsync(uri, cancellationToken);
-            else return Task.FromResult(true);
+            else
+            {
+                if (uri is null)
+                    throw new ArgumentNullException(nameof(uri));
+                bool isAccept = true;
+                switch (uri.HostNameType)
+                {
+                    case UriHostNameType.Dns:
+                        if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isAccept = false;
+                        }
+                        break;
+
+                    case UriHostNameType.IPv4:
+                        if (uri.Host.StartsWith("127.", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isAccept = false;
+                        }
+                        break;
+
+                    case UriHostNameType.IPv6:
+                        if (uri.Host.Equals("[::1]", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isAccept = false;
+                        }
+                        break;
+                }
+                return Task.FromResult(isAccept);
+            }
         }
     }
 }

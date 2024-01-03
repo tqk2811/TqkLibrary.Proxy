@@ -32,7 +32,14 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InitConnectSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");
                 }
 
-                return _socks4_RequestResponse.IPEndPoint;
+                if (_socks4_RequestResponse.DSTIP.Equals(IPAddress.Any))
+                {
+                    return new IPEndPoint(_proxySource.iPEndPoint.Address, _socks4_RequestResponse.DSTPORT);
+                }
+                else
+                {
+                    return _socks4_RequestResponse.IPEndPoint;
+                }
             }
 
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)

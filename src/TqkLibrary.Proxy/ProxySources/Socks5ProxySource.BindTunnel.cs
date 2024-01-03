@@ -37,7 +37,15 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InvalidOperationException($"socks5 bind response support ipv4/ipv6 only");
                 }
 
-                return new IPEndPoint(socks5_RequestResponse.BNDADDR.IPAddress, socks5_RequestResponse.BNDPORT);
+
+                if (socks5_RequestResponse.BNDADDR.IPAddress.Equals(IPAddress.Any) || socks5_RequestResponse.BNDADDR.IPAddress.Equals(IPAddress.IPv6Any))
+                {
+                    return new IPEndPoint(_proxySource.IPEndPoint.Address, socks5_RequestResponse.BNDPORT);
+                }
+                else
+                {
+                    return new IPEndPoint(socks5_RequestResponse.BNDADDR.IPAddress, socks5_RequestResponse.BNDPORT);
+                }
             }
 
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)

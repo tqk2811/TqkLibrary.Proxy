@@ -77,8 +77,11 @@ namespace TqkLibrary.Proxy.ProxyServers
                             break;
 
                         case Socks5_CMD.AssociateUDP:
+
+
                         default:
-                            throw new NotSupportedException($"{nameof(Socks5_CMD)}: {socks5_Request.CMD:X2}");
+                            await _WriteReplyConnectionRequestAsync(Socks5_STATUS.CommandNotSupportedOrProtocolError);
+                            break;
                     }
                 }
                 else

@@ -29,7 +29,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(cancellationToken);
                 if (_socks4_RequestResponse.REP != Socks4_REP.RequestGranted)
                 {
-                    throw new InitConnectSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");
+                    throw new InitBindSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");
                 }
 
                 if (_socks4_RequestResponse.DSTIP.Equals(IPAddress.Any))

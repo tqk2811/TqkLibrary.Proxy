@@ -30,7 +30,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
                 {
-                    throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
+                    throw new InitBindSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
                 }
                 if (socks5_RequestResponse.BNDADDR.ATYP == Socks5_ATYP.DomainName)
                 {

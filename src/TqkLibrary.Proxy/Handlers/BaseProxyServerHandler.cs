@@ -54,9 +54,9 @@ namespace TqkLibrary.Proxy.Handlers
         /// <param name="tcpClient"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task<bool> IsAcceptClientFilterAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
+        public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
         {
-            if (_parent is not null) return _parent.IsAcceptClientFilterAsync(tcpClient, cancellationToken);
+            if (_parent is not null) return _parent.IsAcceptClientAsync(tcpClient, cancellationToken);
             else return Task.FromResult(true);
         }
 

@@ -117,7 +117,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             {
                 using (tcpClient)
                 {
-                    if (await _baseProxyServerHandler.IsAcceptClientFilterAsync(tcpClient, _CancellationToken))
+                    if (await _baseProxyServerHandler.IsAcceptClientAsync(tcpClient, _CancellationToken))
                     {
                         using Stream stream = await _baseProxyServerHandler.StreamFilterAsync(tcpClient.GetStream(), _CancellationToken);
                         await ProxyWorkAsync(stream, tcpClient.Client.RemoteEndPoint!, _CancellationToken);

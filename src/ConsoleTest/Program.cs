@@ -14,6 +14,8 @@ Uri uri5 = new Uri("tcp://httpbin.org:8080");
 Uri uri6 = new Uri("udp://httpbin.org:8080");
 Uri uri7 = new Uri("tcp://127.0.0.1:13566");
 Uri uri8 = new Uri("udp://[::1]:13566");
+Uri uri9 = new Uri("http://[0:0:0:0:0:0:0:1]:13566");
+Uri uri10 = new Uri("http://localhost:13566");
 
 //string strHostName = Dns.GetHostName();
 //Console.WriteLine("Local Machine's Host Name: " + strHostName);

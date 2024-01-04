@@ -66,9 +66,9 @@ namespace TqkLibrary.Proxy.Handlers
         /// <param name="networkStream"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task<Stream> StreamFilterAsync(Stream networkStream, CancellationToken cancellationToken = default)
+        public virtual Task<Stream> StreamHandlerAsync(Stream networkStream, CancellationToken cancellationToken = default)
         {
-            if (_parent is not null) return _parent.StreamFilterAsync(networkStream, cancellationToken);
+            if (_parent is not null) return _parent.StreamHandlerAsync(networkStream, cancellationToken);
             else return Task.FromResult(networkStream);
         }
 

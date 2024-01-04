@@ -88,7 +88,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                     client_isKeepAlive = _client_HeaderParse.IsKeepAlive;
 
-                    if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(_client_HeaderParse.Uri, _cancellationToken))
+                    if (await _proxyServer.Handler.IsAcceptDomainAsync(_client_HeaderParse.Uri, _cancellationToken))
                     {
                         IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
                         using IConnectSource connectSource = proxySource.GetConnectSource();

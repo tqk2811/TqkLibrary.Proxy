@@ -64,7 +64,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task _ClientConnectionRequest()
             {
                 Socks5_Request socks5_Request = await _clientStream.Read_Socks5_Request_Async(_cancellationToken);
-                if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(socks5_Request.Uri, _cancellationToken))
+                if (await _proxyServer.Handler.IsAcceptDomainAsync(socks5_Request.Uri, _cancellationToken))
                 {
                     switch (socks5_Request.CMD)
                     {

@@ -76,7 +76,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     }
 
                     Uri uri = new Uri($"tcp://{socks4_Request.DOMAIN}:{socks4_Request.DSTPORT}");
-                    if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                    if (await _proxyServer.Handler.IsAcceptDomainAsync(uri, _cancellationToken))
                     {
                         //ipv4 only because need to response
                         target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
@@ -95,7 +95,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 else
                 {
                     Uri uri = new Uri($"tcp://{socks4_Request.DSTIP}:{socks4_Request.DSTPORT}");
-                    if (await _proxyServer.Handler.IsAcceptDomainFilterAsync(uri, _cancellationToken))
+                    if (await _proxyServer.Handler.IsAcceptDomainAsync(uri, _cancellationToken))
                     {
                         target_ip = socks4_Request.DSTIP;
                     }

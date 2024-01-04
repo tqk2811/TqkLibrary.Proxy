@@ -78,9 +78,9 @@ namespace TqkLibrary.Proxy.Handlers
         /// <param name="uri"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public virtual Task<bool> IsAcceptDomainFilterAsync(Uri uri, CancellationToken cancellationToken = default)
+        public virtual Task<bool> IsAcceptDomainAsync(Uri uri, CancellationToken cancellationToken = default)
         {
-            if (_parent is not null) return _parent.IsAcceptDomainFilterAsync(uri, cancellationToken);
+            if (_parent is not null) return _parent.IsAcceptDomainAsync(uri, cancellationToken);
             else
             {
                 if (uri is null)

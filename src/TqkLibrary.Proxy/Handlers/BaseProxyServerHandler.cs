@@ -33,9 +33,9 @@ namespace TqkLibrary.Proxy.Handlers
         }
 
 
-        public virtual Task<IProxySource> GetProxySourceAsync(CancellationToken cancellationToken = default)
+        public virtual Task<IProxySource> GetProxySourceAsync(Uri? uri, CancellationToken cancellationToken = default)
         {
-            if (_parent is not null) return _parent.GetProxySourceAsync(cancellationToken);
+            if (_parent is not null) return _parent.GetProxySourceAsync(uri, cancellationToken);
             else
             {
                 if (_proxySource is not null)

@@ -90,7 +90,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
                     if (await _proxyServer.Handler.IsAcceptDomainAsync(_client_HeaderParse.Uri, _cancellationToken))
                     {
-                        IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                        IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_client_HeaderParse.Uri, _cancellationToken);
                         using IConnectSource connectSource = proxySource.GetConnectSource();
                         await connectSource.ConnectAsync(_client_HeaderParse.Uri, _cancellationToken);
                         using Stream source_stream = await connectSource.GetStreamAsync();

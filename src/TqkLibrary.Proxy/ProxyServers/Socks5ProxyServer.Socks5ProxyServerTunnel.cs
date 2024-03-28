@@ -109,7 +109,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task _EstablishStreamConnectionAsync(Uri uri)
             {
-                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(uri, _cancellationToken);
                 using IConnectSource connectSource = proxySource.GetConnectSource();
                 await connectSource.ConnectAsync(uri, _cancellationToken);
                 using Stream session_stream = await connectSource.GetStreamAsync();
@@ -124,7 +124,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task _EstablishPortBinding()
             {
-                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(null, _cancellationToken);
                 if (!proxySource.IsSupportBind)
                 {
                     await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);

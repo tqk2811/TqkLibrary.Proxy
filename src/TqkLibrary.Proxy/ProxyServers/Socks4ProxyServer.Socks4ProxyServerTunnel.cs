@@ -67,6 +67,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             async Task _HandleConnectAsync(Socks4_Request socks4_Request)
             {
                 IPAddress? target_ip = null;
+                Uri uri;
                 if (socks4_Request.IsDomain)
                 {
                     if (string.IsNullOrWhiteSpace(socks4_Request.DOMAIN))
@@ -75,7 +76,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                         return;
                     }
 
-                    Uri uri = new Uri($"tcp://{socks4_Request.DOMAIN}:{socks4_Request.DSTPORT}");
+                    uri = new Uri($"tcp://{socks4_Request.DOMAIN}:{socks4_Request.DSTPORT}");
                     if (await _proxyServer.Handler.IsAcceptDomainAsync(uri, _cancellationToken))
                     {
                         //ipv4 only because need to response
@@ -94,7 +95,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 }
                 else
                 {
-                    Uri uri = new Uri($"tcp://{socks4_Request.DSTIP}:{socks4_Request.DSTPORT}");
+                    uri = new Uri($"tcp://{socks4_Request.DSTIP}:{socks4_Request.DSTPORT}");
                     if (await _proxyServer.Handler.IsAcceptDomainAsync(uri, _cancellationToken))
                     {
                         target_ip = socks4_Request.DSTIP;
@@ -106,7 +107,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     }
                 }
 
-                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(uri, _cancellationToken);
 
                 Uri uri_connect = new Uri($"http://{target_ip}:{socks4_Request.DSTPORT}");
                 using IConnectSource connectSource = proxySource.GetConnectSource();
@@ -126,7 +127,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             async Task _HandleBindAsync()
             {
-                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(_cancellationToken);
+                IProxySource proxySource = await _proxyServer.Handler.GetProxySourceAsync(null, _cancellationToken);
                 if (!proxySource.IsSupportBind)
                 {
                     await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);

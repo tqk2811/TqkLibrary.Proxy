@@ -24,9 +24,9 @@ namespace TqkLibrary.Proxy.ProxySources
                 Socks4_Request socks4_Request = Socks4_Request.CreateBind(_proxySource.userId);
 
                 byte[] buffer = socks4_Request.GetByteArray();
-                await this._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+                await _stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
 
-                _socks4_RequestResponse = await this._stream.Read_Socks4_RequestResponse_Async(cancellationToken);
+                _socks4_RequestResponse = await _stream.Read_Socks4_RequestResponse_Async(cancellationToken);
                 if (_socks4_RequestResponse.REP != Socks4_REP.RequestGranted)
                 {
                     throw new InitBindSourceFailedException($"{nameof(Socks4_REP)}: {_socks4_RequestResponse.REP}");

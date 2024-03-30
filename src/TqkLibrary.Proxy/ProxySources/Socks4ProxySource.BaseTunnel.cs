@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Enums;
-using TqkLibrary.Proxy.Helpers;
-using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.StreamHeplers;
+﻿using System.Net.Sockets;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -38,7 +27,7 @@ namespace TqkLibrary.Proxy.ProxySources
 #else
                 await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port);
 #endif
-                this._stream = _tcpClient.GetStream();
+                _stream = _tcpClient.GetStream();
             }
 
         }

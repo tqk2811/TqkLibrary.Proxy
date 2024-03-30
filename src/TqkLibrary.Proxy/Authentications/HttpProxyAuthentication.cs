@@ -8,8 +8,8 @@ namespace TqkLibrary.Proxy.Authentications
         {
             if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentNullException(nameof(userName));
             if (string.IsNullOrWhiteSpace(password)) throw new ArgumentNullException(nameof(password));
-            this.UserName = userName;
-            this.Password = password;
+            UserName = userName;
+            Password = password;
         }
 
         public string UserName { get; }
@@ -22,7 +22,7 @@ namespace TqkLibrary.Proxy.Authentications
 
             if (obj is HttpProxyAuthentication httpProxyAuthentication)
             {
-                return this.GetHashCode() == httpProxyAuthentication.GetHashCode();
+                return GetHashCode() == httpProxyAuthentication.GetHashCode();
             }
 
             return false;

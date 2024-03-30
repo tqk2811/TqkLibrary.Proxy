@@ -1,25 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    internal abstract class BaseProxySourceTunnel<T> : IDisposable
+    internal abstract class BaseProxySourceTunnel<T> : BaseLogger, IDisposable
         where T : class, IProxySource
     {
-        protected readonly ILogger? _logger;
         protected readonly T _proxySource;
         private bool _IsDisposed = false;
         protected BaseProxySourceTunnel(T proxySource)
         {
-            this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
-            _logger = Singleton.LoggerFactory?.CreateLogger(this.GetType());
+            _proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
         }
         ~BaseProxySourceTunnel()
         {
@@ -38,7 +29,7 @@ namespace TqkLibrary.Proxy.ProxySources
         protected void CheckIsDisposed()
         {
             if (_IsDisposed)
-                throw new ObjectDisposedException(this.GetType().FullName);
+                throw new ObjectDisposedException(GetType().FullName);
         }
     }
 }

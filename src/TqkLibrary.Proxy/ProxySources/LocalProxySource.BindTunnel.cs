@@ -1,15 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -37,7 +31,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 CheckIsDisposed();
                 if (_tcpListener is null)
                 {
-                    _tcpListener = new TcpListener(await _proxySource.Handler.GetListenEndPointAsync());
+                    _tcpListener = new TcpListener(await _proxySource.GetListenEndPointAsync());
 #if NET5_0_OR_GREATER || NETSTANDARD
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 #endif
@@ -48,7 +42,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     _tcpListener.BeginAcceptTcpClient(OnBeginAcceptTcpClient, null);
                 }
 
-                return new IPEndPoint(await _proxySource.Handler.GetResponseIPAddressAsync(), ((IPEndPoint)_tcpListener.LocalEndpoint).Port);
+                return new IPEndPoint(await _proxySource.GetResponseIPAddressAsync(), ((IPEndPoint)_tcpListener.LocalEndpoint).Port);
             }
 
             public async Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)

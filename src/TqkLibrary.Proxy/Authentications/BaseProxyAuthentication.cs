@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.Authentications
 {
     /// <summary>
     /// 
     /// </summary>
-    public abstract class BaseProxyAuthentication
+    public abstract class BaseProxyAuthentication : IAuthentication
     {
         /// <summary>
         /// 

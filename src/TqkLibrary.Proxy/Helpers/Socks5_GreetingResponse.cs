@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Enums;
+﻿using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -15,7 +10,7 @@ namespace TqkLibrary.Proxy.Helpers
     {
         internal Socks5_GreetingResponse(Socks5_Auth socks5_Auth)
         {
-            this.CAUTH = socks5_Auth;
+            CAUTH = socks5_Auth;
         }
 
         private Socks5_GreetingResponse()

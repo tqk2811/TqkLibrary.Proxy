@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -93,7 +88,7 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.DSTPORT)))
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)DSTPORT)))
             {
                 yield return b;
             }

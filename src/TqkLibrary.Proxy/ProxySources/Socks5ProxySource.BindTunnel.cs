@@ -1,10 +1,9 @@
 ﻿using System.Net;
-using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Exceptions;
+using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
-using System.Threading;
-using TqkLibrary.Proxy.Exceptions;
 
 namespace TqkLibrary.Proxy.ProxySources
 {

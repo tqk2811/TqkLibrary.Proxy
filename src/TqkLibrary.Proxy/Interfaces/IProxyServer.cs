@@ -1,13 +1,9 @@
-﻿namespace TqkLibrary.Proxy.Interfaces
+﻿using System.Net;
+
+namespace TqkLibrary.Proxy.Interfaces
 {
-    public interface IProxyServer: IDisposable
+    public interface IProxyServer
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="allowNatTraversal">Window Only</param>
-        void StartListen(bool allowNatTraversal = false);
-        void StopListen();
-        void ShutdownCurrentConnection();
+        Task ProxyWorkAsync(Stream clientStream, IPEndPoint clientEndPoint, IProxyServerHandler proxyServerHandler, CancellationToken cancellationToken = default);
     }
 }

@@ -1,9 +1,6 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 using TqkLibrary.Proxy.Authentications;
-using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -13,11 +10,11 @@ namespace TqkLibrary.Proxy.ProxySources
         public HttpProxyAuthentication? HttpProxyAuthentication { get; }
         public Socks5ProxySource(IPEndPoint iPEndPoint)
         {
-            this.IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
+            IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
         }
         public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication) : this(iPEndPoint)
         {
-            this.HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
+            HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
         public bool IsSupportUdp { get; set; } = true;

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -47,13 +42,13 @@ namespace TqkLibrary.Proxy.Helpers
             switch (iPAddress.AddressFamily)
             {
                 case AddressFamily.InterNetwork:
-                    this.IPAddress = iPAddress;
-                    this.ATYP = Socks5_ATYP.IpV4;
+                    IPAddress = iPAddress;
+                    ATYP = Socks5_ATYP.IpV4;
                     break;
 
                 case AddressFamily.InterNetworkV6:
-                    this.IPAddress = iPAddress;
-                    this.ATYP = Socks5_ATYP.IpV6;
+                    IPAddress = iPAddress;
+                    ATYP = Socks5_ATYP.IpV6;
                     break;
 
                 default:

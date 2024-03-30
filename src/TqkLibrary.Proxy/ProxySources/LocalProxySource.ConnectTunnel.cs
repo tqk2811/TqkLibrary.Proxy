@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.StreamHeplers;
-using System.Threading;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -79,7 +71,7 @@ namespace TqkLibrary.Proxy.ProxySources
                             if (_SupportUriSchemes.Any(x => x.Equals(address.Scheme, StringComparison.InvariantCulture)))
                             {
                                 await _tcpClient.ConnectAsync(
-                                    address.Host, 
+                                    address.Host,
                                     address.Port
 #if NET5_0_OR_GREATER
                                     , cancellationToken

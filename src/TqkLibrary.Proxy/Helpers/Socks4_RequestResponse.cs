@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -20,27 +15,27 @@ namespace TqkLibrary.Proxy.Helpers
             if (uri is null) throw new ArgumentNullException(nameof(uri));
             if (uri.HostNameType != UriHostNameType.IPv4) throw new InvalidDataException($"Address input must be Ipv4");
 
-            this.REP = socks4_REP;
-            this.DSTIP = IPAddress.Parse(uri.Host);
-            this.DSTPORT = (UInt16)uri.Port;
+            REP = socks4_REP;
+            DSTIP = IPAddress.Parse(uri.Host);
+            DSTPORT = (UInt16)uri.Port;
         }
         public Socks4_RequestResponse(Socks4_REP socks4_REP, IPEndPoint iPEndPoint)
         {
             if (iPEndPoint is null) throw new ArgumentNullException(nameof(iPEndPoint));
             if (iPEndPoint.AddressFamily != AddressFamily.InterNetwork) throw new InvalidDataException($"Address input must be Ipv4");
 
-            this.REP = socks4_REP;
-            this.DSTIP = iPEndPoint.Address;
-            this.DSTPORT = (UInt16)iPEndPoint.Port;
+            REP = socks4_REP;
+            DSTIP = iPEndPoint.Address;
+            DSTPORT = (UInt16)iPEndPoint.Port;
         }
         public Socks4_RequestResponse(Socks4_REP socks4_REP, IPAddress dstIp, UInt16 dstPort)
         {
             if (dstIp is null) throw new ArgumentNullException(nameof(dstIp));
             if (dstIp.AddressFamily != AddressFamily.InterNetwork) throw new InvalidDataException($"Address input must be Ipv4");
 
-            this.REP = socks4_REP;
-            this.DSTIP = dstIp;
-            this.DSTPORT = dstPort;
+            REP = socks4_REP;
+            DSTIP = dstIp;
+            DSTPORT = dstPort;
         }
         private Socks4_RequestResponse()
         {
@@ -75,13 +70,13 @@ namespace TqkLibrary.Proxy.Helpers
         internal byte[] GetByteArray() => GetBytes().ToArray();
         internal IEnumerable<byte> GetBytes()
         {
-            yield return this.VN;
-            yield return (byte)this.REP;
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.DSTPORT)))
+            yield return VN;
+            yield return (byte)REP;
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)DSTPORT)))
             {
                 yield return b;
             }
-            foreach (byte b in this.DSTIP.GetAddressBytes())
+            foreach (byte b in DSTIP.GetAddressBytes())
             {
                 yield return b;
             }

@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using TqkLibrary.Proxy.Enums;
+﻿using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
@@ -36,11 +35,11 @@ namespace TqkLibrary.Proxy.ProxySources
 
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
-                if (this._stream is null)
+                if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(ConnectAsync)} first");
                 CheckIsDisposed();
 
-                return Task.FromResult(this._stream);
+                return Task.FromResult(_stream);
             }
         }
     }

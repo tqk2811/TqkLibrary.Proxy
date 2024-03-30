@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TqkLibrary.Proxy.Enums
+﻿namespace TqkLibrary.Proxy.Enums
 {
     public enum Socks5_Auth : byte
     {

@@ -1,57 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
-using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource : IProxySource, IHttpProxy
     {
-        public LocalProxySourceHandler Handler { get; }
-        public LocalProxySource()
-        {
-            Handler = new LocalProxySourceHandler();
-        }
-        public LocalProxySource(LocalProxySourceHandler handler)
-        {
-            this.Handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        }
-
-        public bool IsSupportUdp { get; set; } = true;
-        public bool IsSupportIpv6 { get; set; } = true;
-        public bool IsSupportBind { get; set; } = true;
+        public virtual bool IsSupportUdp { get; set; } = true;
+        public virtual bool IsSupportIpv6 { get; set; } = true;
+        public virtual bool IsSupportBind { get; set; } = true;
         /// <summary>
         /// window only
         /// </summary>
-        public bool IsAllowNatTraversal { get; set; } = false;
-        public int BindListenTimeout { get; set; } = 30000;
+        public virtual bool IsAllowNatTraversal { get; set; } = false;
+        public virtual int BindListenTimeout { get; set; } = 30000;
 
-        public IConnectSource GetConnectSource()
+        public virtual IConnectSource GetConnectSource()
         {
             return new ConnectTunnel(this);
         }
 
-        public IBindSource GetBindSource()
+        public virtual IBindSource GetBindSource()
         {
             return new BindTunnel(this);
         }
 
-        public IUdpAssociateSource GetUdpAssociateSource()
+        public virtual IUdpAssociateSource GetUdpAssociateSource()
         {
             throw new NotSupportedException();
             //return new UdpTunnel(this);
+        }
+
+        public virtual Task<IPEndPoint> GetListenEndPointAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new IPEndPoint(IPAddress.Any, 0));
+        }
+        public virtual Task<IPAddress> GetResponseIPAddressAsync(CancellationToken cancellationToken = default)
+        {
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            {
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = (IPEndPoint)socket.LocalEndPoint;
+                return Task.FromResult(endPoint.Address);
+            }
         }
     }
 }

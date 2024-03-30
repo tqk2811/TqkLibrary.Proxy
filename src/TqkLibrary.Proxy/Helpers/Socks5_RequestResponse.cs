@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -19,9 +13,9 @@ namespace TqkLibrary.Proxy.Helpers
         {
             if (iPEndPoint is null)
                 throw new ArgumentNullException(nameof(iPEndPoint));
-            this.STATUS = socks5_STATUS;
-            this.BNDADDR = new Socks5_DSTADDR(iPEndPoint.Address);
-            this.BNDPORT = (UInt16)iPEndPoint.Port;
+            STATUS = socks5_STATUS;
+            BNDADDR = new Socks5_DSTADDR(iPEndPoint.Address);
+            BNDPORT = (UInt16)iPEndPoint.Port;
         }
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private Socks5_RequestResponse()
@@ -59,7 +53,7 @@ namespace TqkLibrary.Proxy.Helpers
             {
                 yield return b;
             }
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.BNDPORT)))
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)BNDPORT)))
             {
                 yield return b;
             }

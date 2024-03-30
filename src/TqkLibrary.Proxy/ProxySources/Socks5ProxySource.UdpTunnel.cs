@@ -1,6 +1,4 @@
-﻿using TqkLibrary.Proxy.Interfaces;
-
-namespace TqkLibrary.Proxy.ProxySources
+﻿namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {

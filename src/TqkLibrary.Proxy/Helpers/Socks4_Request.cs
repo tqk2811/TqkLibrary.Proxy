@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
+﻿using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
@@ -107,29 +101,29 @@ namespace TqkLibrary.Proxy.Helpers
         internal byte[] GetByteArray() => GetBytes().ToArray();
         internal IEnumerable<byte> GetBytes()
         {
-            yield return this.VER;
-            yield return (byte)this.CMD;
-            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)this.DSTPORT)))
+            yield return VER;
+            yield return (byte)CMD;
+            foreach (var b in BitConverter.GetBytes(IPAddress.HostToNetworkOrder((short)DSTPORT)))
             {
                 yield return b;
             }
-            foreach (byte b in this.DSTIP.GetAddressBytes())
+            foreach (byte b in DSTIP.GetAddressBytes())
             {
                 yield return b;
             }
-            if (!string.IsNullOrWhiteSpace(this.ID))
+            if (!string.IsNullOrWhiteSpace(ID))
             {
-                foreach (byte b in Encoding.ASCII.GetBytes(this.ID))
+                foreach (byte b in Encoding.ASCII.GetBytes(ID))
                 {
                     yield return b;
                 }
             }
             yield return 0;
-            if (this.IsDomain)
+            if (IsDomain)
             {
-                if (!string.IsNullOrWhiteSpace(this.DOMAIN))
+                if (!string.IsNullOrWhiteSpace(DOMAIN))
                 {
-                    foreach (byte b in Encoding.ASCII.GetBytes(this.DOMAIN))
+                    foreach (byte b in Encoding.ASCII.GetBytes(DOMAIN))
                     {
                         yield return b;
                     }

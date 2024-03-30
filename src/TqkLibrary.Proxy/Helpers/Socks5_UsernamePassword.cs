@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Enums;
+﻿using System.Text;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -19,8 +14,8 @@ namespace TqkLibrary.Proxy.Helpers
             if (string.IsNullOrWhiteSpace(password)) throw new ArgumentNullException(nameof(password));
             if (Encoding.ASCII.GetBytes(userName).Length > 255) throw new InvalidDataException($"{nameof(userName)} too long");
             if (Encoding.ASCII.GetBytes(password).Length > 255) throw new InvalidDataException($"{nameof(password)} too long");
-            this.UserName = userName;
-            this.Password = password;
+            UserName = userName;
+            Password = password;
         }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.

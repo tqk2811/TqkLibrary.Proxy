@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
@@ -50,16 +46,16 @@ namespace TqkLibrary.Proxy.ProxySources
             }
             public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
-                if (this._stream is null)
+                if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(ConnectAsync)} first");
                 CheckIsDisposed();
 
-                return Task.FromResult(this._stream);
+                return Task.FromResult(_stream);
             }
 
             async Task<bool> _CONNECT_Async(Uri address, CancellationToken cancellationToken = default)
             {
-                if (this._stream is null)
+                if (_stream is null)
                     throw new InvalidOperationException();
 
                 List<string> headers = new List<string>();

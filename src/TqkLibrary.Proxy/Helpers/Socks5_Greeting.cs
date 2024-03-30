@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Enums;
+﻿using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -16,8 +11,8 @@ namespace TqkLibrary.Proxy.Helpers
         internal Socks5_Greeting(IEnumerable<Socks5_Auth> socks5_Auths)
         {
             if (socks5_Auths is null) throw new ArgumentNullException(nameof(socks5_Auths));
-            this.Auths = socks5_Auths.ToArray();
-            if (this.AuthCount == 0) throw new InvalidDataException($"{nameof(socks5_Auths)} is empty");
+            Auths = socks5_Auths.ToArray();
+            if (AuthCount == 0) throw new InvalidDataException($"{nameof(socks5_Auths)} is empty");
         }
 
         private Socks5_Greeting()

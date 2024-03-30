@@ -1,17 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal class StreamTransferHelper
+    internal class StreamTransferHelper : BaseLogger
     {
-        readonly ILogger<StreamTransferHelper>? _logger = Singleton.LoggerFactory?.CreateLogger<StreamTransferHelper>();
-
         const int BUFFER_SIZE = 4096;
 
         readonly Stream _first;
@@ -33,8 +25,8 @@ namespace TqkLibrary.Proxy.StreamHeplers
         }
         public StreamTransferHelper DebugName(string? firstName, string? secondName)
         {
-            this._firstName = firstName ?? "first";
-            this._secondName = secondName ?? "second";
+            _firstName = firstName ?? "first";
+            _secondName = secondName ?? "second";
             return this;
         }
 

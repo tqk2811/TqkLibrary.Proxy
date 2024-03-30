@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Helpers;
+﻿using System.Net.Sockets;
 using TqkLibrary.Proxy.Enums;
-using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.StreamHeplers;
-using System.Net.Http;
-using System.Runtime.InteropServices.ComTypes;
-using System.Diagnostics.CodeAnalysis;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -110,7 +99,7 @@ namespace TqkLibrary.Proxy.ProxySources
                                 await _stream.WriteAsync(socks5_UsernamePassword.GetByteArray(), cancellationToken);
                                 await _stream.FlushAsync(cancellationToken);
 
-                                Socks5_UsernamePasswordResponse socks5_UsernamePasswordResponse 
+                                Socks5_UsernamePasswordResponse socks5_UsernamePasswordResponse
                                     = await _stream.Read_Socks5_UsernamePasswordResponse_Async(cancellationToken);
 
                                 if (socks5_UsernamePasswordResponse.STATUS != 0)

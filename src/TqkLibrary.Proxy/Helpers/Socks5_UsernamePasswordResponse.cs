@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.StreamHeplers;
+﻿using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
 {
@@ -14,7 +9,7 @@ namespace TqkLibrary.Proxy.Helpers
     {
         internal Socks5_UsernamePasswordResponse(byte status)
         {
-            this.STATUS = status;
+            STATUS = status;
         }
 
         private Socks5_UsernamePasswordResponse()

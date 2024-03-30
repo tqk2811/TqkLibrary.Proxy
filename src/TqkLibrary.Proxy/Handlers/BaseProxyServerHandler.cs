@@ -1,116 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using TqkLibrary.Proxy.Authentications;
+﻿using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
 
 namespace TqkLibrary.Proxy.Handlers
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public abstract class BaseProxyServerHandler
+    public class BaseProxyServerHandler : IProxyServerHandler
     {
-        readonly BaseProxyServerHandler? _parent;
-        readonly IProxySource? _proxySource;
-        LocalProxySource? _localProxySource;
+        protected readonly IProxySource _proxySource;
         public BaseProxyServerHandler()
         {
-
+            _proxySource = new LocalProxySource();
         }
         public BaseProxyServerHandler(IProxySource proxySource)
         {
-            this._proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
+            _proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
         }
-        public BaseProxyServerHandler(BaseProxyServerHandler parent)
+        public virtual Task<bool> IsAcceptUserAsync(IUserInfo userInfo, CancellationToken cancellationToken = default)
         {
-            this._parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        }
-
-
-        public virtual Task<IProxySource> GetProxySourceAsync(Uri? uri, CancellationToken cancellationToken = default)
-        {
-            if (_parent is not null) return _parent.GetProxySourceAsync(uri, cancellationToken);
-            else
+            if (userInfo.Authentication is Socks5Authentication socks5Authentication)
             {
-                if (_proxySource is not null)
-                    return Task.FromResult(_proxySource);
-
-                if (_localProxySource is null)
-                    _localProxySource = new LocalProxySource();
-
-                return Task.FromResult<IProxySource>(_localProxySource);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="tcpClient"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
-        {
-            if (_parent is not null) return _parent.IsAcceptClientAsync(tcpClient, cancellationToken);
-            else return Task.FromResult(true);
-        }
-
-        /// <summary>
-        /// SSL or encrypt ......
-        /// </summary>
-        /// <param name="networkStream"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public virtual Task<Stream> StreamHandlerAsync(Stream networkStream, CancellationToken cancellationToken = default)
-        {
-            if (_parent is not null) return _parent.StreamHandlerAsync(networkStream, cancellationToken);
-            else return Task.FromResult(networkStream);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="uri"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public virtual Task<bool> IsAcceptDomainAsync(Uri uri, CancellationToken cancellationToken = default)
-        {
-            if (_parent is not null) return _parent.IsAcceptDomainAsync(uri, cancellationToken);
-            else
-            {
-                if (uri is null)
-                    throw new ArgumentNullException(nameof(uri));
-                bool isAccept = true;
-                switch (uri.HostNameType)
+                foreach (var socks5_Auth in socks5Authentication.Auths)
                 {
-                    case UriHostNameType.Dns:
-                        if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-                        {
-                            isAccept = false;
-                        }
-                        break;
+                    switch (socks5_Auth)
+                    {
+                        case Socks5_Auth.NoAuthentication:
+                            socks5Authentication.Choice = socks5_Auth;
+                            return Task.FromResult(true);
 
-                    case UriHostNameType.IPv4:
-                        if (uri.Host.StartsWith("127.", StringComparison.OrdinalIgnoreCase))
-                        {
-                            isAccept = false;
-                        }
-                        break;
-
-                    case UriHostNameType.IPv6:
-                        if (uri.Host.Equals("[::1]", StringComparison.OrdinalIgnoreCase))
-                        {
-                            isAccept = false;
-                        }
-                        break;
+                        default:
+                            continue;
+                    }
                 }
-                return Task.FromResult(isAccept);
             }
+            return Task.FromResult(true);
+        }
+        public virtual Task<bool> IsAcceptDomainAsync(Uri uri, IUserInfo userInfo, CancellationToken cancellationToken = default)
+        {
+            if (uri is null)
+                throw new ArgumentNullException(nameof(uri));
+
+            bool isAccept = true;
+            switch (uri.HostNameType)
+            {
+                case UriHostNameType.Dns:
+                    if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAccept = false;
+                    }
+                    break;
+
+                case UriHostNameType.IPv4:
+                    if (uri.Host.StartsWith("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAccept = false;
+                    }
+                    break;
+
+                case UriHostNameType.IPv6:
+                    if (uri.Host.Equals("[::1]", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isAccept = false;
+                    }
+                    break;
+            }
+            return Task.FromResult(isAccept);
+        }
+        public virtual Task<IProxySource> GetProxySourceAsync(Uri? uri, IUserInfo userInfo, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_proxySource);
+        }
+        public virtual Task<Stream> StreamHandlerAsync(Stream stream, IUserInfo userInfo, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(stream);
         }
     }
 }

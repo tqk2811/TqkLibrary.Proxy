@@ -82,6 +82,20 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             _tcpListener = new TcpListener(iPEndPoint);
         }
+        public ProxyServer(
+            IPEndPoint iPEndPoint,
+            IProxyServerHandler proxyServerHandler
+            ) : this(iPEndPoint)
+        {
+            this.ProxyServerHandler = proxyServerHandler ?? throw new ArgumentNullException(nameof(proxyServerHandler));
+        }
+        public ProxyServer(
+            IPEndPoint iPEndPoint,
+            IProxySource proxySource
+            ) : this(iPEndPoint, new BaseProxyServerHandler(proxySource ?? throw new ArgumentNullException(nameof(proxySource))))
+        {
+
+        }
         ~ProxyServer()
         {
             Dispose(false);

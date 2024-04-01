@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
         {
             if (_preReadBuffer is null || _preReadBuffer.Length < count)
             {
-                int needRead = count - _preReadBuffer?.Length ?? 0;
+                int needRead = count - (_preReadBuffer?.Length ?? 0);
                 byte[] buffer = new byte[needRead];
                 int byte_read = await _baseStream.ReadAsync(buffer, 0, needRead, cancellationToken);
 
@@ -48,8 +48,9 @@ namespace TqkLibrary.Proxy.StreamHeplers
             do
             {
                 buffer = await PreReadAsync(maxLength, cancellationToken).ConfigureAwait(false);
-                int index_cr = Array.IndexOf(buffer, 0x0d);
-                int index_lf = Array.IndexOf(buffer, 0x0a);
+                string text = Encoding.ASCII.GetString(buffer);
+                int index_cr = Array.IndexOf(buffer, (byte)'\r');
+                int index_lf = Array.IndexOf(buffer, (byte)'\n');
                 if (index_cr + 1 == index_lf)
                     return Encoding.ASCII.GetString(buffer, 0, index_lf + 1);
 
@@ -117,7 +118,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
         {
             if (_preReadBuffer is not null)
             {
-                return new AsyncResult(buffer, offset, count, callback, state).TryCallback();
+                return new AsyncResult(this, buffer, offset, count, callback, state).TryCallback();
             }
             else
             {
@@ -148,14 +149,16 @@ namespace TqkLibrary.Proxy.StreamHeplers
 
         class AsyncResult : IAsyncResult
         {
+            readonly PreReadStream _preReadStream;
             readonly byte[] _buffer;
             readonly int _offset;
             readonly int _count;
             readonly AsyncCallback? _callback;
             readonly object? _state;
             readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-            public AsyncResult(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
+            public AsyncResult(PreReadStream preReadStream, byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
             {
+                _preReadStream = preReadStream;
                 _buffer = buffer;
                 _offset = offset;
                 _count = count;
@@ -164,7 +167,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 manualResetEvent.Set();
             }
 
-            public object? AsyncState => throw new NotImplementedException();
+            public object? AsyncState => _state;
             public WaitHandle AsyncWaitHandle => manualResetEvent;
             public bool CompletedSynchronously => true;
             public bool IsCompleted => true;

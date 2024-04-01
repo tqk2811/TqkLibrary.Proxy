@@ -1,10 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.ProxyServers;
 
 namespace TestProxy
@@ -21,7 +15,7 @@ namespace TestProxy
             _httpClient.Dispose();
             base.Dispose(isDisposing);
         }
-        protected abstract HttpMessageHandler CreateHttpMessageHandler(BaseProxyServer baseProxyServer);
+        protected abstract HttpMessageHandler CreateHttpMessageHandler(ProxyServer baseProxyServer);
 
 
         [TestMethod]

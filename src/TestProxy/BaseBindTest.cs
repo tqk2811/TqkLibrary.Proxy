@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
 
@@ -17,7 +12,7 @@ namespace TestProxy
         {
             _sockProxySource = GetSocksProxySource(_proxyServer);
         }
-        protected abstract IProxySource GetSocksProxySource(BaseProxyServer baseProxyServer);
+        protected abstract IProxySource GetSocksProxySource(ProxyServer baseProxyServer);
 
         // [local source] <-> [socks server] <-> [socks source] <-> [IPEndPoint -> TcpClient]
         [TestMethod]

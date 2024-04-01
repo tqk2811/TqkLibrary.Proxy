@@ -99,7 +99,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     should_continue = client_isKeepAlive;
                 }
             }
-            while ((client_isKeepAlive || should_continue));
+            while (client_isKeepAlive && should_continue);
         }
 
 

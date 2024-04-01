@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
@@ -13,22 +14,31 @@ namespace ConsoleTest
 {
     internal static class DebugTest
     {
+        class MyBaseProxyServerHandler : BaseProxyServerHandler
+        {
+            readonly HttpProxyAuthentication _httpProxyAuthentication;
+            public MyBaseProxyServerHandler(HttpProxyAuthentication httpProxyAuthentication, IProxySource proxySource) : base(proxySource)
+            {
+                _httpProxyAuthentication = httpProxyAuthentication;
+            }
+            public override Task<bool> IsAcceptUserAsync(IUserInfo userInfo, CancellationToken cancellationToken = default)
+            {
+                if (userInfo.Authentication is HttpProxyAuthentication httpProxyAuthentication)
+                {
+                    return Task.FromResult(httpProxyAuthentication.Equals(_httpProxyAuthentication));
+                }
+                return base.IsAcceptUserAsync(userInfo, cancellationToken);
+            }
+        }
         public static async Task Test()
         {
             //const string address = "127.0.0.1:13566";
             const string address = "[::1]:13566";
             IProxySource proxySource = new LocalProxySource();
-
-
-            CredentialCache credentialCache = new CredentialCache();
             NetworkCredential networkCredential = new NetworkCredential("admin", "admin");
-            credentialCache.Add(new Uri($"http://{address}"), "Basic", networkCredential);
 
-            HttpAuthenticationProxyServerHandler handler = new HttpAuthenticationProxyServerHandler(proxySource);
-            handler.WithAuthentications(networkCredential);
-
-            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), handler);
-            httpProxyServer.StartListen();
+            ProxyServer proxyServer = new ProxyServer(IPEndPoint.Parse(address), new MyBaseProxyServerHandler(networkCredential, proxySource));
+            proxyServer.StartListen();
 
             using HttpClientHandler httpClientHandler = new HttpClientHandler()
             {
@@ -81,7 +91,7 @@ namespace ConsoleTest
 
 
             Console.ReadLine();
-            httpProxyServer.StopListen();
+            proxyServer.StopListen();
 
             Console.ReadLine();
         }

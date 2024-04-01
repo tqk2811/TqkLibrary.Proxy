@@ -18,13 +18,13 @@ namespace ConsoleTest
             //IProxySource proxySource = new LocalProxySource();
             //IProxySource proxySource = new HttpProxySource(new Uri("http://103.178.231.186:10003"));
             IProxySource proxySource = new HttpProxySource(new Uri("http://svhn1.proxyno1.com:41352"));
-            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse(address), proxySource);
-            httpProxyServer.StartListen();
+            ProxyServer proxyServer = new ProxyServer(IPEndPoint.Parse(address), proxySource);
+            proxyServer.StartListen();
             Console.WriteLine("server started");
             Console.ReadLine();
             //httpProxyServer.ChangeSource(new HttpProxySource(new Uri("http://103.178.231.186:10003")), true);
             Console.ReadLine();
-            httpProxyServer.StopListen();
+            proxyServer.StopListen();
             Console.ReadLine();
         }
 
@@ -49,13 +49,13 @@ namespace ConsoleTest
 
 
             IProxySource proxySource = new Socks4ProxySource(IPEndPoint.Parse("212.213.132.5:31632"));//địa chỉ sock4
-            HttpProxyServer httpProxyServer = new HttpProxyServer(IPEndPoint.Parse("127.0.0.1:13566"), proxySource);//địa chỉ http proxy host lại
+            ProxyServer proxyServer = new ProxyServer(IPEndPoint.Parse("127.0.0.1:13566"), proxySource);//địa chỉ http proxy host lại
 
-            httpProxyServer.StartListen();//xài
+            proxyServer.StartListen();//xài
 
             //code..... dùng proxy 127.0.0.1:13566
 
-            httpProxyServer.StopListen();//xài xong nhớ tắt
+            proxyServer.StopListen();//xài xong nhớ tắt
 
 
             Console.ReadLine();

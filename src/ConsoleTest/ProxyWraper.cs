@@ -33,7 +33,7 @@ namespace ConsoleTest
 
             //ipEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-            using var server = new HttpProxyServer(ipEndPoint, GetProxySource());
+            using var server = new ProxyServer(ipEndPoint, GetProxySource());
             server.StartListen();
             Console.WriteLine($"Listening {server.IPEndPoint}");
             Console.ReadLine();

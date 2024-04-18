@@ -21,7 +21,7 @@ namespace TestProxy
             using IBindSource bindSource = _sockProxySource.GetBindSource();
             IPEndPoint iPEndPoint = await bindSource.BindAsync();
 
-            Task<string> t_ping = ConnectBindAsync(iPEndPoint);
+            Task<string?> t_ping = ConnectBindAsync(iPEndPoint);
 
             using var stream = await bindSource.GetStreamAsync();
 
@@ -29,7 +29,7 @@ namespace TestProxy
             _ = stream.WriteAsync(data, 0, data.Length);
 
             using StreamReader streamReader = new StreamReader(stream);
-            string pong = await streamReader.ReadLineAsync();
+            string? pong = await streamReader.ReadLineAsync();
 
 
             Assert.AreEqual("pong", pong);
@@ -37,7 +37,7 @@ namespace TestProxy
         }
 
 
-        async Task<string> ConnectBindAsync(IPEndPoint ipEndPoint)
+        async Task<string?> ConnectBindAsync(IPEndPoint ipEndPoint)
         {
             using TcpClient tcpClient = new TcpClient();
             await tcpClient.ConnectAsync(ipEndPoint);
@@ -47,7 +47,7 @@ namespace TestProxy
             _ = stream.WriteAsync(data, 0, data.Length);
 
             using StreamReader streamReader = new StreamReader(stream);
-            string ping = await streamReader.ReadLineAsync();
+            string? ping = await streamReader.ReadLineAsync();
             return ping;
         }
     }

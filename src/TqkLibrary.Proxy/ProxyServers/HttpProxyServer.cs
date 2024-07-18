@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
@@ -82,15 +83,23 @@ namespace TqkLibrary.Proxy.ProxyServers
                 {
                     IProxySource proxySource = await proxyServerHandler.GetProxySourceAsync(_client_HeaderParse.Uri, userInfo, cancellationToken);
                     using IConnectSource connectSource = proxySource.GetConnectSource();
-                    await connectSource.ConnectAsync(_client_HeaderParse.Uri, _cancellationToken);
-                    using Stream source_stream = await connectSource.GetStreamAsync();
-                    if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        should_continue = await _HttpsTransfer(source_stream, userInfo);
+                        await connectSource.ConnectAsync(_client_HeaderParse.Uri, _cancellationToken);
+                        using Stream source_stream = await connectSource.GetStreamAsync();
+                        if ("CONNECT".Equals(_client_HeaderParse.Method, StringComparison.OrdinalIgnoreCase))
+                        {
+                            should_continue = await _HttpsTransfer(source_stream, userInfo);
+                        }
+                        else
+                        {
+                            should_continue = await _HttpTransfer(source_stream, userInfo);
+                        }
                     }
-                    else
+                    catch (InitConnectSourceFailedException ex)
                     {
-                        should_continue = await _HttpTransfer(source_stream, userInfo);
+                        _logger?.LogInformation(ex, "InitConnectSourceFailedException");
+                        await _WriteResponse((int)HttpStatusCode.ServiceUnavailable, "Service Unavailable", true);
                     }
                 }
                 else

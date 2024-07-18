@@ -9,7 +9,7 @@ namespace TqkLibrary.Proxy.ProxySources
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
 
-            internal BaseTunnel(Socks4ProxySource proxySource) : base(proxySource)
+            internal BaseTunnel(Socks4ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }

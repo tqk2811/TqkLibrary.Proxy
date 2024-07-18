@@ -17,6 +17,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         Stream? _clientStream;
         IPEndPoint? _clientEndPoint;
         IProxyServerHandler? _proxyServerHandler;
+        Guid _tunnelId;
         CancellationToken _cancellationToken;
         BaseUserInfo? userInfo;
 
@@ -24,6 +25,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Stream clientStream,
             IPEndPoint clientEndPoint,
             IProxyServerHandler proxyServerHandler,
+            Guid tunnelId,
             CancellationToken cancellationToken = default
             )
         {
@@ -33,6 +35,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             _clientStream = clientStream;
             _clientEndPoint = clientEndPoint;
             _proxyServerHandler = proxyServerHandler;
+            _tunnelId = tunnelId;
             _cancellationToken = cancellationToken;
 
 
@@ -43,7 +46,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            userInfo = new BaseUserInfo(clientEndPoint);
+            userInfo = new BaseUserInfo(clientEndPoint, _tunnelId);
 
 
 
@@ -113,7 +116,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(uri, userInfo!, _cancellationToken);
 
             Uri uri_connect = new Uri($"http://{target_ip}:{socks4_Request.DSTPORT}");
-            using IConnectSource connectSource = proxySource.GetConnectSource();
+            using IConnectSource connectSource = proxySource.GetConnectSource(_tunnelId);
             await connectSource.ConnectAsync(uri_connect, _cancellationToken);
 
             using Stream session_stream = await connectSource.GetStreamAsync();
@@ -123,7 +126,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
             //transfer until disconnect
-            await new StreamTransferHelper(clientStream, session_stream)
+            await new StreamTransferHelper(clientStream, session_stream, _tunnelId)
                 .DebugName(_clientEndPoint, uri_connect)
                 .WaitUntilDisconnect(_cancellationToken);
         }
@@ -137,7 +140,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            using IBindSource bindSource = proxySource.GetBindSource();
+            using IBindSource bindSource = proxySource.GetBindSource(_tunnelId);
             IPEndPoint iPEndPoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyAsync(Socks4_REP.RequestGranted, iPEndPoint.Address, (UInt16)iPEndPoint.Port);
@@ -145,7 +148,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
             //transfer until disconnect
-            await new StreamTransferHelper(clientStream, stream)
+            await new StreamTransferHelper(clientStream, stream, _tunnelId)
                 .DebugName(_clientEndPoint, iPEndPoint)
                 .WaitUntilDisconnect(_cancellationToken);
         }
@@ -163,7 +166,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Socks4_RequestResponse response = new Socks4_RequestResponse(rep, listen_ip, listen_port);
             byte[] rep_buffer = response.GetByteArray();
 
-            _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+            _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 
             await _clientStream!.WriteAsync(rep_buffer, _cancellationToken);
             await _clientStream!.FlushAsync(_cancellationToken);

@@ -20,16 +20,16 @@
         /// <summary>
         /// 
         /// </summary>
-        IConnectSource GetConnectSource();
+        IConnectSource GetConnectSource(Guid tunnelId);
 
         /// <summary>
         /// 
         /// </summary>
-        IBindSource GetBindSource();
+        IBindSource GetBindSource(Guid tunnelId);
 
         /// <summary>
         /// 
         /// </summary>
-        IUdpAssociateSource GetUdpAssociateSource();
+        IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId);
     }
 }

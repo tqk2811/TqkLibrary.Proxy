@@ -15,7 +15,7 @@ namespace ConsoleTest
         public static async Task RunAsync()
         {
             IProxySource proxySource = new LocalProxySource();
-            using var bindSource = proxySource.GetBindSource();
+            using var bindSource = proxySource.GetBindSource(Guid.NewGuid());
 
             await bindSource.BindAsync();
             var endpoint = await bindSource.BindAsync();

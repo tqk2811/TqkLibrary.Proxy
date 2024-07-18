@@ -169,6 +169,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
         private async Task _PreProxyWorkAsync(TcpClient tcpClient)
         {
+            Guid tunnelId = Guid.NewGuid();
             try
             {
                 using (tcpClient)
@@ -177,35 +178,35 @@ namespace TqkLibrary.Proxy.ProxyServers
                     tcpClient.SendTimeout = SendTimeout;
 
                     IPEndPoint iPEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint!;
-                    if (await PreProxyServerHandler.IsAcceptClientAsync(tcpClient, _CancellationToken))
+                    if (await PreProxyServerHandler.IsAcceptClientAsync(tcpClient, tunnelId, _CancellationToken))
                     {
                         using Stream baseStream = tcpClient.GetStream();
                         using AsynchronousOnlyStream asynchronousOnlyStream = new AsynchronousOnlyStream(baseStream);
 
-                        using Stream stream = await PreProxyServerHandler.StreamHandlerAsync(asynchronousOnlyStream, iPEndPoint, _CancellationToken);
+                        using Stream stream = await PreProxyServerHandler.StreamHandlerAsync(asynchronousOnlyStream, iPEndPoint, tunnelId, _CancellationToken);
                         if (stream is null)
                             throw new InvalidOperationException($"{PreProxyServerHandler.GetType().FullName}.{nameof(IPreProxyServerHandler.StreamHandlerAsync)} was return null");
 
                         using PreReadStream preReadStream = new PreReadStream(stream);
-                        IProxyServer proxyServer = await PreProxyServerHandler.GetProxyServerAsync(preReadStream, iPEndPoint, _CancellationToken);
+                        IProxyServer proxyServer = await PreProxyServerHandler.GetProxyServerAsync(preReadStream, iPEndPoint, tunnelId, _CancellationToken);
                         if (proxyServer is null)
                             throw new InvalidOperationException($"{PreProxyServerHandler.GetType().FullName}.{nameof(IPreProxyServerHandler.GetProxyServerAsync)} was return null");
 
-                        await proxyServer.ProxyWorkAsync(preReadStream, iPEndPoint, ProxyServerHandler, _CancellationToken);
+                        await proxyServer.ProxyWorkAsync(preReadStream, iPEndPoint, ProxyServerHandler, tunnelId, _CancellationToken);
                     }
                 }
             }
             catch (ObjectDisposedException ode)
             {
-                _logger?.LogInformation(ode, nameof(_PreProxyWorkAsync));
+                _logger?.LogInformation(ode, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
             }
             catch (OperationCanceledException oce)
             {
-                _logger?.LogInformation(oce, nameof(_PreProxyWorkAsync));
+                _logger?.LogInformation(oce, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
             }
             catch (Exception ex)
             {
-                _logger?.LogCritical(ex, nameof(_PreProxyWorkAsync));
+                _logger?.LogCritical(ex, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
             }
         }
     }

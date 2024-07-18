@@ -23,17 +23,17 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 { get; set; } = true;
         public bool IsSupportBind => false;
 
-        public IConnectSource GetConnectSource()
+        public IConnectSource GetConnectSource(Guid tunnelId)
         {
-            return new ConnectTunnel(this);
+            return new ConnectTunnel(this, tunnelId);
         }
 
-        public IBindSource GetBindSource()
+        public IBindSource GetBindSource(Guid tunnelId)
         {
             throw new NotSupportedException();
         }
 
-        public IUdpAssociateSource GetUdpAssociateSource()
+        public IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
         {
             throw new NotSupportedException();
         }

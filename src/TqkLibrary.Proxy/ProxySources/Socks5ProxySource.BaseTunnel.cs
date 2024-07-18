@@ -15,7 +15,7 @@ namespace TqkLibrary.Proxy.ProxySources
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
 
-            internal BaseTunnel(Socks5ProxySource proxySource) : base(proxySource)
+            internal BaseTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }

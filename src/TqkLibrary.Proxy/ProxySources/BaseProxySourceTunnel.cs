@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using TqkLibrary.Proxy.Interfaces;
+﻿using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -8,9 +7,11 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         protected readonly T _proxySource;
         private bool _IsDisposed = false;
-        protected BaseProxySourceTunnel(T proxySource)
+        protected Guid _tunnelId;
+        protected BaseProxySourceTunnel(T proxySource, Guid tunnelId)
         {
             _proxySource = proxySource ?? throw new ArgumentNullException(nameof(proxySource));
+            _tunnelId = tunnelId;
         }
         ~BaseProxySourceTunnel()
         {

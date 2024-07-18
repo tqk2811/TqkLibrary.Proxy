@@ -10,7 +10,7 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         class ConnectTunnel : BaseTunnel, IConnectSource
         {
-            internal ConnectTunnel(Socks5ProxySource proxySource) : base(proxySource)
+            internal ConnectTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }

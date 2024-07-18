@@ -4,6 +4,6 @@ namespace TqkLibrary.Proxy.Interfaces
 {
     public interface IProxyServer
     {
-        Task ProxyWorkAsync(Stream clientStream, IPEndPoint clientEndPoint, IProxyServerHandler proxyServerHandler, CancellationToken cancellationToken = default);
+        Task ProxyWorkAsync(Stream clientStream, IPEndPoint clientEndPoint, IProxyServerHandler proxyServerHandler, Guid tunnelId, CancellationToken cancellationToken = default);
     }
 }

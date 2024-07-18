@@ -12,7 +12,7 @@ namespace TqkLibrary.Proxy.ProxyServers
     {
         class Socks5UserInfo : BaseUserInfo
         {
-            public Socks5UserInfo(IPEndPoint iPEndPoint) : base(iPEndPoint)
+            public Socks5UserInfo(IPEndPoint iPEndPoint, Guid tunnelId) : base(iPEndPoint, tunnelId)
             {
 
             }
@@ -28,6 +28,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         Stream? _clientStream;
         IPEndPoint? _clientEndPoint;
         IProxyServerHandler? _proxyServerHandler;
+        Guid _tunnelId;
         CancellationToken _cancellationToken;
         Socks5UserInfo? userInfo;
 
@@ -35,6 +36,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Stream clientStream,
             IPEndPoint clientEndPoint,
             IProxyServerHandler proxyServerHandler,
+            Guid tunnelId,
             CancellationToken cancellationToken = default
             )
         {
@@ -44,9 +46,10 @@ namespace TqkLibrary.Proxy.ProxyServers
             _clientStream = clientStream;
             _clientEndPoint = clientEndPoint;
             _proxyServerHandler = proxyServerHandler;
+            _tunnelId = tunnelId;
             _cancellationToken = cancellationToken;
 
-            userInfo = new Socks5UserInfo(clientEndPoint);
+            userInfo = new Socks5UserInfo(clientEndPoint, _tunnelId);
 
             if (await _ClientGreeting_And_ServerChoiceAsync())
             {
@@ -116,7 +119,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Socks5_RequestResponse socks5_RequestResponse = new Socks5_RequestResponse(status, iPEndPoint);
             byte[] rep_buffer = socks5_RequestResponse.GetByteArray();
 
-            _logger?.LogInformation($"{_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+            _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
 
             await _clientStream!.WriteAsync(rep_buffer, _cancellationToken);
             await _clientStream!.FlushAsync(_cancellationToken);
@@ -125,7 +128,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task _EstablishStreamConnectionAsync(Uri uri)
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(uri, userInfo!, _cancellationToken);
-            using IConnectSource connectSource = proxySource.GetConnectSource();
+            using IConnectSource connectSource = proxySource.GetConnectSource(_tunnelId);
             await connectSource.ConnectAsync(uri, _cancellationToken);
             using Stream session_stream = await connectSource.GetStreamAsync();
             //send response to client
@@ -133,7 +136,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
-            await new StreamTransferHelper(clientStream, session_stream)
+            await new StreamTransferHelper(clientStream, session_stream, _tunnelId)
                 .DebugName(_clientEndPoint, uri)
                 .WaitUntilDisconnect(_cancellationToken);
         }
@@ -147,7 +150,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            using IBindSource bindSource = proxySource.GetBindSource();
+            using IBindSource bindSource = proxySource.GetBindSource(_tunnelId);
             IPEndPoint listen_endpoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted, listen_endpoint);
@@ -155,7 +158,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Stream target_stream = await bindSource.GetStreamAsync(_cancellationToken);
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
-            await new StreamTransferHelper(clientStream, target_stream)
+            await new StreamTransferHelper(clientStream, target_stream, _tunnelId)
                 .DebugName(_clientEndPoint, listen_endpoint)
                 .WaitUntilDisconnect(_cancellationToken);
         }

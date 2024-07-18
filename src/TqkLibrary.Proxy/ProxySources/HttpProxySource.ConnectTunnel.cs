@@ -15,7 +15,7 @@ namespace TqkLibrary.Proxy.ProxySources
         {
             readonly TcpClient _tcpClient = new TcpClient();
             Stream? _stream;
-            internal ConnectTunnel(HttpProxySource proxySource) : base(proxySource)
+            internal ConnectTunnel(HttpProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -67,14 +67,14 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
 
                 await _stream.WriteHeadersAsync(headers, cancellationToken);
-                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-\r\n{string.Join("\r\n", headers)}");
+                _logger?.LogInformation($"{_tunnelId} {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-\r\n{string.Join("\r\n", headers)}");
 
                 await _stream.FlushAsync(cancellationToken);
 
                 //-----------------------///
 
                 IReadOnlyList<string> response_HeaderLines = await _stream.ReadHeadersAsync(cancellationToken);
-                _logger?.LogInformation($"{_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->\r\n{string.Join("\r\n", response_HeaderLines)}");
+                _logger?.LogInformation($"{_tunnelId} {_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->\r\n{string.Join("\r\n", response_HeaderLines)}");
 
                 var headerResponseParse = HeaderResponseParse.ParseResponse(response_HeaderLines);
 

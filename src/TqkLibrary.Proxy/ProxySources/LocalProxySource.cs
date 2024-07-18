@@ -15,17 +15,17 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsAllowNatTraversal { get; set; } = false;
         public virtual int BindListenTimeout { get; set; } = 30000;
 
-        public virtual IConnectSource GetConnectSource()
+        public virtual IConnectSource GetConnectSource(Guid tunnelId)
         {
-            return new ConnectTunnel(this);
+            return new ConnectTunnel(this, tunnelId);
         }
 
-        public virtual IBindSource GetBindSource()
+        public virtual IBindSource GetBindSource(Guid tunnelId)
         {
-            return new BindTunnel(this);
+            return new BindTunnel(this, tunnelId);
         }
 
-        public virtual IUdpAssociateSource GetUdpAssociateSource()
+        public virtual IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
         {
             throw new NotSupportedException();
             //return new UdpTunnel(this);

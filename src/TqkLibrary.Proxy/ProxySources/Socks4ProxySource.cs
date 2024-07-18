@@ -18,17 +18,17 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => false;
         public bool IsSupportBind { get; set; } = true;
 
-        public IConnectSource GetConnectSource()
+        public IConnectSource GetConnectSource(Guid tunnelId)
         {
-            return new ConnectTunnel(this);
+            return new ConnectTunnel(this, tunnelId);
         }
 
-        public IBindSource GetBindSource()
+        public IBindSource GetBindSource(Guid tunnelId)
         {
-            return new BindTunnel(this);
+            return new BindTunnel(this, tunnelId);
         }
 
-        public IUdpAssociateSource GetUdpAssociateSource()
+        public IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
         {
             throw new NotSupportedException();
         }

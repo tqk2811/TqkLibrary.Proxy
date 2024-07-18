@@ -9,7 +9,7 @@ namespace TqkLibrary.Proxy.ProxySources
         {
             readonly TcpClient _tcpClient = new TcpClient();
             Stream? _stream = null;
-            public ConnectTunnel(LocalProxySource localProxySource) : base(localProxySource)
+            public ConnectTunnel(LocalProxySource localProxySource, Guid tunnelId) : base(localProxySource, tunnelId)
             {
 
             }

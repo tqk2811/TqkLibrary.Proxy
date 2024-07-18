@@ -6,15 +6,18 @@ namespace TqkLibrary.Proxy.StreamHeplers
     {
         const int BUFFER_SIZE = 4096;
 
+        readonly Guid _tunnelId;
+
         readonly Stream _first;
         readonly byte[] _firstBuffer = new byte[BUFFER_SIZE];
 
         readonly Stream _second;
         readonly byte[] _secondBuffer = new byte[BUFFER_SIZE];
-        public StreamTransferHelper(Stream first, Stream second)
+        public StreamTransferHelper(Stream first, Stream second, Guid tunnelId)
         {
             _first = first ?? throw new ArgumentNullException(nameof(first));
             _second = second ?? throw new ArgumentNullException(nameof(second));
+            _tunnelId = tunnelId;
         }
 
         string _firstName = "first";
@@ -47,7 +50,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                     int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_second.CanWrite) return;
 
-                    _logger?.LogInformation($"[{_firstName} -> {_secondName}] {byte_read} bytes");
+                    _logger?.LogInformation($"{_tunnelId} [{_firstName} -> {_secondName}] {byte_read} bytes");
 
                     if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken);
                     else return;
@@ -55,7 +58,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             }
             catch (Exception ex)
             {
-                _logger?.LogInformation(ex, $"[{_firstName} -> {_secondName}]");
+                _logger?.LogInformation(ex, $"{_tunnelId} [{_firstName} -> {_secondName}]");
             }
         }
         async Task SecondToFirst(CancellationToken cancellationToken = default)
@@ -68,7 +71,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                     int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_first.CanWrite) return;
 
-                    _logger?.LogInformation($"[{_firstName} <- {_secondName}] {byte_read} bytes");
+                    _logger?.LogInformation($"{_tunnelId} [{_firstName} <- {_secondName}] {byte_read} bytes");
 
                     if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken);
                     else return;
@@ -76,7 +79,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
             }
             catch (Exception ex)
             {
-                _logger?.LogInformation(ex, $"[{_firstName} <- {_secondName}]");
+                _logger?.LogInformation(ex, $"{_tunnelId} [{_firstName} <- {_secondName}]");
             }
         }
 

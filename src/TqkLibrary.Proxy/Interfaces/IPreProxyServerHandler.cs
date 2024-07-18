@@ -12,7 +12,7 @@ namespace TqkLibrary.Proxy.Interfaces
         /// <param name="tcpClient"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<bool> IsAcceptClientAsync(TcpClient tcpClient, CancellationToken cancellationToken = default);
+        Task<bool> IsAcceptClientAsync(TcpClient tcpClient, Guid tunnelId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// SSL/Cert or limit/calc bandwidth
@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.Interfaces
         /// <param name="iPEndPoint"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<Stream> StreamHandlerAsync(Stream stream, IPEndPoint iPEndPoint, CancellationToken cancellationToken = default);
+        Task<Stream> StreamHandlerAsync(Stream stream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Handler allow http/socks4/socks5 base on IP
@@ -30,6 +30,6 @@ namespace TqkLibrary.Proxy.Interfaces
         /// <param name="iPEndPoint"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, CancellationToken cancellationToken = default);
+        Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default);
     }
 }

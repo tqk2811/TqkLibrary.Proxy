@@ -4,7 +4,7 @@
     {
         class BaseTunnel : BaseProxySourceTunnel<LocalProxySource>
         {
-            internal BaseTunnel(LocalProxySource proxySource) : base(proxySource)
+            internal BaseTunnel(LocalProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }

@@ -13,8 +13,7 @@ namespace TqkLibrary.Proxy.ProxySources
         {
             TcpListener? _tcpListener;
             TcpClient? _tcpClient;
-            internal BindTunnel(LocalProxySource proxySource)
-                : base(proxySource)
+            internal BindTunnel(LocalProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -80,7 +79,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogCritical(ex, "OnBeginAcceptTcpClient");
+                    _logger?.LogCritical(ex, $"{_tunnelId}  OnBeginAcceptTcpClient");
                 }
             }
         }

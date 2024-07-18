@@ -10,7 +10,7 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         class BindTunnel : BaseTunnel, IBindSource
         {
-            internal BindTunnel(Socks4ProxySource proxySource) : base(proxySource)
+            internal BindTunnel(Socks4ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }

@@ -8,16 +8,16 @@ namespace TqkLibrary.Proxy.Handlers
 {
     public class BasePreProxyServerHandler : IPreProxyServerHandler
     {
-        public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, CancellationToken cancellationToken = default)
+        public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(true);
         }
-        public virtual Task<Stream> StreamHandlerAsync(Stream stream, IPEndPoint iPEndPoint, CancellationToken cancellationToken = default)
+        public virtual Task<Stream> StreamHandlerAsync(Stream stream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(stream);
         }
 
-        public virtual async Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, CancellationToken cancellationToken = default)
+        public virtual async Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default)
         {
             byte[] buffer = await preReadStream.PreReadAsync(1, cancellationToken).ConfigureAwait(false);
             if (buffer.Length == 0)

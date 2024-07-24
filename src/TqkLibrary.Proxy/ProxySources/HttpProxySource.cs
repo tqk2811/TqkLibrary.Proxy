@@ -19,21 +19,21 @@ namespace TqkLibrary.Proxy.ProxySources
             HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }
 
-        public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 { get; set; } = true;
-        public bool IsSupportBind => false;
+        public virtual bool IsSupportUdp => false;
+        public virtual bool IsSupportIpv6 { get; set; } = true;
+        public virtual bool IsSupportBind => false;
 
-        public IConnectSource GetConnectSource(Guid tunnelId)
+        public virtual IConnectSource GetConnectSource(Guid tunnelId)
         {
             return new ConnectTunnel(this, tunnelId);
         }
 
-        public IBindSource GetBindSource(Guid tunnelId)
+        public virtual IBindSource GetBindSource(Guid tunnelId)
         {
             throw new NotSupportedException();
         }
 
-        public IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
+        public virtual IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
         {
             throw new NotSupportedException();
         }

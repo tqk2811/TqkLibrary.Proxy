@@ -1,4 +1,5 @@
 ﻿using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -6,9 +7,9 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.rfc-editor.org/rfc/rfc1928"/>
     /// </summary>
-    internal class Socks5_GreetingResponse
+    public class Socks5_GreetingResponse : IPacketData
     {
-        internal Socks5_GreetingResponse(Socks5_Auth socks5_Auth)
+        public Socks5_GreetingResponse(Socks5_Auth socks5_Auth)
         {
             CAUTH = socks5_Auth;
         }
@@ -17,11 +18,11 @@ namespace TqkLibrary.Proxy.Helpers
         {
         }
 
-        internal byte VER { get; private set; } = 0x05;
-        internal Socks5_Auth CAUTH { get; private set; }
+        public byte VER { get; private set; } = 0x05;
+        public Socks5_Auth CAUTH { get; private set; }
 
 
-        internal static async Task<Socks5_GreetingResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_GreetingResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_GreetingResponse socks5_GreetingResponse = new Socks5_GreetingResponse();
             byte[] buffer = await stream.ReadBytesAsync(2, cancellationToken);
@@ -31,16 +32,15 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
             yield return (byte)CAUTH;
         }
     }
-    internal static class Socks5_GreetingResponse_Extensions
+    public static class Socks5_GreetingResponse_Extensions
     {
-        internal static Task<Socks5_GreetingResponse> Read_Socks5_GreetingResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_GreetingResponse> Read_Socks5_GreetingResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_GreetingResponse.ReadAsync(stream, cancellationToken);
     }
 }

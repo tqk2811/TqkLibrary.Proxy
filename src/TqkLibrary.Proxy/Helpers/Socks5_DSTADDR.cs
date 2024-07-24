@@ -2,13 +2,14 @@
 using System.Net.Sockets;
 using System.Text;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
 {
-    internal class Socks5_DSTADDR
+    public class Socks5_DSTADDR : IPacketData
     {
-        internal Socks5_DSTADDR(Uri uri)
+        public Socks5_DSTADDR(Uri uri)
         {
             if (uri is null) throw new ArgumentNullException(nameof(uri));
 
@@ -34,7 +35,7 @@ namespace TqkLibrary.Proxy.Helpers
                     throw new InvalidDataException($"Invalid type uri input: {uri.HostNameType}");
             }
         }
-        internal Socks5_DSTADDR(IPAddress iPAddress)
+        public Socks5_DSTADDR(IPAddress iPAddress)
         {
             if (iPAddress is null)
                 throw new ArgumentNullException(nameof(iPAddress));
@@ -61,11 +62,11 @@ namespace TqkLibrary.Proxy.Helpers
 
         }
 
-        internal string Domain { get; private set; } = string.Empty;
-        internal IPAddress IPAddress { get; private set; } = IPAddress.None;
-        internal Socks5_ATYP ATYP { get; private set; }
+        public string Domain { get; private set; } = string.Empty;
+        public IPAddress IPAddress { get; private set; } = IPAddress.None;
+        public Socks5_ATYP ATYP { get; private set; }
 
-        internal static async Task<Socks5_DSTADDR> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_DSTADDR> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_DSTADDR socks5_DSTADDR = new Socks5_DSTADDR();
             socks5_DSTADDR.ATYP = (Socks5_ATYP)await stream.ReadByteAsync(cancellationToken);
@@ -97,8 +98,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return (byte)ATYP;
             if (ATYP == Socks5_ATYP.DomainName)
@@ -119,9 +119,9 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
     }
-    internal static class Socks5_DSTADDR_Extensions
+    public static class Socks5_DSTADDR_Extensions
     {
-        internal static Task<Socks5_DSTADDR> Read_Socks5_DSTADDR_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_DSTADDR> Read_Socks5_DSTADDR_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_DSTADDR.ReadAsync(stream, cancellationToken);
     }
 }

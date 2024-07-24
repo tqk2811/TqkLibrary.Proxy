@@ -13,10 +13,10 @@ using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
 {
-    internal class HeaderResponseParse
+    public class HeaderResponseParse
     {
         static readonly Regex regex_httpResponseStatus = new Regex("^HTTP\\/([0-9\\.]{3}) (\\d{3}) (.*?)$");
-        private HeaderResponseParse(string? line)
+        private HeaderResponseParse(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
                 throw new ArgumentNullException(nameof(line));
@@ -39,9 +39,9 @@ namespace TqkLibrary.Proxy.Helpers
         public int ContentLength { get; set; } = 0;
 
 
-        internal static HeaderResponseParse ParseResponse(IEnumerable<string> lines)
+        public static HeaderResponseParse ParseResponse(IEnumerable<string> lines)
         {
-            HeaderResponseParse responseStatusCode = new HeaderResponseParse(lines.FirstOrDefault());
+            HeaderResponseParse responseStatusCode = new HeaderResponseParse(lines.FirstOrDefault()!);
 
             var dict = lines.Skip(1)
                 .Select(x => x.Split(':'))

@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Enums
 {
-    internal enum Socks4_REP : byte
+    public enum Socks4_REP : byte
     {
         /// <summary>
         /// Request granted

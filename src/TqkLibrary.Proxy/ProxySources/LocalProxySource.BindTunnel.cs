@@ -9,11 +9,11 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource
     {
-        class BindTunnel : BaseTunnel, IBindSource
+        public class BindTunnel : BaseTunnel, IBindSource
         {
-            TcpListener? _tcpListener;
-            TcpClient? _tcpClient;
-            internal BindTunnel(LocalProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            protected TcpListener? _tcpListener;
+            protected TcpClient? _tcpClient;
+            internal protected BindTunnel(LocalProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -25,7 +25,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            public async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
+            public virtual async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
             {
                 CheckIsDisposed();
                 if (_tcpListener is null)
@@ -44,7 +44,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 return new IPEndPoint(await _proxySource.GetResponseIPAddressAsync(), ((IPEndPoint)_tcpListener.LocalEndpoint).Port);
             }
 
-            public async Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            public virtual async Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 CheckIsDisposed();
                 if (_tcpListener is null)
@@ -69,8 +69,8 @@ namespace TqkLibrary.Proxy.ProxySources
 
             }
 
-            private event Action<TcpClient>? OnEndAcceptTcpClient;
-            void OnBeginAcceptTcpClient(IAsyncResult ar)
+            protected virtual event Action<TcpClient>? OnEndAcceptTcpClient;
+            protected virtual void OnBeginAcceptTcpClient(IAsyncResult ar)
             {
                 try
                 {

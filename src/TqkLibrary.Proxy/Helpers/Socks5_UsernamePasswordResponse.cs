@@ -1,13 +1,14 @@
-﻿using TqkLibrary.Proxy.StreamHeplers;
+﻿using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
 {
     /// <summary>
     /// <see href="https://www.rfc-editor.org/rfc/rfc1929"/>
     /// </summary>
-    internal class Socks5_UsernamePasswordResponse
+    public class Socks5_UsernamePasswordResponse : IPacketData
     {
-        internal Socks5_UsernamePasswordResponse(byte status)
+        public Socks5_UsernamePasswordResponse(byte status)
         {
             STATUS = status;
         }
@@ -16,11 +17,11 @@ namespace TqkLibrary.Proxy.Helpers
         {
         }
 
-        internal byte VER { get; private set; } = 0x01;
-        internal byte STATUS { get; private set; }
+        public byte VER { get; private set; } = 0x01;
+        public byte STATUS { get; private set; }
 
 
-        internal static async Task<Socks5_UsernamePasswordResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_UsernamePasswordResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_UsernamePasswordResponse socks5_UsernamePasswordResponse = new Socks5_UsernamePasswordResponse();
             byte[] buffer = await stream.ReadBytesAsync(2, cancellationToken);
@@ -30,16 +31,15 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
             yield return STATUS;
         }
     }
-    internal static class Socks5_UsernamePasswordResponse_Extensions
+    public static class Socks5_UsernamePasswordResponse_Extensions
     {
-        internal static Task<Socks5_UsernamePasswordResponse> Read_Socks5_UsernamePasswordResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_UsernamePasswordResponse> Read_Socks5_UsernamePasswordResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_UsernamePasswordResponse.ReadAsync(stream, cancellationToken);
     }
 }

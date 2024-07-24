@@ -2,13 +2,15 @@
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal static class StreamExtensions
+    public static class StreamExtensions
     {
-        internal static async Task TransferAsync(this Stream from,
+        public static async Task TransferAsync(
+            this Stream from,
             Stream to,
             long size,
             int bufferSize = 4096,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+            )
         {
             if (size <= 0) return;
             if (from == null) throw new ArgumentNullException(nameof(from));
@@ -27,10 +29,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             while (totalRead < size);
         }
 
-        internal static async Task<byte[]> ReadBytesAsync(
+        public static async Task<byte[]> ReadBytesAsync(
             this Stream from,
             int size,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+            )
         {
             if (size <= 0) return new byte[0];
             if (from == null) throw new ArgumentNullException(nameof(from));
@@ -49,22 +52,31 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return buffer;
         }
 
-        internal static async Task<byte> ReadByteAsync(
+        public static async Task<byte> ReadByteAsync(
             this Stream from,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+            )
         {
             byte[] bytes = await ReadBytesAsync(from, 1, cancellationToken);
             return bytes.First();
         }
 
 
-        internal static Task WriteAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
+        public static Task WriteAsync(
+            this Stream stream, 
+            string text, 
+            CancellationToken cancellationToken = default
+            )
         {
             if (string.IsNullOrWhiteSpace(text)) throw new ArgumentNullException(nameof(text));
             byte[] buffer = Encoding.ASCII.GetBytes(text);
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
-        internal static Task WriteLineAsync(this Stream stream, string text, CancellationToken cancellationToken = default)
+        public static Task WriteLineAsync(
+            this Stream stream, 
+            string text, 
+            CancellationToken cancellationToken = default
+            )
         {
             if (string.IsNullOrWhiteSpace(text)) throw new ArgumentNullException(nameof(text));
             byte[] buffer = new byte[text.Length + 2];
@@ -74,19 +86,29 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
 
-        static readonly byte[] line_break = new byte[] { 13, 10 };
-        internal static Task WriteLineAsync(this Stream stream, CancellationToken cancellationToken = default)
+        public static byte[] LineBreak => new byte[] { 13, 10 };
+        public static async Task WriteLineAsync(
+            this Stream stream, 
+            CancellationToken cancellationToken = default
+            )
         {
-            return stream.WriteAsync(line_break, 0, line_break.Length, cancellationToken);
+            await stream.WriteAsync(LineBreak, cancellationToken);
         }
 
-        internal static Task WriteHeadersAsync(this Stream stream, IEnumerable<string> headers, CancellationToken cancellationToken = default)
+        public static Task WriteHeadersAsync(
+            this Stream stream, 
+            IEnumerable<string> headers, 
+            CancellationToken cancellationToken = default
+            )
         {
             return stream.WriteLineAsync(string.Join("\r\n", headers) + "\r\n", cancellationToken);
         }
 
 
-        internal static async Task<string> ReadLineAsync(this Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<string> ReadLineAsync(
+            this Stream stream, 
+            CancellationToken cancellationToken = default
+            )
         {
             using MemoryStream memoryStream = new MemoryStream();
             byte[] buffer = new byte[1];
@@ -120,7 +142,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             }
         }
 
-        internal static async Task<byte[]> ReadUntilNullTerminated(this Stream stream, int maxLength = 256 * 1024, CancellationToken cancellationToken = default)
+        public static async Task<byte[]> ReadUntilNullTerminated(
+            this Stream stream, 
+            int maxLength = 256 * 1024,
+            CancellationToken cancellationToken = default
+            )
         {
             using MemoryStream memoryStream = new MemoryStream();
             byte[] buffer = new byte[1];
@@ -145,17 +171,13 @@ namespace TqkLibrary.Proxy.StreamHeplers
         }
 
 
-
-#if !NET5_0_OR_GREATER
-        public static Task WriteAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken = default)
+        public static Task WriteAsync(
+            this Stream stream, 
+            byte[] buffer, 
+            CancellationToken cancellationToken = default
+            )
         {
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
-
-        public static void Write(this Stream stream, byte[] buffer)
-        {
-            stream.Write(buffer, 0, buffer.Length);
-        }
-#endif
     }
 }

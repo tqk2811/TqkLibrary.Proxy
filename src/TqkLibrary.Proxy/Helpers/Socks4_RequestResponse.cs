@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -8,7 +9,7 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.openssh.com/txt/socks4.protocol"/>
     /// </summary>
-    internal class Socks4_RequestResponse
+    public class Socks4_RequestResponse : IPacketData
     {
         public Socks4_RequestResponse(Socks4_REP socks4_REP, Uri uri)
         {
@@ -55,7 +56,7 @@ namespace TqkLibrary.Proxy.Helpers
         public IPAddress DSTIP { get; private set; } = IPAddress.None;
         public IPEndPoint IPEndPoint { get { return new IPEndPoint(DSTIP, DSTPORT); } }
 
-        internal static async Task<Socks4_RequestResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks4_RequestResponse> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks4_RequestResponse socks4_RequestResponse = new Socks4_RequestResponse();
             byte[] buffer = await stream.ReadBytesAsync(8, cancellationToken);
@@ -67,8 +68,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VN;
             yield return (byte)REP;
@@ -87,9 +87,9 @@ namespace TqkLibrary.Proxy.Helpers
             return $"{REP}";
         }
     }
-    internal static class Socks4_RequestResponse_Extension
+    public static class Socks4_RequestResponse_Extension
     {
-        internal static Task<Socks4_RequestResponse> Read_Socks4_RequestResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks4_RequestResponse> Read_Socks4_RequestResponse_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks4_RequestResponse.ReadAsync(stream, cancellationToken);
     }
 }

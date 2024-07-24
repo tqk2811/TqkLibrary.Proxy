@@ -1,4 +1,5 @@
 ﻿using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -6,9 +7,9 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.rfc-editor.org/rfc/rfc1928"/>
     /// </summary>
-    internal class Socks5_Greeting
+    public class Socks5_Greeting : IPacketData
     {
-        internal Socks5_Greeting(IEnumerable<Socks5_Auth> socks5_Auths)
+        public Socks5_Greeting(IEnumerable<Socks5_Auth> socks5_Auths)
         {
             if (socks5_Auths is null) throw new ArgumentNullException(nameof(socks5_Auths));
             Auths = socks5_Auths.ToArray();
@@ -19,12 +20,12 @@ namespace TqkLibrary.Proxy.Helpers
         {
         }
 
-        internal byte VER { get; private set; } = 0x05;
-        internal int AuthCount { get { return Auths.Count(); } }
-        internal IEnumerable<Socks5_Auth> Auths { get; private set; } = Enumerable.Empty<Socks5_Auth>();
+        public byte VER { get; private set; } = 0x05;
+        public int AuthCount { get { return Auths.Count(); } }
+        public IEnumerable<Socks5_Auth> Auths { get; private set; } = Enumerable.Empty<Socks5_Auth>();
 
 
-        internal static async Task<Socks5_Greeting> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_Greeting> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_Greeting socks5_Greeting = new Socks5_Greeting();
             byte[] buffer = await stream.ReadBytesAsync(2, cancellationToken);
@@ -36,8 +37,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
             yield return (byte)AuthCount;
@@ -47,9 +47,9 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
     }
-    internal static class Socks5_Greeting_Extensions
+    public static class Socks5_Greeting_Extensions
     {
-        internal static Task<Socks5_Greeting> Read_Socks5_Greeting_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_Greeting> Read_Socks5_Greeting_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_Greeting.ReadAsync(stream, cancellationToken);
     }
 }

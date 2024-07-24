@@ -5,11 +5,11 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource
     {
-        class ConnectTunnel : BaseProxySourceTunnel<LocalProxySource>, IConnectSource
+        public class ConnectTunnel : BaseProxySourceTunnel<LocalProxySource>, IConnectSource
         {
-            readonly TcpClient _tcpClient = new TcpClient();
-            Stream? _stream = null;
-            public ConnectTunnel(LocalProxySource localProxySource, Guid tunnelId) : base(localProxySource, tunnelId)
+            protected readonly TcpClient _tcpClient = new TcpClient();
+            protected Stream? _stream = null;
+            internal protected ConnectTunnel(LocalProxySource localProxySource, Guid tunnelId) : base(localProxySource, tunnelId)
             {
 
             }
@@ -21,7 +21,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            static readonly IEnumerable<string> _SupportUriSchemes = new string[]
+            static protected readonly IEnumerable<string> _SupportUriSchemes = new string[]
             {
                 Uri.UriSchemeHttp,
                 Uri.UriSchemeHttps,
@@ -53,7 +53,7 @@ namespace TqkLibrary.Proxy.ProxySources
 #endif
             };
 
-            public async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
+            public virtual async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
             {
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
@@ -91,7 +91,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
 
-            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(ConnectAsync)} first");

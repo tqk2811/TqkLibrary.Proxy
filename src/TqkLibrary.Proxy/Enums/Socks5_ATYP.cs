@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Enums
 {
-    internal enum Socks5_ATYP
+    public enum Socks5_ATYP : byte
     {
         IpV4 = 0x01,
         DomainName = 0x03,

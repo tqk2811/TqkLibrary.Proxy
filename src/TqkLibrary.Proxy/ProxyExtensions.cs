@@ -1,6 +1,8 @@
-﻿namespace TqkLibrary.Proxy
+﻿using TqkLibrary.Proxy.Interfaces;
+
+namespace TqkLibrary.Proxy
 {
-    internal static class Extensions
+    public static class ProxyExtensions
     {
 #if !NET5_0_OR_GREATER
         public static bool Contains(this string self, string value, StringComparison stringComparison)
@@ -23,11 +25,7 @@
             }
         }
 #endif
-        internal static IEnumerable<T> Except<T>(this IEnumerable<T> source, params T[] values)
-            => source.Except(values.AsEnumerable());
-        internal static IEnumerable<T> Concat<T>(this IEnumerable<T> source, params T[] values)
-            => source.Concat(values.AsEnumerable());
-        internal static IEnumerable<T> ConcatIf<T>(this IEnumerable<T> source, bool val, params T[] values)
-            => val ? source.Concat(values.AsEnumerable()) : source;
+        public static byte[] GetByteArray(this IPacketData packetData) 
+            => packetData.GetBytes().ToArray();
     }
 }

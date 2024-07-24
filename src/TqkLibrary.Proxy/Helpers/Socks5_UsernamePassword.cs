@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -6,9 +7,9 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.rfc-editor.org/rfc/rfc1929"/>
     /// </summary>
-    internal class Socks5_UsernamePassword
+    public class Socks5_UsernamePassword: IPacketData
     {
-        internal Socks5_UsernamePassword(string userName, string password)
+        public Socks5_UsernamePassword(string userName, string password)
         {
             if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentNullException(nameof(userName));
             if (string.IsNullOrWhiteSpace(password)) throw new ArgumentNullException(nameof(password));
@@ -24,12 +25,12 @@ namespace TqkLibrary.Proxy.Helpers
         {
         }
 
-        internal byte VER { get; private set; } = 0x01;
-        internal string UserName { get; private set; }
-        internal string Password { get; private set; }
+        public byte VER { get; private set; } = 0x01;
+        public string UserName { get; private set; }
+        public string Password { get; private set; }
 
 
-        internal static async Task<Socks5_UsernamePassword> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_UsernamePassword> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_UsernamePassword socks5_UsernamePassword = new Socks5_UsernamePassword();
             byte[] buffer = await stream.ReadBytesAsync(2, cancellationToken);
@@ -46,8 +47,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
 
@@ -66,9 +66,9 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
     }
-    internal static class Socks5_UsernamePassword_Extensions
+    public static class Socks5_UsernamePassword_Extensions
     {
-        internal static Task<Socks5_UsernamePassword> Read_Socks5_UsernamePassword_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_UsernamePassword> Read_Socks5_UsernamePassword_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_UsernamePassword.ReadAsync(stream, cancellationToken);
     }
 }

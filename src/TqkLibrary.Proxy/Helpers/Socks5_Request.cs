@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -7,7 +8,7 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.rfc-editor.org/rfc/rfc1928"/>
     /// </summary>
-    internal class Socks5_Request
+    public class Socks5_Request : IPacketData
     {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         private Socks5_Request()
@@ -44,12 +45,12 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte VER { get; private set; } = 0x05;
-        internal Socks5_CMD CMD { get; private set; }
-        internal byte RSV { get; private set; }
-        internal Socks5_DSTADDR DSTADDR { get; private set; }
-        internal UInt16 DSTPORT { get; private set; }
-        internal Uri Uri
+        public byte VER { get; private set; } = 0x05;
+        public Socks5_CMD CMD { get; private set; }
+        public byte RSV { get; private set; }
+        public Socks5_DSTADDR DSTADDR { get; private set; }
+        public UInt16 DSTPORT { get; private set; }
+        public Uri Uri
         {
             get
             {
@@ -65,7 +66,7 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
 
-        internal static async Task<Socks5_Request> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks5_Request> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks5_Request socks5_Connection = new Socks5_Request();
             byte[] buffer = await stream.ReadBytesAsync(3, cancellationToken);
@@ -78,8 +79,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
             yield return (byte)CMD;
@@ -94,9 +94,9 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
     }
-    internal static class Socks5_Request_Extensions
+    public static class Socks5_Request_Extensions
     {
-        internal static Task<Socks5_Request> Read_Socks5_Request_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks5_Request> Read_Socks5_Request_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks5_Request.ReadAsync(stream, cancellationToken);
     }
 }

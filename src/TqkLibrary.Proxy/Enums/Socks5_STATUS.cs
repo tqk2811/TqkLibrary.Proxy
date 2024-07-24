@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Enums
 {
-    internal enum Socks5_STATUS : byte
+    public enum Socks5_STATUS : byte
     {
         RequestGranted = 0x00,
         GeneralFailure = 0x01,

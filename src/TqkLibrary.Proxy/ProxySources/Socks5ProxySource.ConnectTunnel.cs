@@ -8,14 +8,14 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {
-        class ConnectTunnel : BaseTunnel, IConnectSource
+        public class ConnectTunnel : BaseTunnel, IConnectSource
         {
-            internal ConnectTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            internal protected ConnectTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
 
-            public async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
+            public virtual async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
             {
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
@@ -32,7 +32,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
                 }
             }
-            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(ConnectAsync)} first");

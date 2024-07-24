@@ -7,7 +7,7 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {
-        class BaseTunnel : BaseProxySourceTunnel<Socks5ProxySource>
+        public class BaseTunnel : BaseProxySourceTunnel<Socks5ProxySource>
         {
             protected const byte SOCKS5_VER = 0x05;
             protected const byte UsernamePassword_Ver = 0x01;
@@ -15,7 +15,7 @@ namespace TqkLibrary.Proxy.ProxySources
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
 
-            internal BaseTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            internal protected BaseTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -36,7 +36,7 @@ namespace TqkLibrary.Proxy.ProxySources
             /// <exception cref="InvalidDataException"></exception>
             /// <exception cref="InvalidOperationException"></exception>
             /// <exception cref="NotSupportedException"></exception>
-            protected async Task ConnectAndAuthAsync(CancellationToken cancellationToken = default)
+            protected virtual async Task ConnectAndAuthAsync(CancellationToken cancellationToken = default)
             {
 #if NET5_0_OR_GREATER
                 await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port, cancellationToken);
@@ -53,13 +53,13 @@ namespace TqkLibrary.Proxy.ProxySources
 
             }
 
-            IEnumerable<Socks5_Auth> _GetSupportAuth()
+            protected virtual IEnumerable<Socks5_Auth> _GetSupportAuth()
             {
                 if (_proxySource.HttpProxyAuthentication != null) yield return Socks5_Auth.UsernamePassword;
                 yield return Socks5_Auth.NoAuthentication;
             }
 
-            async Task<Socks5_Auth> _ClientGreetingAsync(IEnumerable<Socks5_Auth> auths, CancellationToken cancellationToken = default)
+            protected virtual async Task<Socks5_Auth> _ClientGreetingAsync(IEnumerable<Socks5_Auth> auths, CancellationToken cancellationToken = default)
             {
                 if (auths == null || !auths.Any())
                     throw new InvalidDataException($"{nameof(auths)} is null or empty");
@@ -78,7 +78,7 @@ namespace TqkLibrary.Proxy.ProxySources
             }
 
 
-            async Task _AuthAsync(Socks5_Auth socks5_Auth, CancellationToken cancellationToken = default)
+            protected virtual async Task _AuthAsync(Socks5_Auth socks5_Auth, CancellationToken cancellationToken = default)
             {
                 if (_stream is null) throw new InvalidOperationException();
 

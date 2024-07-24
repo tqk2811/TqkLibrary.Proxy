@@ -9,14 +9,14 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource
     {
-        class BindTunnel : BaseTunnel, IBindSource
+        public class BindTunnel : BaseTunnel, IBindSource
         {
-            internal BindTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            internal protected BindTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
 
-            public async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
+            public virtual async Task<IPEndPoint> BindAsync(CancellationToken cancellationToken = default)
             {
                 CheckIsDisposed();
                 await ConnectAndAuthAsync();
@@ -47,7 +47,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
 
-            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(BindAsync)} first");

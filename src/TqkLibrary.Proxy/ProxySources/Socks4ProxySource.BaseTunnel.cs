@@ -4,12 +4,12 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks4ProxySource
     {
-        class BaseTunnel : BaseProxySourceTunnel<Socks4ProxySource>
+        public class BaseTunnel : BaseProxySourceTunnel<Socks4ProxySource>
         {
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
 
-            internal BaseTunnel(Socks4ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            internal protected BaseTunnel(Socks4ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -20,7 +20,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            protected async Task _ConnectToSocksServerAsync(CancellationToken cancellationToken = default)
+            protected virtual async Task _ConnectToSocksServerAsync(CancellationToken cancellationToken = default)
             {
 #if NET5_0_OR_GREATER
                 await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port, cancellationToken);

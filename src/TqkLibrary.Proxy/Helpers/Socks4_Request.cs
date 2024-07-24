@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 using TqkLibrary.Proxy.Enums;
+using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 
 namespace TqkLibrary.Proxy.Helpers
@@ -8,7 +9,7 @@ namespace TqkLibrary.Proxy.Helpers
     /// <summary>
     /// <see href="https://www.openssh.com/txt/socks4.protocol"/>
     /// </summary>
-    internal class Socks4_Request
+    public class Socks4_Request : IPacketData
     {
         const long socks4aDomain = 0x00000001; //0.0.0.x with x non-zero
         private Socks4_Request()
@@ -79,7 +80,7 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
 
-        internal static async Task<Socks4_Request> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<Socks4_Request> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             Socks4_Request socks4_Request = new Socks4_Request();
             byte[] buffer = await stream.ReadBytesAsync(8, cancellationToken);
@@ -98,8 +99,7 @@ namespace TqkLibrary.Proxy.Helpers
         }
 
 
-        internal byte[] GetByteArray() => GetBytes().ToArray();
-        internal IEnumerable<byte> GetBytes()
+        public IEnumerable<byte> GetBytes()
         {
             yield return VER;
             yield return (byte)CMD;
@@ -132,9 +132,9 @@ namespace TqkLibrary.Proxy.Helpers
             }
         }
     }
-    internal static class Socks4_Request_Extension
+    public static class Socks4_Request_Extension
     {
-        internal static Task<Socks4_Request> Read_Socks4_Request_Async(this Stream stream, CancellationToken cancellationToken = default)
+        public static Task<Socks4_Request> Read_Socks4_Request_Async(this Stream stream, CancellationToken cancellationToken = default)
             => Socks4_Request.ReadAsync(stream, cancellationToken);
     }
 }

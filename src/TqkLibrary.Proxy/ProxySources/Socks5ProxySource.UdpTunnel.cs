@@ -2,19 +2,19 @@
 {
     public partial class Socks5ProxySource
     {
-        //class UdpTunnel : BaseTunnel, IUdpAssociateSource
+        //public class UdpTunnel : BaseTunnel, IUdpAssociateSource
         //{
-        //    internal UdpTunnel(Socks5ProxySource proxySource) : base(proxySource)
+        //    internal protected UdpTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
         //    {
 
         //    }
 
-        //    public Task InitAsync(Uri address, CancellationToken cancellationToken = default)
+        //    public virtual Task InitAsync(Uri address, CancellationToken cancellationToken = default)
         //    {
         //        throw new NotImplementedException();
         //    }
 
-        //    public async Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address)
+        //    public virtual async Task<IUdpAssociateSource> InitUdpAssociateAsync(Uri address)
         //    {
 
         //    }

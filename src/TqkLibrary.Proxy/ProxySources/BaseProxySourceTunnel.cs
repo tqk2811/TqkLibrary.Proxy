@@ -2,7 +2,7 @@
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    internal abstract class BaseProxySourceTunnel<T> : BaseLogger, IDisposable
+    public abstract class BaseProxySourceTunnel<T> : BaseLogger, IDisposable
         where T : class, IProxySource
     {
         protected readonly T _proxySource;

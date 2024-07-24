@@ -11,11 +11,11 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class HttpProxySource
     {
-        class ConnectTunnel : BaseProxySourceTunnel<HttpProxySource>, IConnectSource
+        public class ConnectTunnel : BaseProxySourceTunnel<HttpProxySource>, IConnectSource
         {
-            readonly TcpClient _tcpClient = new TcpClient();
-            Stream? _stream;
-            internal ConnectTunnel(HttpProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
+            protected readonly TcpClient _tcpClient = new TcpClient();
+            protected Stream? _stream;
+            internal protected ConnectTunnel(HttpProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
 
             }
@@ -27,7 +27,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            public async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
+            public virtual async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
             {
                 if (address is null)
                     throw new ArgumentNullException(nameof(address));
@@ -44,7 +44,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InitConnectSourceFailedException();
                 }
             }
-            public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
+            public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {
                 if (_stream is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(ConnectTunnel)}.{nameof(ConnectAsync)} first");
@@ -53,7 +53,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 return Task.FromResult(_stream);
             }
 
-            async Task<bool> _CONNECT_Async(Uri address, CancellationToken cancellationToken = default)
+            protected virtual async Task<bool> _CONNECT_Async(Uri address, CancellationToken cancellationToken = default)
             {
                 if (_stream is null)
                     throw new InvalidOperationException();

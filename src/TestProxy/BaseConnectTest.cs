@@ -25,6 +25,7 @@ namespace TestProxy
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
+            Assert.IsNotNull(json);
             Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/get");
         }
 
@@ -36,6 +37,7 @@ namespace TestProxy
                 using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
                 string content = await httpResponseMessage.Content.ReadAsStringAsync();
                 dynamic json = JsonConvert.DeserializeObject(content);
+                Assert.IsNotNull(json);
                 Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/get");
             }
 
@@ -58,6 +60,7 @@ namespace TestProxy
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
+            Assert.IsNotNull(json);
             Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/post");
             Assert.AreEqual(json["data"]?.ToString(), "Test post");
         }
@@ -70,6 +73,7 @@ namespace TestProxy
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
+            Assert.IsNotNull(json);
             Assert.AreEqual(json["url"]?.ToString(), "https://httpbin.org/get");
         }
 
@@ -82,6 +86,7 @@ namespace TestProxy
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
+            Assert.IsNotNull(json);
             Assert.AreEqual(json["url"]?.ToString(), "https://httpbin.org/post");
             Assert.AreEqual(json["data"]?.ToString(), "Test post");
         }

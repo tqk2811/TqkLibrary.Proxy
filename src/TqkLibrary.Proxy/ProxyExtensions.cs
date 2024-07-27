@@ -1,4 +1,5 @@
-﻿using TqkLibrary.Proxy.Interfaces;
+﻿using System.Collections.Specialized;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy
 {
@@ -25,7 +26,13 @@ namespace TqkLibrary.Proxy
             }
         }
 #endif
-        public static byte[] GetByteArray(this IPacketData packetData) 
+        public static byte[] GetByteArray(this IPacketData packetData)
             => packetData.GetBytes().ToArray();
+
+        public static bool TryGetValues(this NameValueCollection nameValueCollection, string key, out string[]? values)
+        {
+            values = nameValueCollection.GetValues(key);
+            return values is not null;
+        }
     }
 }

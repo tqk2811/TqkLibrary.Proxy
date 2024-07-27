@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Specialized;
+using System.Net;
 using System.Text.RegularExpressions;
 
 /* Unmerged change from project 'TqkLibrary.Proxy (net6.0)'
@@ -42,18 +43,21 @@ namespace TqkLibrary.Proxy.Helpers
         public static HeaderResponseParse ParseResponse(IEnumerable<string> lines)
         {
             HeaderResponseParse responseStatusCode = new HeaderResponseParse(lines.FirstOrDefault()!);
-
-            var dict = lines.Skip(1)
+            NameValueCollection nameValueCollection = new NameValueCollection();
+            foreach (var line in lines
+                .Skip(1)
                 .Select(x => x.Split(':'))
-                .Where(x => x.Length == 2)
-                .ToDictionary(k => k[0].Trim().ToLower(), v => v[1].Trim());
-
-            if (dict.TryGetValue("proxy-connection", out string? proxy_connection))
+                .Where(x => x.Length == 2))
             {
-                responseStatusCode.IsKeepAlive = "keep-alive".Equals(proxy_connection, StringComparison.OrdinalIgnoreCase);
+                nameValueCollection.Add(line[0].ToLower(), line[1]);
             }
-            if (dict.TryGetValue("content-length", out string? content_length) &&
-                int.TryParse(content_length, out int int_cl))
+
+            if (nameValueCollection.TryGetValues("proxy-connection", out string[]? proxy_connection))
+            {
+                responseStatusCode.IsKeepAlive = proxy_connection!.Any(x => x.Contains("keep-alive", StringComparison.OrdinalIgnoreCase));
+            }
+            if (nameValueCollection.TryGetValues("content-length", out string[]? content_length) &&
+                int.TryParse(content_length!.First(), out int int_cl))
             {
                 responseStatusCode.ContentLength = int_cl;
             }

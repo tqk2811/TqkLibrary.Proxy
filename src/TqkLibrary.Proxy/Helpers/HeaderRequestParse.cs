@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Collections.Specialized;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 /* Unmerged change from project 'TqkLibrary.Proxy (net6.0)'
@@ -61,30 +62,34 @@ namespace TqkLibrary.Proxy.Helpers
         {
             HeaderRequestParse headerRequestParse = new HeaderRequestParse(lines.FirstOrDefault()!);
 
-            var dict = lines.Skip(1)
+            NameValueCollection nameValueCollection = new NameValueCollection();
+            foreach (var line in lines
+                .Skip(1)
                 .Select(x => x.Split(':'))
-                .Where(x => x.Length == 2)
-                .ToDictionary(k => k[0].Trim().ToLower(), v => v[1].Trim());
+                .Where(x => x.Length == 2))
+            {
+                nameValueCollection.Add(line[0].ToLower(), line[1]);
+            }
 
-            if (dict.TryGetValue("proxy-connection", out string? proxy_connection))
+            if (nameValueCollection.TryGetValues("proxy-connection", out string[]? proxy_connection))
             {
-                headerRequestParse.IsKeepAlive = "keep-alive".Equals(proxy_connection, StringComparison.OrdinalIgnoreCase);
+                headerRequestParse.IsKeepAlive = proxy_connection!.Any(x => x.Contains("keep-alive", StringComparison.OrdinalIgnoreCase));
             }
-            if (dict.TryGetValue("host", out string? host))
+            if (nameValueCollection.TryGetValues("host", out string[]? host))
             {
-                headerRequestParse.Host = host;
+                headerRequestParse.Host = host!.First();
             }
-            if (dict.TryGetValue("proxy-authorization", out string? Proxy_Authorization))
+            if (nameValueCollection.TryGetValues("proxy-authorization", out string[]? Proxy_Authorization))
             {
                 //https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
-                string[] split = Proxy_Authorization.Split(' ');
+                string[] split = Proxy_Authorization!.First().Split(' ');
                 if (split.Length == 2)
                 {
                     headerRequestParse.ProxyAuthorization = new AuthenticationHeaderValue(split[0], split[1]);
                 }
             }
-            if (dict.TryGetValue("content-length", out string? content_length) &&
-                int.TryParse(content_length, out int int_cl))
+            if (nameValueCollection.TryGetValues("content-length", out string[]? content_length) &&
+                int.TryParse(content_length!.First(), out int int_cl))
             {
                 headerRequestParse.ContentLength = int_cl;
             }

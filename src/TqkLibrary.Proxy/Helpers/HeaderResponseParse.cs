@@ -49,7 +49,7 @@ namespace TqkLibrary.Proxy.Helpers
                 .Select(x => x.Split(':'))
                 .Where(x => x.Length == 2))
             {
-                nameValueCollection.Add(line[0].ToLower(), line[1]);
+                nameValueCollection.Add(line[0].Trim().ToLower(), line[1].Trim());
             }
 
             if (nameValueCollection.TryGetValues("proxy-connection", out string[]? proxy_connection))

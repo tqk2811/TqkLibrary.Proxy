@@ -109,6 +109,9 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             StopListen();
             _ShutdownCurrentConnection(false);
+#if NET8_0_OR_GREATER
+            _tcpListener.Dispose();
+#endif
         }
 
         /// <summary>

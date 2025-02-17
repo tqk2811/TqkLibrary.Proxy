@@ -184,7 +184,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     if (await PreProxyServerHandler.IsAcceptClientAsync(tcpClient, tunnelId, _CancellationToken))
                     {
                         using Stream baseStream = tcpClient.GetStream();
-                        using AsynchronousOnlyStream asynchronousOnlyStream = new AsynchronousOnlyStream(baseStream);
+                        using AsynchronousOnlyStream asynchronousOnlyStream = new AsynchronousOnlyStream(baseStream, false);
 
                         using Stream stream = await PreProxyServerHandler.StreamHandlerAsync(asynchronousOnlyStream, iPEndPoint, tunnelId, _CancellationToken);
                         if (stream is null)

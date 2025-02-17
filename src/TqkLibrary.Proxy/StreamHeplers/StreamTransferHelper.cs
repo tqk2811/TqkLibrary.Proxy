@@ -2,7 +2,7 @@
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    internal class StreamTransferHelper : BaseLogger
+    public class StreamTransferHelper : BaseLogger
     {
         const int BUFFER_SIZE = 4096;
 
@@ -33,11 +33,16 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return this;
         }
 
+        Task? _taskWork = null;
         public Task WaitUntilDisconnect(CancellationToken cancellationToken = default)
         {
+            if (_taskWork is not null) 
+                return _taskWork;
+
             Task task_first = FirstToSecond(cancellationToken);
             Task task_second = SecondToFirst(cancellationToken);
-            return Task.WhenAll(task_first, task_second);
+            _taskWork = Task.WhenAll(task_first, task_second);
+            return _taskWork;
         }
 
         async Task FirstToSecond(CancellationToken cancellationToken = default)

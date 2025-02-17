@@ -11,15 +11,7 @@
 		<license type="expression">MIT</license>
 		<readme>docs\README.md</readme>
 		<dependencies>
-			<group targetFramework="net462">
-				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
-				<dependency id="System.Net.Http" version="4.3.4" />
-			</group>
 			<group targetFramework="netstandard2.0">
-				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
-				<dependency id="System.Net.Http" version="4.3.4" />
-			</group>
-			<group targetFramework="net5.0">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
@@ -27,7 +19,7 @@
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>
-			<group targetFramework="net7.0">
+			<group targetFramework="net8.0">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
 			</group>

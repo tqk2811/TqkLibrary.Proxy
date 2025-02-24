@@ -153,7 +153,6 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             await source_stream.WriteLineAsync(_cancellationToken);
 
-            using NonDisposeWrapperStream nonDisposeWrapperStream = new NonDisposeWrapperStream(_clientStream!);
             using Stream clientStream = await _proxyServerHandler!.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
             //Transfer content from client to target if have

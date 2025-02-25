@@ -1,20 +1,13 @@
 ﻿using System.Text;
+using TqkLibrary.Streams;
 
 namespace TqkLibrary.Proxy.StreamHeplers
 {
-    public class PreReadStream : Stream
+    public class PreReadStream : BaseInheritStream
     {
         byte[]? _preReadBuffer;
-
-        readonly Stream _baseStream;
-        public PreReadStream(Stream baseStream)
+        public PreReadStream(Stream baseStream, bool disposeBaseStream = true) : base(baseStream, disposeBaseStream)
         {
-            _baseStream = baseStream ?? throw new ArgumentNullException(nameof(baseStream));
-        }
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            _baseStream.Dispose();
         }
 
         public async Task<byte[]> PreReadAsync(int count, CancellationToken cancellationToken = default)
@@ -60,17 +53,11 @@ namespace TqkLibrary.Proxy.StreamHeplers
             while (true);
         }
 
-
-
-
-        public override bool CanRead => _baseStream.CanRead;
         public override bool CanSeek => false;
-        public override bool CanWrite => _baseStream.CanWrite;
-        public override long Length => _baseStream.Length;
-        public override long Position { get => _baseStream.Position; set => _baseStream.Position = value; }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
 
 
-        public override void Flush() => _baseStream.Flush();
 
         public override int Read(byte[] buffer, int offset, int count)
         {
@@ -97,17 +84,6 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 return _baseStream.Read(buffer, offset, count);
             }
         }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotImplementedException();
-        }
-
         public override void Write(byte[] buffer, int offset, int count)
         {
             _baseStream.Write(buffer, offset, count);
@@ -135,15 +111,6 @@ namespace TqkLibrary.Proxy.StreamHeplers
             {
                 return _baseStream.EndRead(asyncResult);
             }
-        }
-
-        public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback? callback, object? state)
-        {
-            return _baseStream.BeginWrite(buffer, offset, count, callback, state);
-        }
-        public override void EndWrite(IAsyncResult asyncResult)
-        {
-            _baseStream.EndWrite(asyncResult);
         }
 
 

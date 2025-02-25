@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Streams;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {

@@ -8,7 +8,7 @@
         bool IsSupportUdp { get; }
 
         /// <summary>
-        /// for socks5
+        /// for socks5, dns 
         /// </summary>
         bool IsSupportIpv6 { get; }
 

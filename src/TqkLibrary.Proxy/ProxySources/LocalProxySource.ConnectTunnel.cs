@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
@@ -62,6 +63,29 @@ namespace TqkLibrary.Proxy.ProxySources
                 switch (address.HostNameType)
                 {
                     case UriHostNameType.Dns://http://host/abc/def
+                        {
+                            var ips = await Dns.GetHostAddressesAsync(address.Host);
+                            if (!_proxySource.IsSupportIpv6)
+                            {
+                                ips = ips.Where(x => x.AddressFamily == AddressFamily.InterNetwork).ToArray();//ipv4 only
+                            }
+                            else if (_proxySource.IsPrioritizeIpv4.HasValue)
+                            {
+                                //prioritize ip v4/v6
+                                var order = _proxySource.IsPrioritizeIpv4.Value ? ips.OrderBy(x => x.AddressFamily) : ips.OrderByDescending(x => x.AddressFamily);
+                                ips = order.ToArray();
+                            }
+                            await _tcpClient.ConnectAsync(
+                                   ips,
+                                   address.Port
+#if NET5_0_OR_GREATER
+                                    , cancellationToken
+#endif
+                                );
+                            _stream = _tcpClient.GetStream();
+                            break;
+                        }
+
                     case UriHostNameType.IPv4:
                     case UriHostNameType.IPv6:
                         {

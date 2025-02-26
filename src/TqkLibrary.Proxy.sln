@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestProxy", "TestProxy\Test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1D31E06-4B0C-4398-A9E2-8D52495A76E0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoProxyThrottling", "DemoProxyThrottling\DemoProxyThrottling.csproj", "{CE23B3A5-80BB-4693-8823-252CDF080A33}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,10 @@ Global
 		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE676026-74A6-46B6-8A3F-55D53645AE6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE23B3A5-80BB-4693-8823-252CDF080A33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE23B3A5-80BB-4693-8823-252CDF080A33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE23B3A5-80BB-4693-8823-252CDF080A33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE23B3A5-80BB-4693-8823-252CDF080A33}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

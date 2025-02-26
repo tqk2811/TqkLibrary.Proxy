@@ -9,7 +9,8 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsSupportUdp { get; set; } = true;
         public virtual bool IsSupportIpv6 { get; set; } = true;
         /// <summary>
-        /// null is default by <see cref="TcpClient.ConnectAsync(string, int)"/><br/>
+        /// use for connect to target host dns -> ip address<br/>
+        /// null is default by <see cref="Dns.GetHostAddressesAsync"/><br/>
         /// True for Prioritize Ipv4, false for Prioritize Ipv6 (must enable <see cref="IsSupportIpv6"/>)
         /// </summary>
         public virtual bool? IsPrioritizeIpv4 { get; set; } = null;

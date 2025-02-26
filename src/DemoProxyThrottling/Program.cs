@@ -11,7 +11,7 @@ using TqkLibrary.Streams.ThrottlingHelpers;
 TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
 
 
-IProxySource proxySource = new MyLocalProxySource();
+IProxySource proxySource = new LocalProxySource() { IsPrioritizeIpv4 = true };
 
 ThrottlingConfigure throttlingConfigure = new ThrottlingConfigure();
 throttlingConfigure.DelayStep = 0;
@@ -56,69 +56,5 @@ class MyPreProxyServerHandler : BasePreProxyServerHandler
     public override Task<Stream> StreamHandlerAsync(Stream stream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult<Stream>(new ThrottlingStream(_throttlingConfigure, stream, true));
-    }
-}
-class MyLocalProxySource : LocalProxySource
-{
-    public override IConnectSource GetConnectSource(Guid tunnelId)
-    {
-        return new MyConnectTunnel(this, tunnelId);
-    }
-
-    class MyConnectTunnel : LocalProxySource.ConnectTunnel
-    {
-        protected internal MyConnectTunnel(LocalProxySource localProxySource, Guid tunnelId) : base(localProxySource, tunnelId)
-        {
-
-        }
-
-        public override async Task ConnectAsync(Uri address, CancellationToken cancellationToken = default)
-        {
-            if (address is null)
-                throw new ArgumentNullException(nameof(address));
-            CheckIsDisposed();
-
-            switch (address.HostNameType)
-            {
-                case UriHostNameType.Dns://http://host/abc/def
-                    {
-                        var ips = await Dns.GetHostAddressesAsync(address.Host);
-                        ips = ips.OrderBy(x => x.AddressFamily).ToArray();//prioritize ipv4
-                        await _tcpClient.ConnectAsync(ips, address.Port
-#if NET5_0_OR_GREATER
-                                , cancellationToken
-#endif
-                                );
-                        _stream = _tcpClient.GetStream();
-                        break;
-                    }
-                case UriHostNameType.IPv4:
-                case UriHostNameType.IPv6:
-                    {
-                        if (!_proxySource.IsSupportIpv6 && address.HostNameType == UriHostNameType.IPv6)
-                            throw new NotSupportedException($"IpV6 are not support");
-
-                        if (_SupportUriSchemes.Any(x => x.Equals(address.Scheme, StringComparison.InvariantCulture)))
-                        {
-                            await _tcpClient.ConnectAsync(
-                                address.Host,
-                                address.Port
-#if NET5_0_OR_GREATER
-                                , cancellationToken
-#endif
-                            );
-                            _stream = _tcpClient.GetStream();
-                        }
-                        else
-                        {
-                            throw new NotSupportedException(address.Scheme);
-                        }
-                    }
-                    break;
-
-                default:
-                    throw new NotSupportedException(address.HostNameType.ToString());
-            }
-        }
     }
 }

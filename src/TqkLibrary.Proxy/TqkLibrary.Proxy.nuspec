@@ -14,17 +14,17 @@
 			<group targetFramework="netstandard2.0">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
-				<dependency id="TqkLibrary.Streams" version="1.0.1" />
+				<dependency id="TqkLibrary.Streams" version="1.0.2" />
 			</group>
 			<group targetFramework="net6.0">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
-				<dependency id="TqkLibrary.Streams" version="1.0.1" />
+				<dependency id="TqkLibrary.Streams" version="1.0.2" />
 			</group>
 			<group targetFramework="net8.0">
 				<dependency id="Microsoft.Extensions.Logging" version="8.0.0" />
 				<dependency id="System.Net.Http" version="4.3.4" />
-				<dependency id="TqkLibrary.Streams" version="1.0.1" />
+				<dependency id="TqkLibrary.Streams" version="1.0.2" />
 			</group>
 		</dependencies>
 	</metadata>

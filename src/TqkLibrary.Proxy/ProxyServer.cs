@@ -9,7 +9,7 @@ using TqkLibrary.Streams;
 
 namespace TqkLibrary.Proxy
 {
-    public class ProxyServer : BaseLogger, IProxyServerListener
+    public sealed class ProxyServer : BaseLogger, IProxyServerListener
     {
         IPreProxyServerHandler _PreProxyServerHandler = new BasePreProxyServerHandler();
         /// <summary>

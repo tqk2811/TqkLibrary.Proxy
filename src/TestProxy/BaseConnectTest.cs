@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using TqkLibrary.Proxy.ProxyServers;
+using TqkLibrary.Proxy;
 
 namespace TestProxy
 {

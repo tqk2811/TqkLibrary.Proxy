@@ -1,9 +1,9 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Microsoft.Extensions.Logging;
 using System.Net;
+using TqkLibrary.Proxy;
 using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.ProxySources;
 using TqkLibrary.Streams;
 using TqkLibrary.Streams.ThrottlingHelpers;

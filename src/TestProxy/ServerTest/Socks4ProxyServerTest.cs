@@ -1,6 +1,6 @@
 ﻿using System.Net;
+using TqkLibrary.Proxy;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.ProxySources;
 
 namespace TestProxy.ServerTest

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using TqkLibrary.Proxy;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 
 namespace TestProxy
 {

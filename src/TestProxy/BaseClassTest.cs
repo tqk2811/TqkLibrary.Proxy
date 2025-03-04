@@ -1,5 +1,5 @@
-﻿using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
+﻿using TqkLibrary.Proxy;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TestProxy
 {

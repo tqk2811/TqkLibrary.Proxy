@@ -1,8 +1,8 @@
 ﻿using System.Net;
 using TestProxy.ServerTest;
+using TqkLibrary.Proxy;
 using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.ProxySources;
 
 namespace TestProxy.HttpProxySourceTest

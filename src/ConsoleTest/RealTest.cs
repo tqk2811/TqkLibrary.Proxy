@@ -4,8 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using TqkLibrary.Proxy;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.ProxySources;
 
 namespace ConsoleTest

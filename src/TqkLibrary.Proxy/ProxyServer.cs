@@ -7,7 +7,7 @@ using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHeplers;
 using TqkLibrary.Streams;
 
-namespace TqkLibrary.Proxy.ProxyServers
+namespace TqkLibrary.Proxy
 {
     public class ProxyServer : BaseLogger, IProxyServerListener
     {

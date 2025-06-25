@@ -21,17 +21,17 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsSupportIpv6 { get; set; } = true;
         public virtual bool IsSupportBind { get; set; } = true;
 
-        public virtual IConnectSource GetConnectSource(Guid tunnelId)
+        public virtual Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
-            return new ConnectTunnel(this, tunnelId);
+            return Task.FromResult<IConnectSource>(new ConnectTunnel(this, tunnelId));
         }
 
-        public virtual IBindSource GetBindSource(Guid tunnelId)
+        public virtual Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
-            return new BindTunnel(this, tunnelId);
+            return Task.FromResult<IBindSource>(new BindTunnel(this, tunnelId));
         }
 
-        public virtual IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId)
+        public virtual Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();
             //return new UdpTunnel(this);

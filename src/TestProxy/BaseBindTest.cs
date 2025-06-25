@@ -18,7 +18,7 @@ namespace TestProxy
         [TestMethod]
         public async Task TestBindTransfer()
         {
-            using IBindSource bindSource = _sockProxySource.GetBindSource(Guid.NewGuid());
+            using IBindSource bindSource = await _sockProxySource.GetBindSourceAsync(Guid.NewGuid());
             IPEndPoint iPEndPoint = await bindSource.BindAsync();
 
             Task<string?> t_ping = ConnectBindAsync(iPEndPoint);

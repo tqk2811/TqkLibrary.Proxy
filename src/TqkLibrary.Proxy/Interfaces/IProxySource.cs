@@ -20,16 +20,16 @@
         /// <summary>
         /// 
         /// </summary>
-        IConnectSource GetConnectSource(Guid tunnelId);
+        Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
-        IBindSource GetBindSource(Guid tunnelId);
+        Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// 
         /// </summary>
-        IUdpAssociateSource GetUdpAssociateSource(Guid tunnelId);
+        Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default);
     }
 }

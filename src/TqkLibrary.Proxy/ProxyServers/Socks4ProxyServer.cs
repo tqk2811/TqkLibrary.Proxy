@@ -116,7 +116,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(uri, userInfo!, _cancellationToken);
 
             Uri uri_connect = new Uri($"http://{target_ip}:{socks4_Request.DSTPORT}");
-            using IConnectSource connectSource = proxySource.GetConnectSource(_tunnelId);
+            using IConnectSource connectSource = await proxySource.GetConnectSourceAsync(_tunnelId);
             await connectSource.ConnectAsync(uri_connect, _cancellationToken);
 
             using Stream session_stream = await connectSource.GetStreamAsync();
@@ -140,7 +140,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            using IBindSource bindSource = proxySource.GetBindSource(_tunnelId);
+            using IBindSource bindSource = await proxySource.GetBindSourceAsync(_tunnelId);
             IPEndPoint iPEndPoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyAsync(Socks4_REP.RequestGranted, iPEndPoint.Address, (UInt16)iPEndPoint.Port);

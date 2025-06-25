@@ -85,7 +85,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (await proxyServerHandler.IsAcceptDomainAsync(_client_HeaderParse.Uri, userInfo, cancellationToken))
                 {
                     IProxySource proxySource = await proxyServerHandler.GetProxySourceAsync(_client_HeaderParse.Uri, userInfo, cancellationToken);
-                    using IConnectSource connectSource = proxySource.GetConnectSource(tunnelId);
+                    using IConnectSource connectSource = await proxySource.GetConnectSourceAsync(tunnelId);
                     try
                     {
                         await connectSource.ConnectAsync(_client_HeaderParse.Uri, _cancellationToken);

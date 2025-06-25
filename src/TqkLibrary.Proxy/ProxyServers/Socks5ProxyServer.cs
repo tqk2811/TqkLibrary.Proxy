@@ -128,7 +128,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task _EstablishStreamConnectionAsync(Uri uri)
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(uri, userInfo!, _cancellationToken);
-            using IConnectSource connectSource = proxySource.GetConnectSource(_tunnelId);
+            using IConnectSource connectSource = await proxySource.GetConnectSourceAsync(_tunnelId);
             await connectSource.ConnectAsync(uri, _cancellationToken);
             using Stream session_stream = await connectSource.GetStreamAsync();
             //send response to client
@@ -150,7 +150,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            using IBindSource bindSource = proxySource.GetBindSource(_tunnelId);
+            using IBindSource bindSource = await proxySource.GetBindSourceAsync(_tunnelId);
             IPEndPoint listen_endpoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted, listen_endpoint);

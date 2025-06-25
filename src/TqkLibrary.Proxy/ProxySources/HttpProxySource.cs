@@ -10,6 +10,14 @@ namespace TqkLibrary.Proxy.ProxySources
         public HttpProxySource(Uri proxy)
         {
             _proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
+            if (!string.IsNullOrWhiteSpace(_proxy.UserInfo))
+            {
+                var split = _proxy.UserInfo.Split(':');
+                if (split.Length == 2)
+                {
+                    HttpProxyAuthentication = new HttpProxyAuthentication(split[0], split[1]);
+                }
+            }
         }
         /// <summary>
         /// Self host

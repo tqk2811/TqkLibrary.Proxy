@@ -12,6 +12,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+		<ProjectReference Include="..\TqkLibrary.Proxy.GlobalUnicast\TqkLibrary.Proxy.GlobalUnicast.csproj" />
 		<ProjectReference Include="..\TqkLibrary.Proxy\TqkLibrary.Proxy.csproj" />
 	</ItemGroup>
 

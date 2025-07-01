@@ -101,7 +101,7 @@ namespace TqkLibrary.Proxy.GlobalUnicast
             row.OnLinkPrefixLength = prefixLength;
             row.PrefixOrigin = 3; // IpPrefixOriginRouterAdvertisement
             row.SuffixOrigin = 4; // IpSuffixOriginRandom
-            if (lifeTime == TimeSpan.Zero)
+            if (lifeTime <= TimeSpan.Zero)
             {
                 row.ValidLifetime = 0xFFFFFFFF; // infinite
                 row.PreferredLifetime = 0xFFFFFFFF; // infinite

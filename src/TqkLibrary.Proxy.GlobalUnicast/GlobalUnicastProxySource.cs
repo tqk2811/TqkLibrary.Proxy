@@ -76,7 +76,7 @@ namespace TqkLibrary.Proxy.GlobalUnicast
                     throw new InvalidOperationException();
 
                 IPAddress iPAddress = SlaccHelper.GenerateSlaacAddress(prefix);
-                await SlaccHelper.AssignIPv6ToFirstUpInterfaceAsync(iPAddress);
+                await SlaccHelper.AssignIPv6ToFirstUpInterfaceAsync(iPAddress, LifeTime);
                 AssignAddress = iPAddress;
             }
             finally

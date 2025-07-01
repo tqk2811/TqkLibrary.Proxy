@@ -68,7 +68,7 @@ namespace TqkLibrary.Proxy.GlobalUnicast
             return new IPAddress(full);
         }
 
-        public static async Task AssignIPv6ToFirstUpInterface(IPAddress ipv6Address, byte prefixLength = 64)
+        public static async Task AssignIPv6ToFirstUpInterfaceAsync(IPAddress ipv6Address, TimeSpan lifeTime, byte prefixLength = 64)
         {
             var ip = ipv6Address;
             if (ip.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
@@ -101,8 +101,16 @@ namespace TqkLibrary.Proxy.GlobalUnicast
             row.OnLinkPrefixLength = prefixLength;
             row.PrefixOrigin = 3; // IpPrefixOriginRouterAdvertisement
             row.SuffixOrigin = 4; // IpSuffixOriginRandom
-            row.ValidLifetime = 0xFFFFFFFF; // infinite
-            row.PreferredLifetime = 0xFFFFFFFF; // infinite
+            if (lifeTime == TimeSpan.Zero)
+            {
+                row.ValidLifetime = 0xFFFFFFFF; // infinite
+                row.PreferredLifetime = 0xFFFFFFFF; // infinite
+            }
+            else
+            {
+                row.ValidLifetime = (uint)lifeTime.TotalSeconds;
+                row.PreferredLifetime = (uint)lifeTime.TotalSeconds;
+            }
             row.SkipAsSource = false;
             row.DadState = 0;     // IpDadStatePreferred
 

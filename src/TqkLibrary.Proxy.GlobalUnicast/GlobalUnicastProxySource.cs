@@ -12,6 +12,11 @@ namespace TqkLibrary.Proxy.GlobalUnicast
     {
         private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
         public IPAddress? AssignAddress { get; private set; }
+        /// <summary>
+        /// zero mean infinity
+        /// </summary>
+        public TimeSpan LifeTime { get; set; } = TimeSpan.Zero;
+
 
         public bool IsSupportUdp => false;
 
@@ -71,7 +76,7 @@ namespace TqkLibrary.Proxy.GlobalUnicast
                     throw new InvalidOperationException();
 
                 IPAddress iPAddress = SlaccHelper.GenerateSlaacAddress(prefix);
-                SlaccHelper.AssignIPv6ToFirstUpInterface(iPAddress);
+                await SlaccHelper.AssignIPv6ToFirstUpInterfaceAsync(iPAddress);
                 AssignAddress = iPAddress;
             }
             finally

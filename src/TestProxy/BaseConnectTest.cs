@@ -5,6 +5,7 @@ namespace TestProxy
 {
     public abstract class BaseConnectTest : BaseClassTest
     {
+        const string testDomain = "httpbingo.org";//httpbin.org
         readonly HttpClient _httpClient;
         public BaseConnectTest()
         {
@@ -21,24 +22,24 @@ namespace TestProxy
         [TestMethod]
         public async Task HttpGet()
         {
-            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
+            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"http://{testDomain}/get");
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
             Assert.IsNotNull(json);
-            Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/get");
+            Assert.AreEqual(json["url"]?.ToString(), $"http://{testDomain}/get");
         }
 
         [TestMethod]
         public async Task HttpGetTwoTimes()
         {
             {
-                using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "http://httpbin.org/get");
+                using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"http://{testDomain}/get");
                 using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
                 string content = await httpResponseMessage.Content.ReadAsStringAsync();
                 dynamic json = JsonConvert.DeserializeObject(content);
                 Assert.IsNotNull(json);
-                Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/get");
+                Assert.AreEqual(json["url"]?.ToString(), $"http://{testDomain}/get");
             }
 
             //Test make new request on 1 connection with proxy
@@ -54,14 +55,14 @@ namespace TestProxy
         [TestMethod]
         public async Task HttpPost()
         {
-            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "http://httpbin.org/post");
+            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"http://{testDomain}/post");
             httpRequestMessage.Headers.Add("Accept", "application/json");
             httpRequestMessage.Content = new StringContent("Test post");
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
             Assert.IsNotNull(json);
-            Assert.AreEqual(json["url"]?.ToString(), "http://httpbin.org/post");
+            Assert.AreEqual(json["url"]?.ToString(), $"http://{testDomain}/post");
             Assert.AreEqual(json["data"]?.ToString(), "Test post");
         }
 
@@ -69,25 +70,25 @@ namespace TestProxy
         [TestMethod]
         public async Task HttpsGet()
         {
-            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://httpbin.org/get");
+            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"https://{testDomain}/get");
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
             Assert.IsNotNull(json);
-            Assert.AreEqual(json["url"]?.ToString(), "https://httpbin.org/get");
+            Assert.AreEqual(json["url"]?.ToString(), $"https://{testDomain}/get");
         }
 
         [TestMethod]
         public async Task HttpsPost()
         {
-            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "https://httpbin.org/post");
+            using HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"https://{testDomain}/post");
             httpRequestMessage.Headers.Add("Accept", "application/json");
             httpRequestMessage.Content = new StringContent("Test post");
             using HttpResponseMessage httpResponseMessage = await _httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead);
             string content = await httpResponseMessage.Content.ReadAsStringAsync();
             dynamic json = JsonConvert.DeserializeObject(content);
             Assert.IsNotNull(json);
-            Assert.AreEqual(json["url"]?.ToString(), "https://httpbin.org/post");
+            Assert.AreEqual(json["url"]?.ToString(), $"https://{testDomain}/post");
             Assert.AreEqual(json["data"]?.ToString(), "Test post");
         }
     }

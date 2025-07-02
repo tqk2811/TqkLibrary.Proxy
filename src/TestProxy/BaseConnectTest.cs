@@ -5,7 +5,8 @@ namespace TestProxy
 {
     public abstract class BaseConnectTest : BaseClassTest
     {
-        const string testDomain = "httpbingo.org";//httpbin.org
+        //const string testDomain = "httpbingo.org";
+        const string testDomain = "httpbin.org";
         readonly HttpClient _httpClient;
         public BaseConnectTest()
         {

@@ -36,4 +36,4 @@ jobs:
         
       - name: Execute unit tests
         working-directory: ./src
-        run: dotnet test
+        run: dotnet test $Test_Project_Path

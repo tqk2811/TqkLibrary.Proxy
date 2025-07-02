@@ -15,8 +15,8 @@ jobs:
         configuration: [Release]
 
     env:
-      Solution_Name: src\TqkLibrary.Proxy.sln                       # Replace with your solution name, i.e. MyWpfApp.sln.
-      Test_Project_Path: src\TestProxy\TestProxy.csproj             # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+      Solution_Name: src/TqkLibrary.Proxy.sln                       # Replace with your solution name, i.e. MyWpfApp.sln.
+      Test_Project_Path: src/TestProxy/TestProxy.csproj             # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
 
 
     steps:

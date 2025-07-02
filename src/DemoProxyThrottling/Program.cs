@@ -9,6 +9,7 @@ using TqkLibrary.Streams;
 using TqkLibrary.Streams.ThrottlingHelpers;
 
 TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
+const uint speedLimit = 200 * 1024;//200KiB/sec
 
 
 IProxySource proxySource = new LocalProxySource() { IsPrioritizeIpv4 = true };
@@ -16,8 +17,8 @@ IProxySource proxySource = new LocalProxySource() { IsPrioritizeIpv4 = true };
 ThrottlingConfigure throttlingConfigure = new ThrottlingConfigure();
 throttlingConfigure.DelayStep = 0;
 throttlingConfigure.Balanced = 1024;//balanced for multi stream
-throttlingConfigure.ReadBytesPerTime = 100 * 1024;//100KiB/sec
-throttlingConfigure.WriteBytesPerTime = 100 * 1024;//100KiB/sec
+throttlingConfigure.ReadBytesPerTime = speedLimit;
+throttlingConfigure.WriteBytesPerTime = speedLimit;
 throttlingConfigure.Time = TimeSpan.FromSeconds(1);
 
 

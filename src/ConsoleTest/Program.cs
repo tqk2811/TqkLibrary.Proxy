@@ -2,6 +2,8 @@
 using System.Net.Sockets;
 using System.Net;
 using Microsoft.Extensions.Logging;
+using TqkLibrary.Proxy.GlobalUnicast;
+using System.Net.NetworkInformation;
 
 TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
 
@@ -17,18 +19,31 @@ Uri uri8 = new Uri("udp://[::1]:13566");
 Uri uri9 = new Uri("http://[0:0:0:0:0:0:0:1]:13566");
 Uri uri10 = new Uri("http://localhost:13566");
 
-//string strHostName = Dns.GetHostName();
-//Console.WriteLine("Local Machine's Host Name: " + strHostName);
+string strHostName = Dns.GetHostName();
+Console.WriteLine("Local Machine's Host Name: " + strHostName);
+IPHostEntry iPHostEntry = Dns.GetHostEntry(strHostName);
+foreach (var item in iPHostEntry.AddressList)
+{
+    Console.WriteLine($"{item.AddressFamily}: {item}");
+}
 
-//IPHostEntry iPHostEntry = Dns.GetHostEntry(strHostName);
-//var ip = iPHostEntry
-//        .AddressList
-//        .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
-
+Console.WriteLine();
+Console.WriteLine("UnicastAddresses");
+foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+{
+    var props = nic.GetIPProperties();
+    foreach (var addr in props.UnicastAddresses)
+    {
+        if (addr.Address.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            Console.WriteLine($"{nic.Name} => {addr.Address}");
+        }
+    }
+}
 //TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
 //tcpListener.Start();
 
-await Socks4SourceBindTest.RunAsync();
-//await ProxyWraper.RunAsync();
+//await Socks4SourceBindTest.RunAsync();
+await ProxyWraper.RunAsync();
 //await DebugTest.Test();
 //RealTest.HttpProxyServerTest();

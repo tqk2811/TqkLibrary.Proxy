@@ -36,4 +36,4 @@ jobs:
         
       - name: Execute unit tests
         working-directory: ./src
-        run: dotnet test $Test_Project_Path
+        run: dotnet test "${{ env.Test_Project_Path }}"

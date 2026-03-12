@@ -1,13 +1,14 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.ProxyServers;
 using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.Handlers
 {
     public class BasePreProxyServerHandler : IPreProxyServerHandler
     {
+        protected IProxyServerFactory ProxyServerFactory { get; set; } = new DefaultProxyServerFactory();
+
         public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(true);
@@ -17,30 +18,9 @@ namespace TqkLibrary.Proxy.Handlers
             return Task.FromResult(stream);
         }
 
-        public virtual async Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default)
+        public virtual Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default)
         {
-            byte[] buffer = await preReadStream.PreReadAsync(1, cancellationToken).ConfigureAwait(false);
-            if (buffer.Length == 0)
-                throw new InvalidOperationException($"Invalid Request");
-
-            switch (buffer[0])
-            {
-                case 0x04:
-                    return new Socks4ProxyServer();
-
-                case 0x05:
-                    return new Socks5ProxyServer();
-
-                default:
-                    {
-                        string header = await preReadStream.PreReadLineAsync(32 * 1024, cancellationToken);
-                        if (header.Contains("HTTP/", StringComparison.OrdinalIgnoreCase))
-                        {
-                            return new HttpProxyServer();
-                        }
-                        else throw new InvalidOperationException($"Invalid Request");
-                    }
-            }
+            return ProxyServerFactory.CreateAsync(preReadStream, cancellationToken);
         }
     }
 }

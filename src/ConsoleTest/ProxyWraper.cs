@@ -39,6 +39,7 @@ namespace ConsoleTest
 
             MyProxyServerHandler myProxyServerHandler = new(GetProxySource());
             using var server = new ProxyServer(ipEndPoint, myProxyServerHandler);
+            server.PreProxyServerHandler = new MyBasePreProxyServerHandler();
             server.StartListen();
             Console.WriteLine($"Listening {server.IPEndPoint}");
             Console.ReadLine();
@@ -46,12 +47,12 @@ namespace ConsoleTest
 
         static IProxySource GetProxySource()
         {
-            HttpProxyAuthentication? auth = new HttpProxyAuthentication("0FKGiplus.", "VnNMVtbn");
+            HttpProxyAuthentication? auth = new HttpProxyAuthentication("hwac7m0f", "hWaC7m0F");
             IProxySource proxySource;
-            proxySource = new HttpProxySource(new Uri("http://103.171.1.93:8549"), auth);
+            //proxySource = new HttpProxySource(new Uri("http://15.204.2.117:31419"), auth);
             //proxySource = new Socks4ProxySource(IPEndPoint.Parse("93.104.63.65:80"));
             //proxySource = new Socks5ProxySource(IPEndPoint.Parse("138.201.120.118:29127"));
-            //proxySource = new LocalProxySource();
+            proxySource = new LocalProxySource();
             //proxySource = new GlobalUnicastProxySource()
             //{
             //    LifeTime = TimeSpan.FromMinutes(10),
@@ -66,13 +67,36 @@ namespace ConsoleTest
 
             }
 
-            public override Task<Stream> StreamHandlerAsync(Stream stream, IUserInfo userInfo, CancellationToken cancellationToken = default)
+            //public override Task<Stream> StreamHandlerAsync(Stream stream, IUserInfo userInfo, CancellationToken cancellationToken = default)
+            //{
+            //    ExchangeLimitStream exchangeLimitStream = new ExchangeLimitStream(stream, true);
+            //    exchangeLimitStream.MaxBytesRead = 100 * 1024 * 1024;
+            //    exchangeLimitStream.MaxBytesWrite = 100 * 1024 * 1024;
+            //    return Task.FromResult<Stream>(exchangeLimitStream);
+            //    //return base.StreamHandlerAsync(stream, userInfo, cancellationToken);
+            //}
+
+            public override Task<bool> IsAcceptUserAsync(IUserInfo userInfo, CancellationToken cancellationToken = default)
             {
-                ExchangeLimitStream exchangeLimitStream = new ExchangeLimitStream(stream, true);
-                exchangeLimitStream.MaxBytesRead = 100 * 1024 * 1024;
-                exchangeLimitStream.MaxBytesWrite = 100 * 1024 * 1024;
-                return Task.FromResult<Stream>(exchangeLimitStream);
-                //return base.StreamHandlerAsync(stream, userInfo, cancellationToken);
+                return base.IsAcceptUserAsync(userInfo, cancellationToken);
+            }
+
+            public override Task<bool> IsAcceptDomainAsync(Uri uri, IUserInfo userInfo, CancellationToken cancellationToken = default)
+            {
+                return base.IsAcceptDomainAsync(uri, userInfo, cancellationToken);
+            }
+
+            public override Task<IProxySource> GetProxySourceAsync(Uri? uri, IUserInfo userInfo, CancellationToken cancellationToken = default)
+            {
+                return base.GetProxySourceAsync(uri, userInfo, cancellationToken);
+            }
+        }
+
+        class MyBasePreProxyServerHandler: BasePreProxyServerHandler
+        {
+            public override Task<bool> IsAcceptClientAsync(TcpClient tcpClient, Guid tunnelId, CancellationToken cancellationToken = default)
+            {
+                return base.IsAcceptClientAsync(tcpClient, tunnelId, cancellationToken);
             }
         }
     }

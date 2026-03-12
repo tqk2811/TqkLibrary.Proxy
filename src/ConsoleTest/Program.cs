@@ -28,6 +28,8 @@ foreach (var item in iPHostEntry.AddressList)
 }
 
 Console.WriteLine();
+Console.WriteLine("==================================================");
+Console.WriteLine();
 Console.WriteLine("UnicastAddresses");
 foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
 {
@@ -40,6 +42,9 @@ foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
         }
     }
 }
+Console.WriteLine();
+Console.WriteLine("==================================================");
+Console.WriteLine();
 //TcpListener tcpListener = new TcpListener(IPAddress.Any, 0);
 //tcpListener.Start();
 

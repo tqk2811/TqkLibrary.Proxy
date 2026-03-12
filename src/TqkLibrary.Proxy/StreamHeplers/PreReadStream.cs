@@ -97,7 +97,7 @@ namespace TqkLibrary.Proxy.StreamHeplers
                     return lengthCopy;
                 }
             }
-            return -1;
+            return 0;
         }
 
         public override bool CanSeek => false;

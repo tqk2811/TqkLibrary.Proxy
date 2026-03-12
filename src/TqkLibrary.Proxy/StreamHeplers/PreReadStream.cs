@@ -38,28 +38,38 @@ namespace TqkLibrary.Proxy.StreamHeplers
             return result;
         }
         /// <summary>
-        /// 
+        /// Reads bytes incrementally until a CRLF line terminator is found, buffering all
+        /// consumed bytes so subsequent reads are not affected.
         /// </summary>
         /// <param name="maxLength">Http header size or url max length</param>
         /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <returns>The line including the trailing CRLF.</returns>
         /// <exception cref="InvalidOperationException"></exception>
         public async Task<string> PreReadLineAsync(int maxLength = 32 * 1024, CancellationToken cancellationToken = default)
         {
-            byte[] buffer;
-            do
+            int searchFrom = 0;
+            int count = Math.Min(64, maxLength);
+            while (true)
             {
-                buffer = await PreReadAsync(maxLength, cancellationToken).ConfigureAwait(false);
-                string text = Encoding.ASCII.GetString(buffer);
-                int index_cr = Array.IndexOf(buffer, (byte)'\r');
-                int index_lf = Array.IndexOf(buffer, (byte)'\n');
-                if (index_cr + 1 == index_lf)
-                    return Encoding.ASCII.GetString(buffer, 0, index_lf + 1);
+                byte[] buffer = await PreReadAsync(count, cancellationToken).ConfigureAwait(false);
 
-                if (buffer.Length == maxLength)
+                int searchEnd = buffer.Length - 1;
+                for (int i = searchFrom; i < searchEnd; i++)
+                {
+                    if (buffer[i] == '\r' && buffer[i + 1] == '\n')
+                        return Encoding.ASCII.GetString(buffer, 0, i + 2);
+                }
+
+                if (buffer.Length < count)
+                    throw new InvalidOperationException("Stream ended without CRLF");
+
+                if (count >= maxLength)
                     throw new InvalidOperationException("Stream not contain crlf");
+
+                // keep last byte in next search window to handle \r\n split across chunks
+                searchFrom = Math.Max(0, buffer.Length - 1);
+                count = Math.Min(count * 2, maxLength);
             }
-            while (true);
         }
 
         public override int Read(byte[] buffer, int offset, int count)

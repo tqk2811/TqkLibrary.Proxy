@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Exceptions
 {
-    public class InitConnectSourceFailedException : Exception
+    public class InitConnectSourceFailedException : ProxySourceException
     {
         public InitConnectSourceFailedException()
         {

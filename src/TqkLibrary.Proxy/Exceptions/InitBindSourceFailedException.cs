@@ -1,6 +1,6 @@
 ﻿namespace TqkLibrary.Proxy.Exceptions
 {
-    public class InitBindSourceFailedException : Exception
+    public class InitBindSourceFailedException : ProxySourceException
     {
         public InitBindSourceFailedException()
         {

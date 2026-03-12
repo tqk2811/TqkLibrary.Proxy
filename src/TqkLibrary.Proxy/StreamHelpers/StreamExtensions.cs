@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace TqkLibrary.Proxy.StreamHeplers
+namespace TqkLibrary.Proxy.StreamHelpers
 {
     public static class StreamExtensions
     {

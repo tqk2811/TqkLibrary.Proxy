@@ -1,7 +1,7 @@
 ﻿using System.Net.Sockets;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Helpers;
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {

@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxyServers;
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.Handlers
 {

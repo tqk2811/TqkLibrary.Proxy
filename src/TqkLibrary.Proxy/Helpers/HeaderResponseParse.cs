@@ -4,12 +4,12 @@ using System.Text.RegularExpressions;
 
 /* Unmerged change from project 'TqkLibrary.Proxy (net6.0)'
 Before:
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 After:
 using TqkLibrary;
 using TqkLibrary.Proxy;
 using TqkLibrary.Proxy;
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 */
 
 namespace TqkLibrary.Proxy.Helpers

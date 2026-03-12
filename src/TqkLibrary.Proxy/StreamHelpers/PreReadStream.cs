@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using TqkLibrary.Streams;
 
-namespace TqkLibrary.Proxy.StreamHeplers
+namespace TqkLibrary.Proxy.StreamHelpers
 {
     public class PreReadStream : BaseInheritStream
     {

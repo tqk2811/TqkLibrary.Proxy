@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace TqkLibrary.Proxy.StreamHeplers
+namespace TqkLibrary.Proxy.StreamHelpers
 {
     public class StreamTransferHelper : BaseLogger
     {

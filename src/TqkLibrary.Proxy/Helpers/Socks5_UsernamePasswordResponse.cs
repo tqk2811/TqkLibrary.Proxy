@@ -1,5 +1,5 @@
 ﻿using TqkLibrary.Proxy.Interfaces;
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.Helpers
 {

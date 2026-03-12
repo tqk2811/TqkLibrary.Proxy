@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using TqkLibrary.Proxy.StreamHeplers;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.Interfaces
 {

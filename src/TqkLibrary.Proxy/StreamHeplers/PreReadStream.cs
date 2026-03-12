@@ -6,27 +6,36 @@ namespace TqkLibrary.Proxy.StreamHeplers
     public class PreReadStream : BaseInheritStream
     {
         byte[]? _preReadBuffer;
+        int _preReadOffset;
+
+        int _preReadLength => _preReadBuffer is null ? 0 : _preReadBuffer.Length - _preReadOffset;
+
         public PreReadStream(Stream baseStream, bool disposeBaseStream = true) : base(baseStream, disposeBaseStream)
         {
         }
 
         public async Task<byte[]> PreReadAsync(int count, CancellationToken cancellationToken = default)
         {
-            if (_preReadBuffer is null || _preReadBuffer.Length < count)
+            int buffered = _preReadLength;
+            if (buffered < count)
             {
-                int needRead = count - (_preReadBuffer?.Length ?? 0);
-                byte[] buffer = new byte[needRead];
-                int byte_read = await _baseStream.ReadAsync(buffer, 0, needRead, cancellationToken);
+                int needRead = count - buffered;
+                byte[] newData = new byte[needRead];
+                int bytesRead = await _baseStream.ReadAsync(newData, 0, needRead, cancellationToken);
 
-                if (_preReadBuffer is null) _preReadBuffer = buffer.Take(byte_read).ToArray();
-                else _preReadBuffer = _preReadBuffer.Concat(buffer.Take(byte_read)).ToArray();
+                byte[] merged = new byte[buffered + bytesRead];
+                if (buffered > 0)
+                    Array.Copy(_preReadBuffer!, _preReadOffset, merged, 0, buffered);
+                Array.Copy(newData, 0, merged, buffered, bytesRead);
+                _preReadBuffer = merged;
+                _preReadOffset = 0;
+            }
 
-                return _preReadBuffer.ToArray();
-            }
-            else
-            {
-                return _preReadBuffer.Take(count).ToArray();
-            }
+            int returnCount = Math.Min(count, _preReadLength);
+            byte[] result = new byte[returnCount];
+            if (returnCount > 0)
+                Array.Copy(_preReadBuffer!, _preReadOffset, result, 0, returnCount);
+            return result;
         }
         /// <summary>
         /// 
@@ -79,23 +88,17 @@ namespace TqkLibrary.Proxy.StreamHeplers
         }
         int _ReadPreBuffer(byte[] buffer, int offset, int count)
         {
-            if (_preReadBuffer is not null)
+            if (_preReadBuffer is not null && _preReadLength > 0)
             {
-                int canReadSize = Math.Min(buffer.Length - offset, count);
-                if (canReadSize >= _preReadBuffer.Length)
+                int canCopy = Math.Min(Math.Min(buffer.Length - offset, count), _preReadLength);
+                Array.Copy(_preReadBuffer, _preReadOffset, buffer, offset, canCopy);
+                _preReadOffset += canCopy;
+                if (_preReadOffset >= _preReadBuffer.Length)
                 {
-                    int lengthCopy = _preReadBuffer.Length;
-                    Array.Copy(_preReadBuffer, 0, buffer, offset, lengthCopy);
                     _preReadBuffer = null;
-                    return lengthCopy;
+                    _preReadOffset = 0;
                 }
-                else
-                {
-                    int lengthCopy = canReadSize;
-                    Array.Copy(_preReadBuffer, 0, buffer, offset, lengthCopy);
-                    _preReadBuffer = _preReadBuffer.Skip(lengthCopy).ToArray();
-                    return lengthCopy;
-                }
+                return canCopy;
             }
             return 0;
         }

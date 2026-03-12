@@ -86,6 +86,26 @@ namespace TqkLibrary.Proxy.StreamHeplers
                 return await _baseStream.ReadAsync(buffer, offset, count, cancellationToken);
             }
         }
+
+#if NET6_0_OR_GREATER
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (_preReadBuffer is not null && _preReadLength > 0)
+            {
+                int canCopy = Math.Min(buffer.Length, _preReadLength);
+                _preReadBuffer.AsMemory(_preReadOffset, canCopy).CopyTo(buffer);
+                _preReadOffset += canCopy;
+                if (_preReadOffset >= _preReadBuffer.Length)
+                {
+                    _preReadBuffer = null;
+                    _preReadOffset = 0;
+                }
+                return ValueTask.FromResult(canCopy);
+            }
+            return _baseStream.ReadAsync(buffer, cancellationToken);
+        }
+#endif
+
         int _ReadPreBuffer(byte[] buffer, int offset, int count)
         {
             if (_preReadBuffer is not null && _preReadLength > 0)

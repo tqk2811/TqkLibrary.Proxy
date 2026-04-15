@@ -9,13 +9,14 @@ namespace TqkLibrary.Proxy.SshCli
         public string? IdentityFile { get; set; }
 
         /// <summary>
-        /// Password authentication (Linux/macOS only, requires sshpass).
-        /// Not supported on Windows.
+        /// Password authentication. On Linux/macOS it is fed to ssh via sshpass; on Windows it is
+        /// supplied through SSH_ASKPASS (requires OpenSSH >= 8.4, shipped with Windows 10/11).
         /// </summary>
         public string? Password { get; set; }
 
         /// <summary>
-        /// Path to ssh executable. If null, resolved from PATH.
+        /// Path to ssh executable. If null, resolved from PATH (prefers the built-in
+        /// C:\Windows\System32\OpenSSH\ssh.exe on Windows).
         /// </summary>
         public string? SshExecutablePath { get; set; }
 

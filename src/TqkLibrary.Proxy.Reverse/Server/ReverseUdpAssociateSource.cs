@@ -1,3 +1,4 @@
+using System.Net;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.Reverse.Protocol;
 
@@ -5,7 +6,15 @@ namespace TqkLibrary.Proxy.Reverse.Server
 {
     internal sealed class ReverseUdpAssociateSource : ReverseSourceBase, IUdpAssociateSource
     {
+        private const string NotImplementedMessage =
+            "Reverse-tunneled UDP ASSOCIATE is not implemented: the reverse data channel has no datagram framing wire format. "
+            + "Implement framing in ReverseClientHandler.DialUdpAsync and pair it with Send/Receive here.";
+
         private PendingTunnel? _pending;
+
+        public IPEndPoint? RelayEndPoint => null;
+
+        public IPEndPoint? LocalEndPoint => null;
 
         public ReverseUdpAssociateSource(ReverseClientSession session, Guid tunnelId)
             : base(session, tunnelId) { }
@@ -18,6 +27,15 @@ namespace TqkLibrary.Proxy.Reverse.Server
                 TunnelId = TunnelId,
             }, cancellationToken).ConfigureAwait(false);
         }
+
+        public Task<IPEndPoint> AssociateAsync(CancellationToken cancellationToken = default)
+            => throw new NotImplementedException(NotImplementedMessage);
+
+        public Task SendAsync(IPEndPoint destination, byte[] payload, int offset, int count, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException(NotImplementedMessage);
+
+        public Task<UdpAssociateDatagram> ReceiveAsync(CancellationToken cancellationToken = default)
+            => throw new NotImplementedException(NotImplementedMessage);
 
         public new async Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
         {

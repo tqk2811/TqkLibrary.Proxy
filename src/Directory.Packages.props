@@ -7,7 +7,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <PackageVersion Include="TqkLibrary.Streams" Version="1.0.4" />
+    <PackageVersion Include="TqkLibrary.Streams" Version="1.0.5.17" />
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.8" />
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />

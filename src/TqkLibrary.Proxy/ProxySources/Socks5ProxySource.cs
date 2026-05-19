@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
 
@@ -6,13 +7,15 @@ namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks5ProxySource : IProxySource, ISocks5Proxy
     {
+        private readonly ILoggerFactory? _loggerFactory;
         public IPEndPoint IPEndPoint { get; }
         public HttpProxyAuthentication? HttpProxyAuthentication { get; }
-        public Socks5ProxySource(IPEndPoint iPEndPoint)
+        public Socks5ProxySource(IPEndPoint iPEndPoint, ILoggerFactory? loggerFactory = null)
         {
             IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
+            _loggerFactory = loggerFactory;
         }
-        public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication) : this(iPEndPoint)
+        public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication, ILoggerFactory? loggerFactory = null) : this(iPEndPoint, loggerFactory)
         {
             HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }

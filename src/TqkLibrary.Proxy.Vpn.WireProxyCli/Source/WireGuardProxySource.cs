@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
@@ -15,20 +16,22 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         private readonly WireGuardOptions _options;
         private readonly WireProxyProcessRunner _runner;
         private readonly Socks5ProxySource _socks5;
+        private readonly ILoggerFactory? _loggerFactory;
         private int _disposed;
 
-        public WireGuardProxySource(WireGuardOptions options)
+        public WireGuardProxySource(WireGuardOptions options, ILoggerFactory? loggerFactory = null)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _runner = new WireProxyProcessRunner(options);
+            _loggerFactory = loggerFactory;
 
             HttpProxyAuthentication? auth = null;
             if (!string.IsNullOrEmpty(options.Socks5Username) && !string.IsNullOrEmpty(options.Socks5Password))
                 auth = new HttpProxyAuthentication(options.Socks5Username!, options.Socks5Password!);
 
             _socks5 = auth != null
-                ? new Socks5ProxySource(_runner.Socks5Endpoint, auth)
-                : new Socks5ProxySource(_runner.Socks5Endpoint);
+                ? new Socks5ProxySource(_runner.Socks5Endpoint, auth, loggerFactory)
+                : new Socks5ProxySource(_runner.Socks5Endpoint, loggerFactory);
 
             _socks5.IsSupportUdp = options.IsSupportUdp;
             _socks5.IsSupportIpv6 = options.IsSupportIpv6;

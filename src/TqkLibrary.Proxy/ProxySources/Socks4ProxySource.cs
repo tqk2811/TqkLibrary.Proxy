@@ -1,16 +1,19 @@
 ﻿using System.Net;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class Socks4ProxySource : IProxySource, ISocks4Proxy
     {
+        private readonly ILoggerFactory? _loggerFactory;
         readonly IPEndPoint iPEndPoint;
         readonly string userId;
-        public Socks4ProxySource(IPEndPoint iPEndPoint, string? userId = null)
+        public Socks4ProxySource(IPEndPoint iPEndPoint, string? userId = null, ILoggerFactory? loggerFactory = null)
         {
             this.iPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
             this.userId = userId ?? string.Empty;
+            _loggerFactory = loggerFactory;
         }
 
         public bool IsUseSocks4A { get; set; } = true;

@@ -13,12 +13,14 @@ namespace TqkLibrary.Proxy.ProxySources
             protected const byte SOCKS5_VER = 0x05;
             protected const byte UsernamePassword_Ver = 0x01;
 
+            protected readonly ILogger? _logger;
+
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
 
             internal protected BaseTunnel(Socks5ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
-
+                _logger = proxySource._loggerFactory?.CreateLogger(GetType());
             }
 
             protected override void Dispose(bool isDisposing)

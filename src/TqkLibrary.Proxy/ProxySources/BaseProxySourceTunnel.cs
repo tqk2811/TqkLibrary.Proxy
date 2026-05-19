@@ -1,8 +1,8 @@
-﻿using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public abstract class BaseProxySourceTunnel<T> : BaseLogger, IDisposable
+    public abstract class BaseProxySourceTunnel<T> : IDisposable
         where T : class, IProxySource
     {
         protected readonly T _proxySource;

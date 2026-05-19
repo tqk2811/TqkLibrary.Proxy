@@ -1,11 +1,19 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class LocalProxySource : IProxySource, IHttpProxy
     {
+        private readonly ILoggerFactory? _loggerFactory;
+
+        public LocalProxySource(ILoggerFactory? loggerFactory = null)
+        {
+            _loggerFactory = loggerFactory;
+        }
+
         public virtual bool IsSupportUdp { get; set; } = true;
         public virtual bool IsSupportIpv6 { get; set; } = true;
         /// <summary>

@@ -3,6 +3,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.GlobalUnicast.Structs;
 using TqkLibrary.Proxy.Interfaces;
 
@@ -11,6 +12,7 @@ namespace TqkLibrary.Proxy.GlobalUnicast
     public partial class GlobalUnicastProxySource : IProxySource, IDisposable
     {
         private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private readonly ILoggerFactory? _loggerFactory;
         public IPAddress? AssignAddress { get; private set; }
         /// <summary>
         /// zero mean infinity
@@ -24,9 +26,9 @@ namespace TqkLibrary.Proxy.GlobalUnicast
 
         public bool IsSupportBind => false;
 
-        public GlobalUnicastProxySource()
+        public GlobalUnicastProxySource(ILoggerFactory? loggerFactory = null)
         {
-
+            _loggerFactory = loggerFactory;
         }
         ~GlobalUnicastProxySource()
         {

@@ -13,11 +13,13 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         public class ConnectTunnel : BaseProxySourceTunnel<HttpProxySource>, IConnectSource
         {
+            protected readonly ILogger? _logger;
+
             protected readonly TcpClient _tcpClient = new TcpClient();
             protected Stream? _stream;
             internal protected ConnectTunnel(HttpProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {
-
+                _logger = proxySource._loggerFactory?.CreateLogger(GetType());
             }
             protected override void Dispose(bool isDisposing)
             {

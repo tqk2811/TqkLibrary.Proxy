@@ -1,15 +1,18 @@
-﻿using TqkLibrary.Proxy.Authentications;
+﻿using Microsoft.Extensions.Logging;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
     public partial class HttpProxySource : IProxySource, IHttpProxy
     {
+        private readonly ILoggerFactory? _loggerFactory;
         readonly Uri _proxy;
         public HttpProxyAuthentication? HttpProxyAuthentication { get; set; }
-        public HttpProxySource(Uri proxy)
+        public HttpProxySource(Uri proxy, ILoggerFactory? loggerFactory = null)
         {
             _proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
+            _loggerFactory = loggerFactory;
             if (!string.IsNullOrWhiteSpace(_proxy.UserInfo))
             {
                 var split = _proxy.UserInfo.Split(':');
@@ -22,7 +25,7 @@ namespace TqkLibrary.Proxy.ProxySources
         /// <summary>
         /// Self host
         /// </summary>
-        public HttpProxySource(Uri proxy, HttpProxyAuthentication httpProxyAuthentication) : this(proxy)
+        public HttpProxySource(Uri proxy, HttpProxyAuthentication httpProxyAuthentication, ILoggerFactory? loggerFactory = null) : this(proxy, loggerFactory)
         {
             HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
         }

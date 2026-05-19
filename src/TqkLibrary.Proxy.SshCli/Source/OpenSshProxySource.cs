@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.SshCli.Exceptions;
 
@@ -9,13 +10,15 @@ namespace TqkLibrary.Proxy.SshCli
         private readonly OpenSshConnectionOptions _options;
         private readonly SshProcessRunner _runner;
         private readonly SemaphoreSlim _masterLock = new SemaphoreSlim(1, 1);
+        private readonly ILoggerFactory? _loggerFactory;
         private Process? _masterProcess;
         private int _disposed;
 
-        public OpenSshProxySource(OpenSshConnectionOptions options)
+        public OpenSshProxySource(OpenSshConnectionOptions options, ILoggerFactory? loggerFactory = null)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _runner = new SshProcessRunner(options);
+            _loggerFactory = loggerFactory;
         }
 
         public bool IsSupportUdp => false;

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<ProjectReference Include="..\TqkLibrary.Proxy.Reverse\TqkLibrary.Proxy.Reverse.csproj" />
+		<ProjectReference Include="..\TqkLibrary.Proxy.Reverse.Transport.WebSocket\TqkLibrary.Proxy.Reverse.Transport.WebSocket.csproj" />
+	</ItemGroup>
+
+</Project>

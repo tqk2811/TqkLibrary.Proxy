@@ -8,7 +8,7 @@ using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
-    public class Socks5ProxyServer : BaseLogger, IProxyServer, ISocks5Proxy
+    public class Socks5ProxyServer : IProxyServer, ISocks5Proxy
     {
         class Socks5UserInfo : BaseUserInfo
         {
@@ -25,12 +25,21 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
         }
 
+        readonly ILoggerFactory? _loggerFactory;
+        readonly ILogger? _logger;
+
         Stream? _clientStream;
         IPEndPoint? _clientEndPoint;
         IProxyServerHandler? _proxyServerHandler;
         Guid _tunnelId;
         CancellationToken _cancellationToken;
         Socks5UserInfo? userInfo;
+
+        public Socks5ProxyServer(ILoggerFactory? loggerFactory = null)
+        {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory?.CreateLogger<Socks5ProxyServer>();
+        }
 
         public async Task ProxyWorkAsync(
             Stream clientStream,
@@ -136,7 +145,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
-            await new StreamTransferHelper(clientStream, session_stream, _tunnelId)
+            await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
                 .DebugName(_clientEndPoint, uri)
                 .WaitUntilDisconnect(_cancellationToken);
         }
@@ -158,7 +167,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Stream target_stream = await bindSource.GetStreamAsync(_cancellationToken);
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
-            await new StreamTransferHelper(clientStream, target_stream, _tunnelId)
+            await new StreamTransferHelper(clientStream, target_stream, _tunnelId, _loggerFactory)
                 .DebugName(_clientEndPoint, listen_endpoint)
                 .WaitUntilDisconnect(_cancellationToken);
         }

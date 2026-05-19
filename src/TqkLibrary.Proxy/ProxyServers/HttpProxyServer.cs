@@ -9,8 +9,11 @@ using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
-    public class HttpProxyServer : BaseLogger, IProxyServer, IHttpProxy
+    public class HttpProxyServer : IProxyServer, IHttpProxy
     {
+        readonly ILoggerFactory? _loggerFactory;
+        readonly ILogger? _logger;
+
         Stream? _clientStream;
         IPEndPoint? _clientEndPoint;
         IProxyServerHandler? _proxyServerHandler;
@@ -20,6 +23,12 @@ namespace TqkLibrary.Proxy.ProxyServers
 
         IReadOnlyList<string>? _client_HeaderLines = null;
         HeaderRequestParse? _client_HeaderParse = null;
+
+        public HttpProxyServer(ILoggerFactory? loggerFactory = null)
+        {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory?.CreateLogger<HttpProxyServer>();
+        }
 
         public async Task ProxyWorkAsync(
             Stream clientStream,
@@ -124,7 +133,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler!.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
 
-            await new StreamTransferHelper(clientStream, source_stream, _tunnelId)
+            await new StreamTransferHelper(clientStream, source_stream, _tunnelId, _loggerFactory)
                 .DebugName(_clientEndPoint, _client_HeaderParse?.Uri)
                 .WaitUntilDisconnect(_cancellationToken);
             return false;

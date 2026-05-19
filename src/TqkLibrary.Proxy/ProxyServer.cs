@@ -9,9 +9,12 @@ using TqkLibrary.Streams;
 
 namespace TqkLibrary.Proxy
 {
-    public sealed class ProxyServer : BaseLogger, IProxyServerListener
+    public sealed class ProxyServer : IProxyServerListener
     {
-        IPreProxyServerHandler _PreProxyServerHandler = new BasePreProxyServerHandler();
+        readonly ILoggerFactory? _loggerFactory;
+        readonly ILogger? _logger;
+
+        IPreProxyServerHandler _PreProxyServerHandler;
         /// <summary>
         /// 
         /// </summary>
@@ -78,22 +81,28 @@ namespace TqkLibrary.Proxy
 
 
         public ProxyServer(
-            IPEndPoint iPEndPoint
+            IPEndPoint iPEndPoint,
+            ILoggerFactory? loggerFactory = null
             )
         {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory?.CreateLogger<ProxyServer>();
             _tcpListener = new TcpListener(iPEndPoint);
+            _PreProxyServerHandler = new BasePreProxyServerHandler(loggerFactory);
         }
         public ProxyServer(
             IPEndPoint iPEndPoint,
-            IProxyServerHandler proxyServerHandler
-            ) : this(iPEndPoint)
+            IProxyServerHandler proxyServerHandler,
+            ILoggerFactory? loggerFactory = null
+            ) : this(iPEndPoint, loggerFactory)
         {
             this.ProxyServerHandler = proxyServerHandler ?? throw new ArgumentNullException(nameof(proxyServerHandler));
         }
         public ProxyServer(
             IPEndPoint iPEndPoint,
-            IProxySource proxySource
-            ) : this(iPEndPoint, new BaseProxyServerHandler(proxySource ?? throw new ArgumentNullException(nameof(proxySource))))
+            IProxySource proxySource,
+            ILoggerFactory? loggerFactory = null
+            ) : this(iPEndPoint, new BaseProxyServerHandler(proxySource ?? throw new ArgumentNullException(nameof(proxySource))), loggerFactory)
         {
 
         }

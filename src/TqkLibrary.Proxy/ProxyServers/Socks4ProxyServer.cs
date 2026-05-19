@@ -9,8 +9,11 @@ using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxyServers
 {
-    public class Socks4ProxyServer : BaseLogger, IProxyServer, ISocks4Proxy
+    public class Socks4ProxyServer : IProxyServer, ISocks4Proxy
     {
+        readonly ILoggerFactory? _loggerFactory;
+        readonly ILogger? _logger;
+
         public bool IsAllowSocks4A { get; set; } = true;
 
 
@@ -20,6 +23,12 @@ namespace TqkLibrary.Proxy.ProxyServers
         Guid _tunnelId;
         CancellationToken _cancellationToken;
         BaseUserInfo? userInfo;
+
+        public Socks4ProxyServer(ILoggerFactory? loggerFactory = null)
+        {
+            _loggerFactory = loggerFactory;
+            _logger = loggerFactory?.CreateLogger<Socks4ProxyServer>();
+        }
 
         public async Task ProxyWorkAsync(
             Stream clientStream,
@@ -126,7 +135,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
             //transfer until disconnect
-            await new StreamTransferHelper(clientStream, session_stream, _tunnelId)
+            await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
                 .DebugName(_clientEndPoint, uri_connect)
                 .WaitUntilDisconnect(_cancellationToken);
         }
@@ -148,7 +157,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
             //transfer until disconnect
-            await new StreamTransferHelper(clientStream, stream, _tunnelId)
+            await new StreamTransferHelper(clientStream, stream, _tunnelId, _loggerFactory)
                 .DebugName(_clientEndPoint, iPEndPoint)
                 .WaitUntilDisconnect(_cancellationToken);
         }

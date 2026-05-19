@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.StreamHelpers;
 
@@ -7,7 +8,14 @@ namespace TqkLibrary.Proxy.Handlers
 {
     public class BasePreProxyServerHandler : IPreProxyServerHandler
     {
-        protected IProxyServerFactory ProxyServerFactory { get; set; } = new DefaultProxyServerFactory();
+        protected readonly ILoggerFactory? _loggerFactory;
+        protected IProxyServerFactory ProxyServerFactory { get; set; }
+
+        public BasePreProxyServerHandler(ILoggerFactory? loggerFactory = null)
+        {
+            _loggerFactory = loggerFactory;
+            ProxyServerFactory = new DefaultProxyServerFactory(loggerFactory);
+        }
 
         public virtual Task<bool> IsAcceptClientAsync(TcpClient tcpClient, Guid tunnelId, CancellationToken cancellationToken = default)
         {

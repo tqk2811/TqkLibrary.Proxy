@@ -2,9 +2,11 @@
 
 namespace TqkLibrary.Proxy.StreamHelpers
 {
-    public class StreamTransferHelper : BaseLogger
+    public class StreamTransferHelper
     {
         const int BUFFER_SIZE = 4096;
+
+        readonly ILogger? _logger;
 
         readonly Guid _tunnelId;
 
@@ -13,11 +15,12 @@ namespace TqkLibrary.Proxy.StreamHelpers
 
         readonly Stream _second;
         readonly byte[] _secondBuffer = new byte[BUFFER_SIZE];
-        public StreamTransferHelper(Stream first, Stream second, Guid tunnelId)
+        public StreamTransferHelper(Stream first, Stream second, Guid tunnelId, ILoggerFactory? loggerFactory = null)
         {
             _first = first ?? throw new ArgumentNullException(nameof(first));
             _second = second ?? throw new ArgumentNullException(nameof(second));
             _tunnelId = tunnelId;
+            _logger = loggerFactory?.CreateLogger<StreamTransferHelper>();
         }
 
         string _firstName = "first";

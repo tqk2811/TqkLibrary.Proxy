@@ -60,7 +60,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                 if (_client_HeaderLines.Count == 0)
                     return;//client stream closed
 
-                _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} -> \r\n{string.Join("\r\n", _client_HeaderLines)}");
+                _logger?.LogInformation("Client request headers\r\n{Headers}", string.Join("\r\n", _client_HeaderLines));
 
                 _client_HeaderParse = HeaderRequestParse.ParseRequest(_client_HeaderLines);
 
@@ -110,7 +110,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     }
                     catch (InitConnectSourceFailedException ex)
                     {
-                        _logger?.LogInformation(ex, $"InitConnectSourceFailedException({_tunnelId})");
+                        _logger?.LogInformation(ex, "InitConnectSource failed");
                         await _WriteResponse((int)HttpStatusCode.ServiceUnavailable, "Service Unavailable", true);
                     }
                 }
@@ -158,7 +158,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
             await source_stream.WriteLineAsync(string.Join("\r\n", headerLines), _cancellationToken);
-            _logger?.LogInformation($"{_tunnelId} {_client_HeaderParse.Uri.Host} <- \r\n{string.Join("\r\n", headerLines)}");
+            _logger?.LogInformation("Sending headers to {TargetHost}\r\n{Headers}", _client_HeaderParse.Uri.Host, string.Join("\r\n", headerLines));
 
             await source_stream.WriteLineAsync(_cancellationToken);
 
@@ -166,7 +166,7 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             //Transfer content from client to target if have
             await clientStream.TransferAsync(source_stream, _client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
-            _logger?.LogInformation($"{_tunnelId} [{_clientEndPoint} -> {_client_HeaderParse.Uri.Host}] {_client_HeaderParse.ContentLength} bytes");
+            _logger?.LogInformation("Sent {Bytes} bytes -> {TargetHost}", _client_HeaderParse.ContentLength, _client_HeaderParse.Uri.Host);
 
             await source_stream.FlushAsync(_cancellationToken);
 
@@ -176,13 +176,13 @@ namespace TqkLibrary.Proxy.ProxyServers
             int ContentLength = target_response_HeaderLines.GetContentLength();
 
             await clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
-            _logger?.LogInformation($"{_tunnelId} {_client_HeaderParse.Uri.Host} ->\r\n{string.Join("\r\n", target_response_HeaderLines)}");
+            _logger?.LogInformation("Received headers from {TargetHost}\r\n{Headers}", _client_HeaderParse.Uri.Host, string.Join("\r\n", target_response_HeaderLines));
 
             await clientStream.WriteLineAsync(_cancellationToken);
 
             //Transfer content from target to client if have
             await source_stream.TransferAsync(_clientStream!, ContentLength, cancellationToken: _cancellationToken);
-            _logger?.LogInformation($"{_tunnelId} [{_clientEndPoint} <- {_client_HeaderParse.Uri.Host}] {ContentLength} bytes");
+            _logger?.LogInformation("Received {Bytes} bytes <- {TargetHost}", ContentLength, _client_HeaderParse.Uri.Host);
 
             await clientStream.FlushAsync(_cancellationToken);
 
@@ -239,12 +239,12 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
             await _clientStream!.WriteHeadersAsync(headers, _cancellationToken);
-            _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} <-\r\n{string.Join("\r\n", headers)}");
+            _logger?.LogInformation("Sent response headers\r\n{Headers}", string.Join("\r\n", headers));
 
             if (body is not null)
             {
                 await _clientStream!.WriteAsync(body, _cancellationToken);
-                _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} <- bytes {body.Length}");
+                _logger?.LogInformation("Sent response body {Bytes} bytes", body.Length);
             }
 
             await _clientStream!.FlushAsync(_cancellationToken);

@@ -5,7 +5,11 @@ using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.GlobalUnicast;
 using System.Net.NetworkInformation;
 
-using var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
+using var loggerFactory = LoggerFactory.Create(x => x.AddSimpleConsole(o =>
+{
+    o.IncludeScopes = true;
+    o.SingleLine = false;
+}));
 
 Uri uri0 = new Uri("http://127.0.0.1:13566");
 Uri uri1 = new Uri("http://[::1]:13566");

@@ -174,7 +174,7 @@ namespace TqkLibrary.Proxy
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogCritical(ex, nameof(_MainLoopListen));
+                    _logger?.LogCritical(ex, "Accept loop failed");
                 }
             }
         }
@@ -183,6 +183,14 @@ namespace TqkLibrary.Proxy
         private async Task _PreProxyWorkAsync(TcpClient tcpClient)
         {
             Guid tunnelId = Guid.NewGuid();
+            IPEndPoint clientEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint!;
+
+            using IDisposable? scope = _logger?.BeginScope(new Dictionary<string, object>
+            {
+                ["TunnelId"] = tunnelId,
+                ["ClientEndPoint"] = clientEndPoint,
+            });
+
             try
             {
                 using (tcpClient)
@@ -190,35 +198,34 @@ namespace TqkLibrary.Proxy
                     tcpClient.ReceiveTimeout = ReceiveTimeout;
                     tcpClient.SendTimeout = SendTimeout;
 
-                    IPEndPoint iPEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint!;
                     if (await PreProxyServerHandler.IsAcceptClientAsync(tcpClient, tunnelId, _CancellationToken))
                     {
                         using Stream baseStream = tcpClient.GetStream();
 
-                        using Stream stream = await PreProxyServerHandler.StreamHandlerAsync(baseStream, iPEndPoint, tunnelId, _CancellationToken);
+                        using Stream stream = await PreProxyServerHandler.StreamHandlerAsync(baseStream, clientEndPoint, tunnelId, _CancellationToken);
                         if (stream is null)
                             throw new InvalidOperationException($"{PreProxyServerHandler.GetType().FullName}.{nameof(IPreProxyServerHandler.StreamHandlerAsync)} was return null");
 
                         using PreReadStream preReadStream = new PreReadStream(stream);
-                        IProxyServer proxyServer = await PreProxyServerHandler.GetProxyServerAsync(preReadStream, iPEndPoint, tunnelId, _CancellationToken);
+                        IProxyServer proxyServer = await PreProxyServerHandler.GetProxyServerAsync(preReadStream, clientEndPoint, tunnelId, _CancellationToken);
                         if (proxyServer is null)
                             throw new InvalidOperationException($"{PreProxyServerHandler.GetType().FullName}.{nameof(IPreProxyServerHandler.GetProxyServerAsync)} was return null");
 
-                        await proxyServer.ProxyWorkAsync(preReadStream, iPEndPoint, ProxyServerHandler, tunnelId, _CancellationToken);
+                        await proxyServer.ProxyWorkAsync(preReadStream, clientEndPoint, ProxyServerHandler, tunnelId, _CancellationToken);
                     }
                 }
             }
             catch (ObjectDisposedException ode)
             {
-                _logger?.LogInformation(ode, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
+                _logger?.LogInformation(ode, "Tunnel work canceled (ObjectDisposed)");
             }
             catch (OperationCanceledException oce)
             {
-                _logger?.LogInformation(oce, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
+                _logger?.LogInformation(oce, "Tunnel work canceled");
             }
             catch (Exception ex)
             {
-                _logger?.LogCritical(ex, $"{nameof(_PreProxyWorkAsync)}({tunnelId})");
+                _logger?.LogCritical(ex, "Tunnel work failed");
             }
         }
     }

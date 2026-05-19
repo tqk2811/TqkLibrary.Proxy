@@ -175,7 +175,7 @@ namespace TqkLibrary.Proxy.ProxyServers
             Socks4_RequestResponse response = new Socks4_RequestResponse(rep, listen_ip, listen_port);
             byte[] rep_buffer = response.GetByteArray();
 
-            _logger?.LogInformation($"{_tunnelId} {_clientEndPoint} <- 0x{BitConverter.ToString(rep_buffer).Replace("-", "")}");
+            _logger?.LogInformation("Reply 0x{Reply}", BitConverter.ToString(rep_buffer).Replace("-", ""));
 
             await _clientStream!.WriteAsync(rep_buffer, _cancellationToken);
             await _clientStream!.FlushAsync(_cancellationToken);

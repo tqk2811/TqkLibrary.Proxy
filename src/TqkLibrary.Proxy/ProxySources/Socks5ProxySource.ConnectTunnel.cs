@@ -22,19 +22,25 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new ArgumentNullException(nameof(address));
                 CheckIsDisposed();
 
+                using var scope = _logger?.BeginScope(new Dictionary<string, object>
+                {
+                    ["TunnelId"] = _tunnelId,
+                    ["TargetHost"] = $"{address.Host}:{address.Port}",
+                });
+
                 await base.ConnectAndAuthAsync(cancellationToken);
 
                 Socks5_Request socks5_Connection = Socks5_Request.CreateConnect(address);
-                _logger?.LogInformation($"{_tunnelId} CONNECT {address.Host}:{address.Port}");
+                _logger?.LogInformation("CONNECT request");
                 await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);
                 await _stream!.FlushAsync(cancellationToken);
                 Socks5_RequestResponse socks5_RequestResponse = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
                 if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
                 {
-                    _logger?.LogWarning($"{_tunnelId} CONNECT {address.Host}:{address.Port} REJECTED status={socks5_RequestResponse.STATUS}");
+                    _logger?.LogWarning("CONNECT REJECTED status={Status}", socks5_RequestResponse.STATUS);
                     throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
                 }
-                _logger?.LogInformation($"{_tunnelId} CONNECT OK bnd={socks5_RequestResponse.BNDADDR.IPAddress}:{socks5_RequestResponse.BNDPORT}");
+                _logger?.LogInformation("CONNECT OK bnd={BndAddress}:{BndPort}", socks5_RequestResponse.BNDADDR.IPAddress, socks5_RequestResponse.BNDPORT);
             }
             public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {

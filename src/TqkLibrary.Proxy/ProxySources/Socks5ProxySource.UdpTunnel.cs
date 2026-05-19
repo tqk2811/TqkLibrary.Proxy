@@ -40,17 +40,23 @@ namespace TqkLibrary.Proxy.ProxySources
             public virtual async Task<IPEndPoint> AssociateAsync(CancellationToken cancellationToken = default)
             {
                 CheckIsDisposed();
+
+                using var scope = _logger?.BeginScope(new Dictionary<string, object>
+                {
+                    ["TunnelId"] = _tunnelId,
+                });
+
                 await base.ConnectAndAuthAsync(cancellationToken);
 
                 Socks5_Request request = Socks5_Request.CreateUdp();
-                _logger?.LogInformation($"{_tunnelId} UDP ASSOCIATE request");
+                _logger?.LogInformation("UDP ASSOCIATE request");
                 await _stream!.WriteAsync(request.GetByteArray(), cancellationToken);
                 await _stream!.FlushAsync(cancellationToken);
 
                 Socks5_RequestResponse response = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
                 if (response.STATUS != Socks5_STATUS.RequestGranted)
                 {
-                    _logger?.LogWarning($"{_tunnelId} UDP ASSOCIATE REJECTED status={response.STATUS}");
+                    _logger?.LogWarning("UDP ASSOCIATE REJECTED status={Status}", response.STATUS);
                     throw new InitConnectSourceFailedException($"UDP ASSOCIATE failed: {response.STATUS}");
                 }
 
@@ -66,7 +72,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 // Connect "binds" the UDP socket's remote — only datagrams from the relay are accepted,
                 // and we don't have to specify the endpoint on every SendAsync.
                 _udp.Connect(RelayEndPoint);
-                _logger?.LogInformation($"{_tunnelId} UDP ASSOCIATE OK relay={RelayEndPoint} local={_udp.Client.LocalEndPoint}");
+                _logger?.LogInformation("UDP ASSOCIATE OK relay={Relay} local={Local}", RelayEndPoint, _udp.Client.LocalEndPoint);
 
                 return RelayEndPoint;
             }

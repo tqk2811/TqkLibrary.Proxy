@@ -8,7 +8,11 @@ using TqkLibrary.Proxy.ProxySources;
 using TqkLibrary.Streams;
 using TqkLibrary.Streams.ThrottlingHelpers;
 
-using var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
+using var loggerFactory = LoggerFactory.Create(x => x.AddSimpleConsole(o =>
+{
+    o.IncludeScopes = true;
+    o.SingleLine = false;
+}));
 const uint speedLimit = 200 * 1024;//200KiB/sec
 
 

@@ -60,6 +60,13 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (_stream is null)
                     throw new InvalidOperationException();
 
+                using var scope = _logger?.BeginScope(new Dictionary<string, object>
+                {
+                    ["TunnelId"] = _tunnelId,
+                    ["UpstreamProxy"] = $"{_proxySource._proxy.Host}:{_proxySource._proxy.Port}",
+                    ["TargetHost"] = $"{address.Host}:{address.Port}",
+                });
+
                 List<string> headers = new List<string>();
                 headers.Add($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
                 if (_proxySource.HttpProxyAuthentication is not null)
@@ -69,14 +76,14 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
 
                 await _stream.WriteHeadersAsync(headers, cancellationToken);
-                _logger?.LogInformation($"{_tunnelId} {_proxySource._proxy.Host}:{_proxySource._proxy.Port} <-\r\n{string.Join("\r\n", headers)}");
+                _logger?.LogInformation("Sending CONNECT to upstream\r\n{Headers}", string.Join("\r\n", headers));
 
                 await _stream.FlushAsync(cancellationToken);
 
                 //-----------------------///
 
                 IReadOnlyList<string> response_HeaderLines = await _stream.ReadHeadersAsync(cancellationToken);
-                _logger?.LogInformation($"{_tunnelId} {_proxySource._proxy.Host}:{_proxySource._proxy.Port} ->\r\n{string.Join("\r\n", response_HeaderLines)}");
+                _logger?.LogInformation("Upstream CONNECT response\r\n{Headers}", string.Join("\r\n", response_HeaderLines));
 
                 var headerResponseParse = HeaderResponseParse.ParseResponse(response_HeaderLines);
 

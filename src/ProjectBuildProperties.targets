@@ -1,0 +1,56 @@
+<Project>
+	<PropertyGroup>
+		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PathMap>$(MSBuildProjectDirectory)=$(MSBuildProjectName)</PathMap>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<Deterministic>true</Deterministic>
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
+
+	<!--
+		GitVersion is wired only for projects that produce a NuGet package (i.e. have a sibling .nuspec).
+		Test/demo projects without a nuspec skip the whole chain.
+
+		Debug skips GitVersion entirely so feature/branch builds don't fail when the branch
+		isn't covered by GitVersion.yml (orphaned-branch error). Version is hard-coded so
+		MSBuild's NETSDK1018 ('.' invalid) doesn't fire when GitVersion outputs are empty.
+		Release still goes through GitVersion and produces a real version.
+
+		DisableGitVersionTask alone only skips RunGitVersion/GetVersion — the other
+		GitVersion targets (WriteVersionInfoToBuildLog, GenerateGitVersionInformation,
+		UpdateAssemblyInfo) still try to read obj/gitversion.json. Turn them all off.
+	-->
+	<PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).nuspec')">
+		<NuspecFile>$(MSBuildProjectName).nuspec</NuspecFile>
+		<EnableGitVersion>true</EnableGitVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(EnableGitVersion)' == 'true'">
+		<DisableGitVersionTask>true</DisableGitVersionTask>
+		<WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
+		<GenerateGitVersionInformation>false</GenerateGitVersionInformation>
+		<UpdateAssemblyInfo>false</UpdateAssemblyInfo>
+		<GenerateGitVersionFiles>false</GenerateGitVersionFiles>
+		<Version>0.0.0-debug</Version>
+		<PackageVersion>0.0.0-debug</PackageVersion>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(EnableGitVersion)' == 'true'">
+		<PackageReference Include="GitVersion.MsBuild">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<Target Name="SetVersionFromGitVersion" AfterTargets="GetVersion" Condition="'$(EnableGitVersion)' == 'true' and '$(DisableGitVersionTask)' != 'true'">
+		<PropertyGroup>
+			<Version>$(GitVersion_MajorMinorPatch).$(GitVersion_CommitsSinceVersionSource)</Version>
+			<PackageVersion>$(Version)</PackageVersion>
+			<NuspecProperties>id=$(MSBuildProjectName);version=$(Version)</NuspecProperties>
+		</PropertyGroup>
+	</Target>
+</Project>

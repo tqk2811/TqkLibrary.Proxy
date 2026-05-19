@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.GlobalUnicast;
 using System.Net.NetworkInformation;
 
-TqkLibrary.Proxy.Singleton.LoggerFactory = LoggerFactory.Create(x => x.AddConsole());
+using var loggerFactory = LoggerFactory.Create(x => x.AddConsole());
 
 Uri uri0 = new Uri("http://127.0.0.1:13566");
 Uri uri1 = new Uri("http://[::1]:13566");
@@ -49,6 +49,6 @@ Console.WriteLine();
 //tcpListener.Start();
 
 //await Socks4SourceBindTest.RunAsync();
-await ProxyWraper.RunAsync();
+await ProxyWraper.RunAsync(loggerFactory);
 //await DebugTest.Test();
 //RealTest.HttpProxyServerTest();

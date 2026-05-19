@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Helpers;
@@ -42,12 +43,16 @@ namespace TqkLibrary.Proxy.ProxySources
                 await base.ConnectAndAuthAsync(cancellationToken);
 
                 Socks5_Request request = Socks5_Request.CreateUdp();
+                _logger?.LogInformation($"{_tunnelId} UDP ASSOCIATE request");
                 await _stream!.WriteAsync(request.GetByteArray(), cancellationToken);
                 await _stream!.FlushAsync(cancellationToken);
 
                 Socks5_RequestResponse response = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
                 if (response.STATUS != Socks5_STATUS.RequestGranted)
+                {
+                    _logger?.LogWarning($"{_tunnelId} UDP ASSOCIATE REJECTED status={response.STATUS}");
                     throw new InitConnectSourceFailedException($"UDP ASSOCIATE failed: {response.STATUS}");
+                }
 
                 IPAddress relayAddr = response.BNDADDR.IPAddress;
                 // Many SOCKS5 servers reply with 0.0.0.0 to mean "same host as TCP control" (RFC ambiguity).
@@ -61,6 +66,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 // Connect "binds" the UDP socket's remote — only datagrams from the relay are accepted,
                 // and we don't have to specify the endpoint on every SendAsync.
                 _udp.Connect(RelayEndPoint);
+                _logger?.LogInformation($"{_tunnelId} UDP ASSOCIATE OK relay={RelayEndPoint} local={_udp.Client.LocalEndPoint}");
 
                 return RelayEndPoint;
             }

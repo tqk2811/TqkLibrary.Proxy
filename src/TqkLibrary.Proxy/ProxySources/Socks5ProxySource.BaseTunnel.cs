@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Enums;
 using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.StreamHelpers;
@@ -38,19 +39,27 @@ namespace TqkLibrary.Proxy.ProxySources
             /// <exception cref="NotSupportedException"></exception>
             protected virtual async Task ConnectAndAuthAsync(CancellationToken cancellationToken = default)
             {
+                _logger?.LogInformation($"{_tunnelId} TCP connect -> {_proxySource.IPEndPoint}");
+                try
+                {
 #if NET5_0_OR_GREATER
-                await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port, cancellationToken);
+                    await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port, cancellationToken);
 #else
-                await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port);
+                    await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port);
 #endif
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, $"{_tunnelId} TCP connect FAILED -> {_proxySource.IPEndPoint}");
+                    throw;
+                }
                 _stream = _tcpClient.GetStream();
-
-
+                _logger?.LogInformation($"{_tunnelId} TCP connect OK; starting SOCKS5 greeting");
 
                 Socks5_Auth socks5_Auth = await _ClientGreetingAsync(_GetSupportAuth(), cancellationToken);
+                _logger?.LogInformation($"{_tunnelId} greeting OK; server selected auth={socks5_Auth} (0x{((byte)socks5_Auth):X2})");
                 await _AuthAsync(socks5_Auth, cancellationToken);
-
-
+                _logger?.LogInformation($"{_tunnelId} auth OK");
             }
 
             protected virtual IEnumerable<Socks5_Auth> _GetSupportAuth()

@@ -4,7 +4,7 @@
 	<metadata>
 		<id>$id$</id>
 		<version>$version$</version>
-		<description>my private lib</description>
+		<description>SSH.NET library-based proxy source for managed SSH tunneling with full connection lifecycle control.</description>
 		<authors>tqk2811</authors>
 		<projectUrl>https://github.com/tqk2811/TqkLibrary.Proxy</projectUrl>
 		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Proxy.git"/>

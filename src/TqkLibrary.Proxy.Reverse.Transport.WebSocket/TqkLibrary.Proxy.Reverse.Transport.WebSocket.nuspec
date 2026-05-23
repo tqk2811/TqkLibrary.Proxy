@@ -4,7 +4,7 @@
 	<metadata>
 		<id>$id$</id>
 		<version>$version$</version>
-		<description>my private lib</description>
+		<description>WebSocket transport for reverse proxy supporting wss:// encrypted connections across restrictive networks.</description>
 		<authors>tqk2811</authors>
 		<projectUrl>https://github.com/tqk2811/TqkLibrary.Proxy</projectUrl>
 		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Proxy.git"/>

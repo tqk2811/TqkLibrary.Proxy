@@ -4,7 +4,7 @@
 	<metadata>
 		<id>$id$</id>
 		<version>$version$</version>
-		<description>my private lib</description>
+		<description>Windows-only proxy source for global unicast address assignment using native SLAAC/IPv6 address manipulation APIs.</description>
 		<authors>tqk2811</authors>
 		<projectUrl>https://github.com/tqk2811/TqkLibrary.Proxy</projectUrl>
 		<repository type="git" url="https://github.com/tqk2811/TqkLibrary.Proxy.git"/>

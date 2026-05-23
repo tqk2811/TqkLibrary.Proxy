@@ -88,7 +88,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (_udp is null || RelayEndPoint is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(UdpTunnel)}.{nameof(AssociateAsync)} first");
 
-                byte[] datagram = BuildDatagram(destination, payload, offset, count);
+                byte[] datagram = Socks5_UdpDatagram.Encode(destination, payload, offset, count);
 #if NET6_0_OR_GREATER
                 // UdpClient is "connected" (see AssociateAsync) — this overload requires that.
                 await _udp.SendAsync(datagram, cancellationToken).ConfigureAwait(false);
@@ -105,14 +105,14 @@ namespace TqkLibrary.Proxy.ProxySources
 
 #if NET6_0_OR_GREATER
                 UdpReceiveResult result = await _udp.ReceiveAsync(cancellationToken).ConfigureAwait(false);
-                return ParseDatagram(result.Buffer);
+                return ToAssociateDatagram(Socks5_UdpDatagram.Parse(result.Buffer));
 #else
                 // netstandard2.0: ReceiveAsync has no CancellationToken overload — closing the socket
                 // is the only reliable way to unblock the pending receive on cancel.
                 using (cancellationToken.Register(() => { try { _udp?.Close(); } catch { } }))
                 {
                     UdpReceiveResult result = await _udp.ReceiveAsync().ConfigureAwait(false);
-                    return ParseDatagram(result.Buffer);
+                    return ToAssociateDatagram(Socks5_UdpDatagram.Parse(result.Buffer));
                 }
 #endif
             }
@@ -158,73 +158,13 @@ namespace TqkLibrary.Proxy.ProxySources
                 base.Dispose(isDisposing);
             }
 
-            // RSV(2)=0 FRAG(1)=0 ATYP(1) DST.ADDR(var) DST.PORT(2) DATA
-            private static byte[] BuildDatagram(IPEndPoint destination, byte[] payload, int offset, int count)
+            // Bridge between the rich Socks5_UdpDatagram (which can carry ATYP=DomainName) and the
+            // IPEndPoint-only UdpAssociateDatagram surface. ATYP=DomainName in replies is rare —
+            // surface as IPAddress.None so callers still see port/payload.
+            private static UdpAssociateDatagram ToAssociateDatagram(Socks5_UdpDatagram parsed)
             {
-                Socks5_DSTADDR dstAddr = new Socks5_DSTADDR(destination.Address);
-                byte[] addrBytes = dstAddr.GetByteArray();
-                byte[] datagram = new byte[3 + addrBytes.Length + 2 + count];
-                // RSV (already 0), FRAG (already 0)
-                Buffer.BlockCopy(addrBytes, 0, datagram, 3, addrBytes.Length);
-                int portOffset = 3 + addrBytes.Length;
-                datagram[portOffset] = (byte)((destination.Port >> 8) & 0xFF);
-                datagram[portOffset + 1] = (byte)(destination.Port & 0xFF);
-                Buffer.BlockCopy(payload, offset, datagram, portOffset + 2, count);
-                return datagram;
-            }
-
-            private static UdpAssociateDatagram ParseDatagram(byte[] buffer)
-            {
-                // Smallest possible header: RSV(2)+FRAG(1)+ATYP(1) — need ATYP before we can compute address size.
-                if (buffer.Length < 4)
-                    throw new InvalidDataException($"SOCKS5 UDP datagram too short ({buffer.Length} bytes)");
-                if (buffer[2] != 0)
-                    throw new NotSupportedException($"Fragmented SOCKS5 UDP datagrams are not supported (FRAG=0x{buffer[2]:X2})");
-
-                int atyp = buffer[3];
-                int cursor = 4;
-                IPAddress source;
-                switch (atyp)
-                {
-                    case 0x01: // IPv4 — 4 byte addr + 2 byte port
-                        if (cursor + 4 + 2 > buffer.Length)
-                            throw new InvalidDataException("SOCKS5 UDP datagram truncated in IPv4 DST.ADDR/DST.PORT");
-                        source = new IPAddress(new[] { buffer[cursor], buffer[cursor + 1], buffer[cursor + 2], buffer[cursor + 3] });
-                        cursor += 4;
-                        break;
-                    case 0x04: // IPv6 — 16 byte addr + 2 byte port
-                        {
-                            if (cursor + 16 + 2 > buffer.Length)
-                                throw new InvalidDataException("SOCKS5 UDP datagram truncated in IPv6 DST.ADDR/DST.PORT");
-                            byte[] ip6 = new byte[16];
-                            Buffer.BlockCopy(buffer, cursor, ip6, 0, 16);
-                            source = new IPAddress(ip6);
-                            cursor += 16;
-                            break;
-                        }
-                    case 0x03: // Domain — uncommon in replies. Skip the bytes; surface as IPAddress.None so caller still sees port/payload.
-                        {
-                            if (cursor + 1 > buffer.Length)
-                                throw new InvalidDataException("SOCKS5 UDP datagram truncated before domain length");
-                            int domainLen = buffer[cursor];
-                            if (cursor + 1 + domainLen + 2 > buffer.Length)
-                                throw new InvalidDataException("SOCKS5 UDP datagram truncated in domain DST.ADDR/DST.PORT");
-                            cursor += 1 + domainLen;
-                            source = IPAddress.None;
-                            break;
-                        }
-                    default:
-                        throw new NotSupportedException($"Unknown SOCKS5 ATYP in UDP reply: 0x{atyp:X2}");
-                }
-
-                int port = (buffer[cursor] << 8) | buffer[cursor + 1];
-                cursor += 2;
-
-                int payloadLen = buffer.Length - cursor;
-                byte[] payload = new byte[payloadLen];
-                Buffer.BlockCopy(buffer, cursor, payload, 0, payloadLen);
-
-                return new UdpAssociateDatagram(new IPEndPoint(source, port), payload);
+                IPAddress addr = parsed.IPAddress ?? IPAddress.None;
+                return new UdpAssociateDatagram(new IPEndPoint(addr, parsed.Port), parsed.Payload);
             }
         }
     }

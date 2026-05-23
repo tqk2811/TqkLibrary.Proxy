@@ -9,16 +9,16 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         private readonly ILoggerFactory? _loggerFactory;
         public Uri Uri { get; }
-        public HttpProxyAuthentication? HttpProxyAuthentication { get; }
+        public ProxyCredential? Credential { get; }
         public Socks5ProxySource(IPEndPoint iPEndPoint, ILoggerFactory? loggerFactory = null)
         {
             if (iPEndPoint is null) throw new ArgumentNullException(nameof(iPEndPoint));
             Uri = new UriBuilder("socks5", iPEndPoint.Address.ToString(), iPEndPoint.Port).Uri;
             _loggerFactory = loggerFactory;
         }
-        public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication, ILoggerFactory? loggerFactory = null) : this(iPEndPoint, loggerFactory)
+        public Socks5ProxySource(IPEndPoint iPEndPoint, ProxyCredential credential, ILoggerFactory? loggerFactory = null) : this(iPEndPoint, loggerFactory)
         {
-            HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
+            Credential = credential ?? throw new ArgumentNullException(nameof(credential));
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 {
                     string user = userInfo.Substring(0, colonIdx);
                     string pass = userInfo.Substring(colonIdx + 1);
-                    HttpProxyAuthentication = new HttpProxyAuthentication(user, pass);
+                    Credential = new ProxyCredential(user, pass);
                 }
             }
 

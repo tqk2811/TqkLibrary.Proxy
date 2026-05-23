@@ -1,10 +1,10 @@
-﻿using System.Net;
+using System.Net;
 
 namespace TqkLibrary.Proxy.Authentications
 {
-    public class HttpProxyAuthentication : BaseProxyAuthentication
+    public class ProxyCredential : BaseProxyAuthentication
     {
-        public HttpProxyAuthentication(string userName, string password)
+        public ProxyCredential(string userName, string password)
         {
             if (string.IsNullOrWhiteSpace(userName)) throw new ArgumentNullException(nameof(userName));
             if (string.IsNullOrWhiteSpace(password)) throw new ArgumentNullException(nameof(password));
@@ -20,19 +20,19 @@ namespace TqkLibrary.Proxy.Authentications
             if (ReferenceEquals(this, obj))
                 return true;
 
-            if (obj is HttpProxyAuthentication httpProxyAuthentication)
+            if (obj is ProxyCredential proxyCredential)
             {
-                return GetHashCode() == httpProxyAuthentication.GetHashCode();
+                return GetHashCode() == proxyCredential.GetHashCode();
             }
 
             return false;
         }
 
-        public static explicit operator NetworkCredential(HttpProxyAuthentication httpProxyAuthentication)
-            => new NetworkCredential(httpProxyAuthentication.UserName, httpProxyAuthentication.Password);
+        public static explicit operator NetworkCredential(ProxyCredential proxyCredential)
+            => new NetworkCredential(proxyCredential.UserName, proxyCredential.Password);
 
-        public static implicit operator HttpProxyAuthentication(NetworkCredential networkCredential)
-            => new HttpProxyAuthentication(networkCredential.UserName, networkCredential.Password);
+        public static implicit operator ProxyCredential(NetworkCredential networkCredential)
+            => new ProxyCredential(networkCredential.UserName, networkCredential.Password);
 
         public override int GetHashCode()
         {

@@ -75,7 +75,7 @@ namespace TqkLibrary.Proxy.ProxyServers
                     string[] split = parameter.Split(':');
                     if (split.Length == 2)
                     {
-                        userInfo.Authentication = new HttpProxyAuthentication(split[0], split[1]);
+                        userInfo.Authentication = new ProxyCredential(split[0], split[1]);
                     }
                     else throw new InvalidOperationException($"ProxyAuthorization Parameter is wrong data '{parameter}'");
                 }

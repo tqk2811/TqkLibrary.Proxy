@@ -8,7 +8,7 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         private readonly ILoggerFactory? _loggerFactory;
         readonly Uri _proxy;
-        public HttpProxyAuthentication? HttpProxyAuthentication { get; set; }
+        public ProxyCredential? Credential { get; set; }
         public HttpProxySource(Uri proxy, ILoggerFactory? loggerFactory = null)
         {
             if (proxy is null) throw new ArgumentNullException(nameof(proxy));
@@ -24,16 +24,16 @@ namespace TqkLibrary.Proxy.ProxySources
                 var split = _proxy.UserInfo.Split(':');
                 if (split.Length == 2)
                 {
-                    HttpProxyAuthentication = new HttpProxyAuthentication(split[0], split[1]);
+                    Credential = new ProxyCredential(split[0], split[1]);
                 }
             }
         }
         /// <summary>
         /// Self host
         /// </summary>
-        public HttpProxySource(Uri proxy, HttpProxyAuthentication httpProxyAuthentication, ILoggerFactory? loggerFactory = null) : this(proxy, loggerFactory)
+        public HttpProxySource(Uri proxy, ProxyCredential credential, ILoggerFactory? loggerFactory = null) : this(proxy, loggerFactory)
         {
-            HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
+            Credential = credential ?? throw new ArgumentNullException(nameof(credential));
         }
 
         public virtual bool IsSupportUdp => false;

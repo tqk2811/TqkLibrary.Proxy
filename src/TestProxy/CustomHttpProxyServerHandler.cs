@@ -1,4 +1,4 @@
-﻿using TqkLibrary.Proxy.Authentications;
+using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 
@@ -6,17 +6,17 @@ namespace TestProxy
 {
     class CustomHttpProxyServerHandler : BaseProxyServerHandler
     {
-        readonly HttpProxyAuthentication? _httpProxyAuthentication;
-        public CustomHttpProxyServerHandler(IProxySource proxySource, HttpProxyAuthentication? httpProxyAuthentication = null) : base(proxySource)
+        readonly ProxyCredential? _credential;
+        public CustomHttpProxyServerHandler(IProxySource proxySource, ProxyCredential? credential = null) : base(proxySource)
         {
-            _httpProxyAuthentication = httpProxyAuthentication;
+            _credential = credential;
         }
 
         public override async Task<bool> IsAcceptUserAsync(IUserInfo userInfo, CancellationToken cancellationToken = default)
         {
-            if (userInfo.Authentication is HttpProxyAuthentication httpProxyAuthentication)
+            if (userInfo.Authentication is ProxyCredential credential)
             {
-                return httpProxyAuthentication.Equals(_httpProxyAuthentication);
+                return credential.Equals(_credential);
             }
             return false;
         }

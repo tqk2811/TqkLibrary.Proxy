@@ -48,7 +48,7 @@ namespace ConsoleTest
 
         static IProxySource GetProxySource(ILoggerFactory? loggerFactory = null)
         {
-            HttpProxyAuthentication? auth = new HttpProxyAuthentication("hwac7m0f", "hWaC7m0F");
+            ProxyCredential? auth = new ProxyCredential("hwac7m0f", "hWaC7m0F");
             IProxySource proxySource;
             //proxySource = new HttpProxySource(new Uri("http://15.204.2.117:31419"), auth, loggerFactory);
             //proxySource = new Socks4ProxySource(IPEndPoint.Parse("93.104.63.65:80"), loggerFactory: loggerFactory);

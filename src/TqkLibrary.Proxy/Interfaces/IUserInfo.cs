@@ -8,8 +8,7 @@ namespace TqkLibrary.Proxy.Interfaces
         Guid TunnelId { get; }
         IPEndPoint IPEndPoint { get; }
         /// <summary>
-        /// <see cref="HttpProxyAuthentication"/> for http<br></br>
-        /// <see cref="Socks5Authentication"/> for socks5
+        /// <see cref="ProxyCredential"/> for http and socks5 username/password auth
         /// </summary>
         IAuthentication? Authentication { get; }
     }

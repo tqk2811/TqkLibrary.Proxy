@@ -66,7 +66,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
             protected virtual IEnumerable<Socks5_Auth> _GetSupportAuth()
             {
-                if (_proxySource.HttpProxyAuthentication != null) yield return Socks5_Auth.UsernamePassword;
+                if (_proxySource.Credential != null) yield return Socks5_Auth.UsernamePassword;
                 yield return Socks5_Auth.NoAuthentication;
             }
 
@@ -104,8 +104,8 @@ namespace TqkLibrary.Proxy.ProxySources
                             {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                                 Socks5_UsernamePassword socks5_UsernamePassword = new Socks5_UsernamePassword(
-                                    _proxySource.HttpProxyAuthentication.UserName,
-                                    _proxySource.HttpProxyAuthentication.Password);
+                                    _proxySource.Credential.UserName,
+                                    _proxySource.Credential.Password);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                                 await _stream.WriteAsync(socks5_UsernamePassword.GetByteArray(), cancellationToken);
                                 await _stream.FlushAsync(cancellationToken);

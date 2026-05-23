@@ -16,16 +16,16 @@ namespace ConsoleTest
     {
         class MyBaseProxyServerHandler : BaseProxyServerHandler
         {
-            readonly HttpProxyAuthentication _httpProxyAuthentication;
-            public MyBaseProxyServerHandler(HttpProxyAuthentication httpProxyAuthentication, IProxySource proxySource) : base(proxySource)
+            readonly ProxyCredential _credential;
+            public MyBaseProxyServerHandler(ProxyCredential credential, IProxySource proxySource) : base(proxySource)
             {
-                _httpProxyAuthentication = httpProxyAuthentication;
+                _credential = credential;
             }
             public override Task<bool> IsAcceptUserAsync(IUserInfo userInfo, CancellationToken cancellationToken = default)
             {
-                if (userInfo.Authentication is HttpProxyAuthentication httpProxyAuthentication)
+                if (userInfo.Authentication is ProxyCredential credential)
                 {
-                    return Task.FromResult(httpProxyAuthentication.Equals(_httpProxyAuthentication));
+                    return Task.FromResult(credential.Equals(_credential));
                 }
                 return base.IsAcceptUserAsync(userInfo, cancellationToken);
             }

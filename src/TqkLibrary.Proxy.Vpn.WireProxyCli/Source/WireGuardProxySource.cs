@@ -25,9 +25,9 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             _runner = new WireProxyProcessRunner(options);
             _loggerFactory = loggerFactory;
 
-            HttpProxyAuthentication? auth = null;
+            ProxyCredential? auth = null;
             if (!string.IsNullOrEmpty(options.Socks5Username) && !string.IsNullOrEmpty(options.Socks5Password))
-                auth = new HttpProxyAuthentication(options.Socks5Username!, options.Socks5Password!);
+                auth = new ProxyCredential(options.Socks5Username!, options.Socks5Password!);
 
             _socks5 = auth != null
                 ? new Socks5ProxySource(_runner.Socks5Endpoint, auth, loggerFactory)

@@ -69,9 +69,9 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 List<string> headers = new List<string>();
                 headers.Add($"CONNECT {address.Host}:{address.Port} HTTP/1.1");
-                if (_proxySource.HttpProxyAuthentication is not null)
+                if (_proxySource.Credential is not null)
                 {
-                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.HttpProxyAuthentication.UserName}:{_proxySource.HttpProxyAuthentication.Password}"));
+                    string data = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_proxySource.Credential.UserName}:{_proxySource.Credential.Password}"));
                     headers.Add($"Proxy-Authorization: Basic {data}");
                 }
 

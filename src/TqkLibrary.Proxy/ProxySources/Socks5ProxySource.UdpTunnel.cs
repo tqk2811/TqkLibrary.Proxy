@@ -60,7 +60,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InitConnectSourceFailedException($"UDP ASSOCIATE failed: {response.STATUS}");
                 }
 
-                IPAddress relayAddr = response.BNDADDR.IPAddress;
+                IPAddress relayAddr = await ResolveRelayAddressAsync(response.BNDADDR, cancellationToken);
                 // Many SOCKS5 servers reply with 0.0.0.0 to mean "same host as TCP control" (RFC ambiguity).
                 if (IPAddress.Any.Equals(relayAddr) || IPAddress.IPv6Any.Equals(relayAddr))
                 {
@@ -89,7 +89,12 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InvalidOperationException($"Mustbe run {nameof(UdpTunnel)}.{nameof(AssociateAsync)} first");
 
                 byte[] datagram = BuildDatagram(destination, payload, offset, count);
+#if NET6_0_OR_GREATER
+                // UdpClient is "connected" (see AssociateAsync) — this overload requires that.
+                await _udp.SendAsync(datagram, cancellationToken).ConfigureAwait(false);
+#else
                 await _udp.SendAsync(datagram, datagram.Length).ConfigureAwait(false);
+#endif
             }
 
             public virtual async Task<UdpAssociateDatagram> ReceiveAsync(CancellationToken cancellationToken = default)
@@ -115,6 +120,37 @@ namespace TqkLibrary.Proxy.ProxySources
             public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
                 => throw new NotSupportedException("UDP associate source does not expose a stream — use SendAsync/ReceiveAsync.");
 
+            // Resolve BND.ADDR to an IPAddress. SOCKS5 servers almost always reply with an IP literal,
+            // but ATYP=DomainName is technically allowed — in that case we DNS-resolve and prefer the
+            // family that matches the TCP control peer (most relay deployments are single-family).
+            private async Task<IPAddress> ResolveRelayAddressAsync(Socks5_DSTADDR bndaddr, CancellationToken cancellationToken)
+            {
+                if (bndaddr.ATYP != Socks5_ATYP.DomainName)
+                    return bndaddr.IPAddress;
+
+                IPAddress[] ips;
+                try
+                {
+#if NET6_0_OR_GREATER
+                    ips = await Dns.GetHostAddressesAsync(bndaddr.Domain, cancellationToken).ConfigureAwait(false);
+#else
+                    ips = await Dns.GetHostAddressesAsync(bndaddr.Domain).ConfigureAwait(false);
+#endif
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to resolve SOCKS5 UDP relay domain '{Domain}', falling back to TCP control peer", bndaddr.Domain);
+                    return (_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address
+                        ?? throw new InvalidOperationException($"Cannot resolve SOCKS5 UDP relay domain '{bndaddr.Domain}' and no TCP peer fallback available");
+                }
+
+                if (ips.Length == 0)
+                    throw new InvalidOperationException($"DNS returned no addresses for SOCKS5 UDP relay domain '{bndaddr.Domain}'");
+
+                AddressFamily preferred = (_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.AddressFamily ?? AddressFamily.InterNetwork;
+                return ips.FirstOrDefault(ip => ip.AddressFamily == preferred) ?? ips[0];
+            }
+
             protected override void Dispose(bool isDisposing)
             {
                 try { _udp?.Close(); } catch { }
@@ -139,7 +175,8 @@ namespace TqkLibrary.Proxy.ProxySources
 
             private static UdpAssociateDatagram ParseDatagram(byte[] buffer)
             {
-                if (buffer.Length < 10) // min header: RSV(2)+FRAG(1)+ATYP(1)+IPv4(4)+PORT(2)
+                // Smallest possible header: RSV(2)+FRAG(1)+ATYP(1) — need ATYP before we can compute address size.
+                if (buffer.Length < 4)
                     throw new InvalidDataException($"SOCKS5 UDP datagram too short ({buffer.Length} bytes)");
                 if (buffer[2] != 0)
                     throw new NotSupportedException($"Fragmented SOCKS5 UDP datagrams are not supported (FRAG=0x{buffer[2]:X2})");
@@ -149,21 +186,29 @@ namespace TqkLibrary.Proxy.ProxySources
                 IPAddress source;
                 switch (atyp)
                 {
-                    case 0x01: // IPv4
+                    case 0x01: // IPv4 — 4 byte addr + 2 byte port
+                        if (cursor + 4 + 2 > buffer.Length)
+                            throw new InvalidDataException("SOCKS5 UDP datagram truncated in IPv4 DST.ADDR/DST.PORT");
                         source = new IPAddress(new[] { buffer[cursor], buffer[cursor + 1], buffer[cursor + 2], buffer[cursor + 3] });
                         cursor += 4;
                         break;
-                    case 0x04: // IPv6
+                    case 0x04: // IPv6 — 16 byte addr + 2 byte port
                         {
+                            if (cursor + 16 + 2 > buffer.Length)
+                                throw new InvalidDataException("SOCKS5 UDP datagram truncated in IPv6 DST.ADDR/DST.PORT");
                             byte[] ip6 = new byte[16];
                             Buffer.BlockCopy(buffer, cursor, ip6, 0, 16);
                             source = new IPAddress(ip6);
                             cursor += 16;
                             break;
                         }
-                    case 0x03: // Domain — uncommon in replies. Surface as 0.0.0.0 so callers can still see the port/payload.
+                    case 0x03: // Domain — uncommon in replies. Skip the bytes; surface as IPAddress.None so caller still sees port/payload.
                         {
+                            if (cursor + 1 > buffer.Length)
+                                throw new InvalidDataException("SOCKS5 UDP datagram truncated before domain length");
                             int domainLen = buffer[cursor];
+                            if (cursor + 1 + domainLen + 2 > buffer.Length)
+                                throw new InvalidDataException("SOCKS5 UDP datagram truncated in domain DST.ADDR/DST.PORT");
                             cursor += 1 + domainLen;
                             source = IPAddress.None;
                             break;
@@ -172,8 +217,6 @@ namespace TqkLibrary.Proxy.ProxySources
                         throw new NotSupportedException($"Unknown SOCKS5 ATYP in UDP reply: 0x{atyp:X2}");
                 }
 
-                if (cursor + 2 > buffer.Length)
-                    throw new InvalidDataException("SOCKS5 UDP datagram truncated before DST.PORT");
                 int port = (buffer[cursor] << 8) | buffer[cursor + 1];
                 cursor += 2;
 

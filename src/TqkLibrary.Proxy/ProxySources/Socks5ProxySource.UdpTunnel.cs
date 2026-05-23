@@ -63,7 +63,10 @@ namespace TqkLibrary.Proxy.ProxySources
                 IPAddress relayAddr = response.BNDADDR.IPAddress;
                 // Many SOCKS5 servers reply with 0.0.0.0 to mean "same host as TCP control" (RFC ambiguity).
                 if (IPAddress.Any.Equals(relayAddr) || IPAddress.IPv6Any.Equals(relayAddr))
-                    relayAddr = _proxySource.IPEndPoint.Address;
+                {
+                    relayAddr = (_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address
+                        ?? throw new InvalidOperationException("Cannot resolve proxy server address for UDP relay fallback");
+                }
 
                 RelayEndPoint = new IPEndPoint(relayAddr, response.BNDPORT);
 

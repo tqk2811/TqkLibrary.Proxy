@@ -34,7 +34,9 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 if (_socks4_RequestResponse.DSTIP.Equals(IPAddress.Any))
                 {
-                    return new IPEndPoint(_proxySource.iPEndPoint.Address, _socks4_RequestResponse.DSTPORT);
+                    IPAddress proxyAddr = (_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address
+                        ?? throw new InvalidOperationException("Cannot resolve proxy server address for DSTIP fallback");
+                    return new IPEndPoint(proxyAddr, _socks4_RequestResponse.DSTPORT);
                 }
                 else
                 {

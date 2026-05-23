@@ -39,7 +39,9 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 if (socks5_RequestResponse.BNDADDR.IPAddress.Equals(IPAddress.Any) || socks5_RequestResponse.BNDADDR.IPAddress.Equals(IPAddress.IPv6Any))
                 {
-                    return new IPEndPoint(_proxySource.IPEndPoint.Address, socks5_RequestResponse.BNDPORT);
+                    IPAddress proxyAddr = (_tcpClient.Client.RemoteEndPoint as IPEndPoint)?.Address
+                        ?? throw new InvalidOperationException("Cannot resolve proxy server address for BND fallback");
+                    return new IPEndPoint(proxyAddr, socks5_RequestResponse.BNDPORT);
                 }
                 else
                 {

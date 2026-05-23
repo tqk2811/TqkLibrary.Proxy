@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
@@ -8,16 +8,44 @@ namespace TqkLibrary.Proxy.ProxySources
     public partial class Socks5ProxySource : IProxySource, ISocks5Proxy
     {
         private readonly ILoggerFactory? _loggerFactory;
-        public IPEndPoint IPEndPoint { get; }
+        public Uri Uri { get; }
         public HttpProxyAuthentication? HttpProxyAuthentication { get; }
         public Socks5ProxySource(IPEndPoint iPEndPoint, ILoggerFactory? loggerFactory = null)
         {
-            IPEndPoint = iPEndPoint ?? throw new ArgumentNullException(nameof(iPEndPoint));
+            if (iPEndPoint is null) throw new ArgumentNullException(nameof(iPEndPoint));
+            Uri = new UriBuilder("socks5", iPEndPoint.Address.ToString(), iPEndPoint.Port).Uri;
             _loggerFactory = loggerFactory;
         }
         public Socks5ProxySource(IPEndPoint iPEndPoint, HttpProxyAuthentication httpProxyAuthentication, ILoggerFactory? loggerFactory = null) : this(iPEndPoint, loggerFactory)
         {
             HttpProxyAuthentication = httpProxyAuthentication ?? throw new ArgumentNullException(nameof(httpProxyAuthentication));
+        }
+
+        /// <summary>
+        /// Construct from a <c>socks5://[user:pass@]host[:port]</c> URI. <paramref name="uri"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
+        /// </summary>
+        public Socks5ProxySource(Uri uri, ILoggerFactory? loggerFactory = null)
+        {
+            if (uri is null) throw new ArgumentNullException(nameof(uri));
+            if (!"socks5".Equals(uri.Scheme, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Uri scheme must be 'socks5', got '{uri.Scheme}'", nameof(uri));
+            if (uri.Port <= 0) throw new ArgumentException($"Uri must include a port: '{uri}'", nameof(uri));
+
+            Uri = uri;
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                string userInfo = Uri.UnescapeDataString(uri.UserInfo);
+                int colonIdx = userInfo.IndexOf(':');
+                if (colonIdx > 0)
+                {
+                    string user = userInfo.Substring(0, colonIdx);
+                    string pass = userInfo.Substring(colonIdx + 1);
+                    HttpProxyAuthentication = new HttpProxyAuthentication(user, pass);
+                }
+            }
+
+            _loggerFactory = loggerFactory;
         }
 
         public virtual bool IsSupportUdp { get; set; } = true;

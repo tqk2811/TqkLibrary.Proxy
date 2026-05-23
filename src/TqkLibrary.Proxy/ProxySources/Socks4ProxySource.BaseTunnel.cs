@@ -23,9 +23,9 @@ namespace TqkLibrary.Proxy.ProxySources
             protected virtual async Task _ConnectToSocksServerAsync(CancellationToken cancellationToken = default)
             {
 #if NET5_0_OR_GREATER
-                await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port, cancellationToken);
+                await _tcpClient.ConnectAsync(_proxySource.Uri.DnsSafeHost, _proxySource.Uri.Port, cancellationToken);
 #else
-                await _tcpClient.ConnectAsync(_proxySource.iPEndPoint.Address, _proxySource.iPEndPoint.Port);
+                await _tcpClient.ConnectAsync(_proxySource.Uri.DnsSafeHost, _proxySource.Uri.Port);
 #endif
                 _stream = _tcpClient.GetStream();
             }

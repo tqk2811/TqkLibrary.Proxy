@@ -41,18 +41,18 @@ namespace TqkLibrary.Proxy.ProxySources
             /// <exception cref="NotSupportedException"></exception>
             protected virtual async Task ConnectAndAuthAsync(CancellationToken cancellationToken = default)
             {
-                _logger?.LogInformation("TCP connect -> {UpstreamEndpoint}", _proxySource.IPEndPoint);
+                _logger?.LogInformation("TCP connect -> {UpstreamUri}", _proxySource.Uri);
                 try
                 {
 #if NET5_0_OR_GREATER
-                    await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port, cancellationToken);
+                    await _tcpClient.ConnectAsync(_proxySource.Uri.DnsSafeHost, _proxySource.Uri.Port, cancellationToken);
 #else
-                    await _tcpClient.ConnectAsync(_proxySource.IPEndPoint.Address, _proxySource.IPEndPoint.Port);
+                    await _tcpClient.ConnectAsync(_proxySource.Uri.DnsSafeHost, _proxySource.Uri.Port);
 #endif
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, "TCP connect FAILED -> {UpstreamEndpoint}", _proxySource.IPEndPoint);
+                    _logger?.LogError(ex, "TCP connect FAILED -> {UpstreamUri}", _proxySource.Uri);
                     throw;
                 }
                 _stream = _tcpClient.GetStream();

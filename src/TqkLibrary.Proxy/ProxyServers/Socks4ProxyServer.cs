@@ -11,6 +11,21 @@ namespace TqkLibrary.Proxy.ProxyServers
 {
     public class Socks4ProxyServer : IProxyServer, ISocks4Proxy
     {
+        class Socks4UserInfo : BaseUserInfo
+        {
+            public Socks4UserInfo(IPEndPoint iPEndPoint, Guid tunnelId) : base(iPEndPoint, tunnelId)
+            {
+
+            }
+
+            public Socks4Authentication? Socks4Authentication { get; set; }
+            public override IAuthentication? Authentication
+            {
+                get => Socks4Authentication;
+                set => throw new NotImplementedException();
+            }
+        }
+
         readonly ILoggerFactory? _loggerFactory;
         readonly ILogger? _logger;
 
@@ -22,7 +37,7 @@ namespace TqkLibrary.Proxy.ProxyServers
         IProxyServerHandler? _proxyServerHandler;
         Guid _tunnelId;
         CancellationToken _cancellationToken;
-        BaseUserInfo? userInfo;
+        Socks4UserInfo? userInfo;
 
         public Socks4ProxyServer(ILoggerFactory? loggerFactory = null)
         {
@@ -55,9 +70,10 @@ namespace TqkLibrary.Proxy.ProxyServers
                 return;
             }
 
-            userInfo = new BaseUserInfo(clientEndPoint, _tunnelId);
-
-
+            userInfo = new Socks4UserInfo(clientEndPoint, _tunnelId)
+            {
+                Socks4Authentication = new Socks4Authentication(socks4_Request.ID)
+            };
 
             if (!await proxyServerHandler.IsAcceptUserAsync(userInfo, cancellationToken))
             {

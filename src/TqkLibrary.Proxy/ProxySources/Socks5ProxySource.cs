@@ -22,7 +22,7 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         /// <summary>
-        /// Construct from a <c>socks5://[user:pass@]host[:port]</c> URI. <paramref name="uri"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
+        /// Construct from a <c>socks5://[user:pass@]host:port</c> URI. <paramref name="uri"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
         /// </summary>
         public Socks5ProxySource(Uri uri, ILoggerFactory? loggerFactory = null)
         {

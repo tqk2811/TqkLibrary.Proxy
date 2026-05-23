@@ -9,6 +9,9 @@ namespace TqkLibrary.Proxy.ProxySources
         private readonly ILoggerFactory? _loggerFactory;
         readonly Uri _proxy;
         public ProxyCredential? Credential { get; set; }
+        /// <summary>
+        /// Construct from a <c>http(s)://[user:pass@]host:port</c> URI. <paramref name="proxy"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
+        /// </summary>
         public HttpProxySource(Uri proxy, ILoggerFactory? loggerFactory = null)
         {
             if (proxy is null) throw new ArgumentNullException(nameof(proxy));

@@ -18,7 +18,7 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         /// <summary>
-        /// Construct from a <c>socks4://[user@]host[:port]</c> URI. <paramref name="uri"/> host may be a domain or IPv4 literal (SOCKS4 itself does not support IPv6).
+        /// Construct from a <c>socks4://[user@]host:port</c> URI. <paramref name="uri"/> host may be a domain or IPv4 literal (SOCKS4 itself does not support IPv6).
         /// </summary>
         public Socks4ProxySource(Uri uri, ILoggerFactory? loggerFactory = null)
         {

@@ -3,7 +3,7 @@
     - Local Source 
         - [x] Connect  
         - [x] Bind  
-        - [ ] Udp  
+        - [x] Udp  
     - Http Source
         - [x] Connect  
     - Socks4 Source
@@ -12,7 +12,7 @@
     - Socks5 Source
         - [x] Connect
         - [x] Bind
-        - [ ] Udp
+        - [x] Udp
 - Server
     - Http Proxy Server
         - [x] Connect  
@@ -22,4 +22,4 @@
     - Socks5 Proxy Server
         - [x] Connect
         - [x] Bind
-        - [ ] Udp
+        - [x] Udp

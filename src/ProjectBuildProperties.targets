@@ -48,7 +48,7 @@
 
 	<Target Name="SetVersionFromGitVersion" AfterTargets="GetVersion" Condition="'$(EnableGitVersion)' == 'true' and '$(DisableGitVersionTask)' != 'true'">
 		<PropertyGroup>
-			<Version>$(GitVersion_MajorMinorPatch).$(GitVersion_CommitsSinceVersionSource)</Version>
+			<Version>$(GitVersion_Major).$(GitVersion_Minor).$(GitVersion_CommitsSinceVersionSource)</Version>
 			<PackageVersion>$(Version)</PackageVersion>
 			<NuspecProperties>id=$(MSBuildProjectName);version=$(Version)</NuspecProperties>
 		</PropertyGroup>

@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TqkLibrary.Proxy.Reverse.Tr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TqkLibrary.Proxy.Reverse.Transport.AspNetCore", "TqkLibrary.Proxy.Reverse.Transport.AspNetCore\TqkLibrary.Proxy.Reverse.Transport.AspNetCore.csproj", "{D0C0C743-FBFA-4100-B5AC-4603959DAD3F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TqkLibrary.Proxy.SshNet", "TqkLibrary.Proxy.SshNet\TqkLibrary.Proxy.SshNet.csproj", "{DF097032-898A-4CFA-ADCE-38E5E08D7D92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,6 +197,18 @@ Global
 		{D0C0C743-FBFA-4100-B5AC-4603959DAD3F}.Release|x64.Build.0 = Release|Any CPU
 		{D0C0C743-FBFA-4100-B5AC-4603959DAD3F}.Release|x86.ActiveCfg = Release|Any CPU
 		{D0C0C743-FBFA-4100-B5AC-4603959DAD3F}.Release|x86.Build.0 = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|x64.Build.0 = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF097032-898A-4CFA-ADCE-38E5E08D7D92}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

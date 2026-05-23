@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\ProjectBuildProperties.targets" />
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net6.0;net8.0</TargetFrameworks>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TqkLibrary.Proxy\TqkLibrary.Proxy.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SSH.NET" />
+	</ItemGroup>
+
+</Project>

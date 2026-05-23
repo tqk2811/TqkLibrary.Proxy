@@ -16,5 +16,6 @@
     <PackageVersion Include="MSTest.TestFramework" Version="2.2.8" />
     <PackageVersion Include="coverlet.collector" Version="3.1.2" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="SSH.NET" Version="2025.1.0" />
   </ItemGroup>
 </Project>

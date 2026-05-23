@@ -11,7 +11,13 @@ namespace TqkLibrary.Proxy.ProxySources
         public HttpProxyAuthentication? HttpProxyAuthentication { get; set; }
         public HttpProxySource(Uri proxy, ILoggerFactory? loggerFactory = null)
         {
-            _proxy = proxy ?? throw new ArgumentNullException(nameof(proxy));
+            if (proxy is null) throw new ArgumentNullException(nameof(proxy));
+            if (!"http".Equals(proxy.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                !"https".Equals(proxy.Scheme, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Uri scheme must be 'http' or 'https', got '{proxy.Scheme}'", nameof(proxy));
+            if (proxy.Port <= 0) throw new ArgumentException($"Uri must include a port: '{proxy}'", nameof(proxy));
+
+            _proxy = proxy;
             _loggerFactory = loggerFactory;
             if (!string.IsNullOrWhiteSpace(_proxy.UserInfo))
             {

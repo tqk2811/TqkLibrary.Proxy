@@ -31,14 +31,6 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
         }
-        /// <summary>
-        /// Self host
-        /// </summary>
-        public HttpProxySource(Uri proxy, ProxyCredential credential, ILoggerFactory? loggerFactory = null) : this(proxy, loggerFactory)
-        {
-            Credential = credential ?? throw new ArgumentNullException(nameof(credential));
-        }
-
         public virtual bool IsSupportUdp => false;
         public virtual bool IsSupportIpv6 { get; set; } = true;
         public virtual bool IsSupportBind => false;

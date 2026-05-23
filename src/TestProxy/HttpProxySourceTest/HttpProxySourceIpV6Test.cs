@@ -21,7 +21,7 @@ namespace TestProxy.HttpProxySourceTest
             };
             _proxyServer2.StartListen();
 
-            return new HttpProxySource(new Uri($"http://{_proxyServer2.IPEndPoint}"), _networkCredential);
+            return new HttpProxySource(new Uri($"http://{_proxyServer2.IPEndPoint}")) { Credential = _networkCredential };
         }
 
         protected override void Dispose(bool isDisposing)

@@ -41,8 +41,7 @@ namespace TqkLibrary.Proxy.ProxySources
 
         public virtual Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
-            throw new NotSupportedException();
-            //return new UdpTunnel(this);
+            return Task.FromResult<IUdpAssociateSource>(new UdpTunnel(this, tunnelId));
         }
 
         public virtual Task<IPEndPoint> GetListenEndPointAsync(CancellationToken cancellationToken = default)

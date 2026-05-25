@@ -13,6 +13,8 @@ namespace TestProxy
         public BaseConnectTest()
         {
             _httpClient = new HttpClient(CreateHttpMessageHandler(_proxyServer), true);
+            // fly.io (httpbingo.org host) returns 402 for requests with empty User-Agent
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("TqkLibrary.Proxy.Test/1.0");
         }
         protected override void Dispose(bool isDisposing)
         {

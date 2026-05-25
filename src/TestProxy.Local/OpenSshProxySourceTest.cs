@@ -12,7 +12,7 @@ namespace TestProxy.Local
         protected override IProxySource GetProxySource()
         {
             var options = new OpenSshConnectionOptions(
-                host: "192.168.1.5",
+                host: "192.168.1.7",
                 user: "tqk2811"
                 )
             {

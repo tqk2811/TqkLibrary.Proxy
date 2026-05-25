@@ -19,9 +19,10 @@ namespace TqkLibrary.Proxy.ProxyServers
             }
 
             public Socks5Authentication? Socks5Authentication { get; set; }
+            public ProxyCredential? ProxyCredential { get; set; }
             public override IAuthentication? Authentication
             {
-                get => Socks5Authentication;
+                get => (IAuthentication?)ProxyCredential ?? Socks5Authentication;
                 set => throw new NotImplementedException();
             }
         }
@@ -86,7 +87,25 @@ namespace TqkLibrary.Proxy.ProxyServers
             Socks5_GreetingResponse greetingResponse = new Socks5_GreetingResponse(choice);
             await _clientStream!.WriteAsync(greetingResponse.GetByteArray(), _cancellationToken);
             await _clientStream!.FlushAsync(_cancellationToken);
-            return choice != Socks5_Auth.Reject;
+
+            if (choice == Socks5_Auth.Reject)
+                return false;
+
+            // RFC 1929 sub-negotiation when UsernamePassword is selected.
+            if (choice == Socks5_Auth.UsernamePassword)
+            {
+                Socks5_UsernamePassword credPacket = await _clientStream!.Read_Socks5_UsernamePassword_Async(_cancellationToken);
+                userInfo!.ProxyCredential = new ProxyCredential(credPacket.UserName, credPacket.Password);
+
+                bool credOk = await _proxyServerHandler!.IsAcceptUserAsync(userInfo, _cancellationToken);
+                byte status = credOk ? (byte)0x00 : (byte)0x01;
+                Socks5_UsernamePasswordResponse credResponse = new Socks5_UsernamePasswordResponse(status);
+                await _clientStream!.WriteAsync(credResponse.GetByteArray(), _cancellationToken);
+                await _clientStream!.FlushAsync(_cancellationToken);
+                return credOk;
+            }
+
+            return true;
         }
 
         async Task _ClientConnectionRequestAsync()

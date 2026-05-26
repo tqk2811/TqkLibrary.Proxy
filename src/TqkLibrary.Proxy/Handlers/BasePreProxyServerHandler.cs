@@ -30,5 +30,9 @@ namespace TqkLibrary.Proxy.Handlers
         {
             return ProxyServerFactory.CreateAsync(preReadStream, cancellationToken);
         }
+        public virtual Task OnExceptionAsync(IPEndPoint iPEndPoint, Guid tunnelId, Exception exception)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

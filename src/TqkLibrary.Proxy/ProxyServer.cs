@@ -211,7 +211,21 @@ namespace TqkLibrary.Proxy
                         if (proxyServer is null)
                             throw new InvalidOperationException($"{PreProxyServerHandler.GetType().FullName}.{nameof(IPreProxyServerHandler.GetProxyServerAsync)} was return null");
 
-                        await proxyServer.ProxyWorkAsync(preReadStream, clientEndPoint, ProxyServerHandler, tunnelId, _CancellationToken);
+                        // Inner try-catch around ProxyWorkAsync only: runs BEFORE the wrapper `using`
+                        // disposes, so OnExceptionAsync can tag failure state before stream.Dispose
+                        // commits the final log row (e.g. a bytes-counting wrapper).
+                        // GetProxyServerAsync is intentionally outside — handlers own that hook's
+                        // failure semantics directly (they can tag state themselves on throw), no
+                        // need for the library to also raise OnExceptionAsync for it.
+                        try
+                        {
+                            await proxyServer.ProxyWorkAsync(preReadStream, clientEndPoint, ProxyServerHandler, tunnelId, _CancellationToken);
+                        }
+                        catch (Exception innerEx)
+                        {
+                            await _SafeInvokeOnExceptionAsync(clientEndPoint, tunnelId, innerEx);
+                            throw;
+                        }
                     }
                 }
             }
@@ -226,6 +240,18 @@ namespace TqkLibrary.Proxy
             catch (Exception ex)
             {
                 _logger?.LogCritical(ex, "Tunnel work failed");
+            }
+        }
+
+        async Task _SafeInvokeOnExceptionAsync(IPEndPoint clientEndPoint, Guid tunnelId, Exception ex)
+        {
+            try
+            {
+                await PreProxyServerHandler.OnExceptionAsync(clientEndPoint, tunnelId, ex);
+            }
+            catch (Exception hookEx)
+            {
+                _logger?.LogError(hookEx, "PreProxyServerHandler.OnExceptionAsync threw");
             }
         }
     }

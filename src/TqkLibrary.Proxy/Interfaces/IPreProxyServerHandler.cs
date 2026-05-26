@@ -31,5 +31,15 @@ namespace TqkLibrary.Proxy.Interfaces
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<IProxyServer> GetProxyServerAsync(PreReadStream preReadStream, IPEndPoint iPEndPoint, Guid tunnelId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Invoked when an uncaught exception escapes the tunnel work pipeline
+        /// (anything inside ProxyServer's per-tunnel scope after IsAcceptClient returned true).
+        /// Implementations can use this to mark the tunnel as failed in their own logs.
+        /// </summary>
+        /// <param name="iPEndPoint">Client endpoint.</param>
+        /// <param name="tunnelId">Tunnel identifier — matches IsAcceptClient/StreamHandlerAsync/GetProxyServerAsync.</param>
+        /// <param name="exception">The exception that escaped (already logged by ProxyServer).</param>
+        Task OnExceptionAsync(IPEndPoint iPEndPoint, Guid tunnelId, Exception exception);
     }
 }

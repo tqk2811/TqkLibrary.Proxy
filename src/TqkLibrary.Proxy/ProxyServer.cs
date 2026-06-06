@@ -172,6 +172,18 @@ namespace TqkLibrary.Proxy
                     TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
                     _ = _PreProxyWorkAsync(tcpClient);//run in task
                 }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.OperationAborted)
+                {
+                    // Stop()/Dispose() aborted the pending accept — normal shutdown, not an error
+                    _logger?.LogInformation("Accept loop stopped (listener aborted)");
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // listener was disposed while accepting — normal shutdown
+                    _logger?.LogInformation("Accept loop stopped (listener disposed)");
+                    break;
+                }
                 catch (Exception ex)
                 {
                     _logger?.LogCritical(ex, "Accept loop failed");

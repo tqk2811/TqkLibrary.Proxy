@@ -1,19 +1,19 @@
-# git-cliff config rieng cho GitHub Release notes (sinh boi CI .github/workflows/release.yml).
-# Khac cliff.toml (CHANGELOG.md local): KHONG header/footer. Dung voi range '<tag>..HEAD'
-# (moi commit ke tu tag vM.N.0, gom ca commit merge vao tu branch khac).
+# git-cliff config dedicated to GitHub Release notes (used by CI .github/workflows/release.yml).
+# Differs from a local CHANGELOG.md config: NO header/footer. Used with range '<tag>..HEAD'
+# (every commit since tag vM.N.0, including commits merged in from other branches).
 #
-# Template CHI emit '__SHA_<sha>__ <noi dung da format>' cho tung commit (khong danh so,
-# khong thu tu cuoi). release.yml dung sha de dung cau truc notes theo cac BUILD [release]:
-# - Diem build R = commit first-parent co marker '[release]' (+ HEAD cua run hien tai);
-#   header '- M.N.<zzz>' voi zzz = rev-list --count tag..R (= version nupkg, GitVersion dem MOI commit)
-# - Muc con '  + <noi dung>' = moi commit moi trong (R_truoc..R], gom ca commit merge tu branch khac
+# The template ONLY emits '__SHA_<sha>__ <formatted content>' per commit (no numbering,
+# no final ordering). release.yml uses the sha to build the notes structure by [release] BUILDs:
+# - Build point R = first-parent commit carrying the '[release]' marker (+ current run's HEAD);
+#   header '- M.N.<zzz>' with zzz = rev-list --count tag..R (= nupkg version, GitVersion counts ALL commits)
+# - Sub-item '  + <content>' = every new commit in (R_prev..R], including commits merged from other branches
 
 [changelog]
 header = ""
-# Chi liet ke cac loai thay doi nguoi dung quan tam (loc o buoc hien thi).
-# Muon them/bot loai: sua danh sach trong `commit.group in [...]` ben duoi.
-# Moi muc co link toi commit: dat tren scope, commit khong scope thi dat tren (type).
-# '__REPO__' duoc release.yml thay bang $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.
+# Only list change types users care about (filtered at the display step).
+# To add/remove types: edit the list in `commit.group in [...]` below.
+# Each item links to its commit: on the scope, or on (type) when the commit has no scope.
+# '__REPO__' is replaced by release.yml with $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.
 body = """
 {% for commit in commits %}\
 {% if commit.group in ["feat", "fix", "perf", "revert", "refactor", "chore"] %}\
@@ -45,10 +45,10 @@ commit_parsers = [
     { message = "^sample", group = "sample" },
     { message = "^chore", group = "chore" },
     { message = ".*", group = "other" },
-    # Danh so/thu tu deu do release.yml quyet (tra cuu theo sha) nen skip khong pha gi;
-    # van loc loai hien thi o body template cho gon 1 cho.
+    # Numbering/ordering are decided by release.yml (lookup by sha), so skipping would not break it;
+    # display-type filtering still happens in the body template, kept in one place.
 ]
 filter_commits = false
 tag_pattern = '[vV]?[0-9]+\.[0-9]+\.[0-9]+'
-# Thu tu output khong quan trong (release.yml tra cuu theo sha); oldest cho deterministic.
+# Output order does not matter (release.yml looks up by sha); oldest for determinism.
 sort_commits = "oldest"

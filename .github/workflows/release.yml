@@ -1,16 +1,16 @@
 name: Release
 
-# CI build + publish. KHONG chay mac dinh: chi build khi commit (head cua push) chua marker
-# '[release]'. Cung cho chay tay (workflow_dispatch).
-# Mode notes-only: marker '[release_notes_only]' (hoac dispatch voi input release_notes_only)
-# chi sinh lai GitHub Release notes (khong build/pack/upload/nuget); khong tinh HEAD la diem build.
+# CI build + publish. Does NOT run by default: only builds when the head commit of the push
+# contains the marker '[release]'. Also runnable manually (workflow_dispatch).
+# Notes-only mode: marker '[release_notes_only]' (or dispatch with input release_notes_only)
+# only regenerates GitHub Release notes (no build/pack/upload/nuget); HEAD is not a build point.
 #
-# Mo hinh /releases: moi dong minor M.N co 1 GitHub Release ten theo tag 'vM.N.0'.
-# Moi lan chay -> pack MOI thu vien co .nuspec version 'M.N.<so-commit>' -> upload tat ca nupkg lam
-# asset vao Release 'vM.N.0' + cap nhat notes (tang dan, danh so) cac change ke tu 'vM.N.0'.
+# /releases model: each minor line M.N has one GitHub Release named by the tag 'vM.N.0'.
+# Each run -> pack every lib with a .nuspec as version 'M.N.<commits>' -> upload all nupkg as
+# assets to Release 'vM.N.0' + update the notes (ascending, numbered) for changes since 'vM.N.0'.
 #
-# Tien dieu kien: tag 'vM.N.0' phai ton tai tren origin truoc (moc GitVersion + ten Release).
-# Push nuget.org chi khi co secret 'nugetKey'.
+# Precondition: tag 'vM.N.0' must already exist on origin (GitVersion source + Release name).
+# Push to nuget.org only when the 'nugetKey' secret is present.
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') || contains(github.event.head_commit.message, '[release_notes_only]')
     runs-on: windows-latest
     env:
-      # 'true' khi chi sinh notes: dispatch chon release_notes_only, hoac head commit chua '[release_notes_only]'
+      # 'true' for notes-only: dispatch chose release_notes_only, or head commit contains '[release_notes_only]'
       NOTES_ONLY: ${{ inputs.release_notes_only || contains(github.event.head_commit.message, '[release_notes_only]') }}
     steps:
       - name: Checkout (full history + tags)
@@ -39,8 +39,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # TFM cao nhat la net8.0, SDK moi build duoc TFM cu qua reference packs. Nen major >= 8 la du;
-      # chi setup-dotnet khi chua co (windows-latest thuong da co >= 8).
+      # Highest TFM is net8.0, and a newer SDK builds older TFMs via reference packs. So major >= 8
+      # is enough; only run setup-dotnet when none is present (windows-latest usually ships >= 8).
       - name: Check installed .NET SDKs
         if: env.NOTES_ONLY != 'true'
         id: dotnet_check
@@ -71,7 +71,7 @@ jobs:
           $exe = Get-ChildItem $dst -Recurse -Filter git-cliff.exe | Select-Object -First 1
           Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
 
-      - name: "Build + pack (9 thu vien TqkLibrary.Proxy.*)"
+      - name: "Build + pack (publishable TqkLibrary.Proxy libraries)"
         if: env.NOTES_ONLY != 'true'
         shell: pwsh
         run: ./.github/workflows/BuildCI.ps1   # pack only; nuget push handled below
@@ -85,8 +85,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $notesOnly = $env:NOTES_ONLY -eq 'true'
           if ($notesOnly) {
-            # Notes-only: khong co nupkg -> suy M.N tu ten branch (neu la version-branch M.N);
-            # branch khac (master) thi lay tag gan nhat trong lich su.
+            # Notes-only: no nupkg -> derive M.N from the branch name (if it is a version-branch M.N);
+            # otherwise (e.g. master) take the nearest tag in history.
             $bn = $env:GITHUB_REF_NAME
             if ($bn -match '^(\d+)\.(\d+)$') { $major = $Matches[1]; $minor = $Matches[2] }
             else {
@@ -98,23 +98,23 @@ jobs:
           } else {
             $nupkgs = @(Get-ChildItem ./artifacts/*.nupkg)
             if ($nupkgs.Count -eq 0) { throw "No .nupkg produced by BuildCI.ps1" }
-            # Version M.N lay tu package loi 'TqkLibrary.Proxy' (ten = TqkLibrary.Proxy.<M>.<N>.<build>.nupkg).
+            # M.N comes from the core 'TqkLibrary.Proxy' package (name = TqkLibrary.Proxy.<M>.<N>.<build>.nupkg).
             $core = $nupkgs | Where-Object { $_.Name -match '^TqkLibrary\.Proxy\.(\d+)\.(\d+)\.(\d+)\.nupkg$' } | Select-Object -First 1
             if (-not $core) { throw "Cannot find core TqkLibrary.Proxy nupkg to parse version" }
             $null = $core.Name -match '^TqkLibrary\.Proxy\.(\d+)\.(\d+)\.(\d+)\.nupkg$'
             $major = $Matches[1]; $minor = $Matches[2]
           }
-          $tag = "v$major.$minor.0"   # tag co prefix 'v' (v1.0.0)
+          $tag = "v$major.$minor.0"   # tags carry the 'v' prefix (v1.0.0)
           $mn  = "$major.$minor"
           if ($notesOnly) { Write-Host "notes-only  release-tag=$tag" }
           else { Write-Host "$($nupkgs.Count) nupkg  release-tag=$tag" }
 
-          # Release notes: moi BUILD la 1 header '- M.N.<zzz>' voi zzz = rev-list --count tag..R
-          # (khop version nupkg vi GitVersion dem MOI commit). Diem build R = cac commit
-          # first-parent co marker '[release]' + HEAD hien tai (build cua run nay, khong trung
-          # neu HEAD chinh la [release]). Muc con '  + ...' = moi commit moi reachable trong
-          # (R_truoc..R] — tu nhien gom ca commit merge tu branch khac.
-          # git-cliff chi format tung commit, moi dong prefix '__SHA_<sha>__' de tra cuu.
+          # Release notes: each BUILD is one header '- M.N.<zzz>' with zzz = rev-list --count tag..R
+          # (matches the nupkg version since GitVersion counts ALL commits). Build point R = commits
+          # (first-parent) carrying the '[release]' marker + current HEAD (this run's build, not
+          # duplicated if HEAD itself is [release]). Sub-item '  + ...' = every new commit reachable in
+          # (R_prev..R], naturally including commits merged in from other branches.
+          # git-cliff only formats each commit, prefixing every line with '__SHA_<sha>__' for lookup.
           $lineOf = @{}
           foreach ($l in @(git-cliff --config cliff-release.toml "$tag..HEAD")) {
             if ($l -match '^__SHA_([0-9a-f]+)__ (.*)$') { $lineOf[$Matches[1]] = $Matches[2] }
@@ -122,13 +122,13 @@ jobs:
           $fps = @(git rev-list --first-parent --reverse "$tag..HEAD")
           $points = @($fps | Where-Object { (git log -1 --format=%B $_) -match '\[release\]' })
           if (-not $notesOnly -and $fps.Count -gt 0 -and ($points.Count -eq 0 -or $points[-1] -ne $fps[-1])) {
-            $points += $fps[-1]   # HEAD = build dang phat hanh boi run nay (bo qua khi notes-only)
+            $points += $fps[-1]   # HEAD = the build being released by this run (skipped when notes-only)
           }
           $out = New-Object System.Collections.Generic.List[string]
           $prev = $tag
           foreach ($r in $points) {
             $n = [int](git rev-list --count "$tag..$r")
-            # Header luon hien, ke ca nhom rong (build khong co thay doi thuoc loai hien thi)
+            # Always emit the header, even for an empty group (a build with no displayed change types)
             $out.Add("- $mn.$n")
             foreach ($c in @(git rev-list --reverse $r --not $prev)) {
               if ($lineOf.ContainsKey($c)) { $out.Add("  + $($lineOf[$c])") }
@@ -136,30 +136,37 @@ jobs:
             $prev = $r
           }
           $notes = ($out -join "`n").Trim()
-          # Link commit trong tung muc: template emit '__REPO__' -> URL repo hien tai
+          # Per-item commit link: the template emits '__REPO__' -> current repo URL
           $notes = $notes -replace '__REPO__', "$($env:GITHUB_SERVER_URL)/$($env:GITHUB_REPOSITORY)"
           if ([string]::IsNullOrWhiteSpace($notes)) { $notes = "Release $tag" }
           Set-Content -Path RELEASE_NOTES.md -Value $notes -Encoding utf8
 
-          # Tao Release 'vM.N.0' neu chua co (tren tag da ton tai), neu co thi cap nhat notes.
+          # Create Release 'vM.N.0' if missing (on the already-existing tag), else update its notes.
+          # Guard: gh/git are native commands -> a non-zero exit does NOT throw under 'Stop', so check
+          # manually; otherwise the job would falsely "succeed" while publishing nothing (e.g. the tag
+          # was never pushed -> vM.N.0 does not exist).
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release edit $tag --notes-file RELEASE_NOTES.md
+            if ($LASTEXITCODE -ne 0) { throw "gh release edit '$tag' failed" }
           } else {
             gh release create $tag --title $tag --notes-file RELEASE_NOTES.md --verify-tag
+            if ($LASTEXITCODE -ne 0) { throw "gh release create '$tag' failed (is tag '$tag' pushed to origin?)" }
           }
 
           if ($notesOnly) {
             Write-Host "notes-only mode -> skip nupkg upload & nuget push"
           } else {
-            # Dinh kem tat ca nupkg cua lan build nay (clobber neu rebuild cung version).
+            # Attach every nupkg from this build (clobber if rebuilding the same version).
             gh release upload $tag ($nupkgs.FullName) --clobber
+            if ($LASTEXITCODE -ne 0) { throw "gh release upload '$tag' failed" }
 
-            # Push nuget.org chi khi co secret nugetKey. Push core truoc (cac package khac phu thuoc no).
+            # Push to nuget.org only when the nugetKey secret exists. Push core first (others depend on it).
             if (-not [string]::IsNullOrWhiteSpace($env:NUGET_KEY)) {
               $ordered = @($nupkgs | Sort-Object { $_.Name.Length })
               foreach ($pkg in $ordered) {
                 dotnet nuget push $pkg.FullName -k $env:NUGET_KEY -s https://api.nuget.org/v3/index.json --skip-duplicate
+                if ($LASTEXITCODE -ne 0) { throw "nuget push failed for $($pkg.Name)" }
               }
             } else {
               Write-Host "No 'nugetKey' secret -> skip nuget.org push"

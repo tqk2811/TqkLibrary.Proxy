@@ -12,12 +12,12 @@
 		<readme>docs\README.md</readme>
 		<dependencies>
 			<group targetFramework="net6.0">
-				<dependency id="TqkLibrary.Proxy.Reverse" version="1.0.24" />
-				<dependency id="TqkLibrary.Proxy.Reverse.Transport.WebSocket" version="1.0.24" />
+				<dependency id="TqkLibrary.Proxy.Reverse" version="$version$" />
+				<dependency id="TqkLibrary.Proxy.Reverse.Transport.WebSocket" version="$version$" />
 			</group>
 			<group targetFramework="net8.0">
-				<dependency id="TqkLibrary.Proxy.Reverse" version="1.0.24" />
-				<dependency id="TqkLibrary.Proxy.Reverse.Transport.WebSocket" version="1.0.24" />
+				<dependency id="TqkLibrary.Proxy.Reverse" version="$version$" />
+				<dependency id="TqkLibrary.Proxy.Reverse.Transport.WebSocket" version="$version$" />
 			</group>
 		</dependencies>
 		<frameworkAssemblies>

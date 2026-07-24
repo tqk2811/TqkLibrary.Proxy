@@ -197,11 +197,7 @@ namespace TqkLibrary.Proxy
             Guid tunnelId = Guid.NewGuid();
             IPEndPoint clientEndPoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint!;
 
-            using IDisposable? scope = _logger?.BeginScope(new Dictionary<string, object>
-            {
-                ["TunnelId"] = tunnelId,
-                ["ClientEndPoint"] = clientEndPoint,
-            });
+            using IDisposable? scope = _logger?.BeginScope("TunnelId:{TunnelId} ClientEndPoint:{ClientEndPoint}", tunnelId, clientEndPoint);
 
             try
             {

@@ -72,10 +72,7 @@ namespace TqkLibrary.Proxy.ProxySources
             protected virtual event Action<TcpClient>? OnEndAcceptTcpClient;
             protected virtual void OnBeginAcceptTcpClient(IAsyncResult ar)
             {
-                using var scope = _logger?.BeginScope(new Dictionary<string, object>
-                {
-                    ["TunnelId"] = _tunnelId,
-                });
+                using var scope = _logger?.BeginScope("TunnelId:{TunnelId}", _tunnelId);
                 try
                 {
                     _tcpClient = _tcpListener!.EndAcceptTcpClient(ar);

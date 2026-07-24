@@ -41,10 +41,7 @@ namespace TqkLibrary.Proxy.ProxySources
             {
                 CheckIsDisposed();
 
-                using var scope = _logger?.BeginScope(new Dictionary<string, object>
-                {
-                    ["TunnelId"] = _tunnelId,
-                });
+                using var scope = _logger?.BeginScope("TunnelId:{TunnelId}", _tunnelId);
 
                 await base.ConnectAndAuthAsync(cancellationToken);
 

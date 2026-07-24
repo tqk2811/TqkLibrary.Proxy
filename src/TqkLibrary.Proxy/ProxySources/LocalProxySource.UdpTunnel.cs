@@ -27,10 +27,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (_udp is not null)
                     throw new InvalidOperationException($"{nameof(AssociateAsync)} already called");
 
-                using var scope = _logger?.BeginScope(new Dictionary<string, object>
-                {
-                    ["TunnelId"] = _tunnelId,
-                });
+                using var scope = _logger?.BeginScope("TunnelId:{TunnelId}", _tunnelId);
 
                 IPEndPoint listen = await _proxySource.GetListenEndPointAsync(cancellationToken);
                 _udp = new UdpClient(listen);

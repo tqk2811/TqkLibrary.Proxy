@@ -22,11 +22,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new ArgumentNullException(nameof(address));
                 CheckIsDisposed();
 
-                using var scope = _logger?.BeginScope(new Dictionary<string, object>
-                {
-                    ["TunnelId"] = _tunnelId,
-                    ["TargetHost"] = $"{address.Host}:{address.Port}",
-                });
+                using var scope = _logger?.BeginScope("TunnelId:{TunnelId} TargetHost:{TargetHost}", _tunnelId, $"{address.Host}:{address.Port}");
 
                 await base.ConnectAndAuthAsync(cancellationToken);
 

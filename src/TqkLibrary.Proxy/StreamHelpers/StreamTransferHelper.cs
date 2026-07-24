@@ -48,10 +48,7 @@ namespace TqkLibrary.Proxy.StreamHelpers
             return _taskWork;
         }
 
-        IDisposable? BeginTunnelScope() => _logger?.BeginScope(new Dictionary<string, object>
-        {
-            ["TunnelId"] = _tunnelId,
-        });
+        IDisposable? BeginTunnelScope() => _logger?.BeginScope("TunnelId:{TunnelId}", _tunnelId);
 
         async Task FirstToSecond(CancellationToken cancellationToken = default)
         {
@@ -64,7 +61,7 @@ namespace TqkLibrary.Proxy.StreamHelpers
                     int byte_read = await _first.ReadAsync(_firstBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_second.CanWrite) return;
 
-                    _logger?.LogInformation("[{First} -> {Second}] {Bytes} bytes", _firstName, _secondName, byte_read);
+                    _logger?.LogTrace("[{First} -> {Second}] {Bytes} bytes", _firstName, _secondName, byte_read);
 
                     if (byte_read > 0) await _second.WriteAsync(_firstBuffer, 0, byte_read, cancellationToken);
                     else return;
@@ -86,7 +83,7 @@ namespace TqkLibrary.Proxy.StreamHelpers
                     int byte_read = await _second.ReadAsync(_secondBuffer, 0, BUFFER_SIZE, cancellationToken);
                     if (!_first.CanWrite) return;
 
-                    _logger?.LogInformation("[{First} <- {Second}] {Bytes} bytes", _firstName, _secondName, byte_read);
+                    _logger?.LogTrace("[{First} <- {Second}] {Bytes} bytes", _firstName, _secondName, byte_read);
 
                     if (byte_read > 0) await _first.WriteAsync(_secondBuffer, 0, byte_read, cancellationToken);
                     else return;

@@ -60,12 +60,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (_stream is null)
                     throw new InvalidOperationException();
 
-                using var scope = _logger?.BeginScope(new Dictionary<string, object>
-                {
-                    ["TunnelId"] = _tunnelId,
-                    ["UpstreamProxy"] = $"{_proxySource._proxy.Host}:{_proxySource._proxy.Port}",
-                    ["TargetHost"] = $"{address.Host}:{address.Port}",
-                });
+                using var scope = _logger?.BeginScope("TunnelId:{TunnelId} UpstreamProxy:{UpstreamProxy} TargetHost:{TargetHost}", _tunnelId, $"{_proxySource._proxy.Host}:{_proxySource._proxy.Port}", $"{address.Host}:{address.Port}");
 
                 List<string> headers = new List<string>();
                 headers.Add($"CONNECT {address.Host}:{address.Port} HTTP/1.1");

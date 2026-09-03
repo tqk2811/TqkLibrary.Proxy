@@ -27,7 +27,9 @@ namespace TqkLibrary.Proxy.Helpers
                     break;
 
                 case UriHostNameType.IPv6:
-                    IPAddress = IPAddress.Parse(uri.Host);
+                    // Uri.Host keeps the RFC 3986 brackets ("[::1]") and IPAddress.Parse rejects
+                    // them, so every IPv6 destination used to throw here.
+                    IPAddress = IPAddress.Parse(uri.Host.Trim('[', ']'));
                     ATYP = Socks5_ATYP.IpV6;
                     break;
 

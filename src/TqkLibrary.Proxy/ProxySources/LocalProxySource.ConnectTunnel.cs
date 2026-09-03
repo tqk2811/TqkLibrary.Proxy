@@ -94,8 +94,13 @@ namespace TqkLibrary.Proxy.ProxySources
 
                             if (_SupportUriSchemes.Any(x => x.Equals(address.Scheme, StringComparison.InvariantCulture)))
                             {
+                                // Connect by IPAddress, not by the host string: Uri.Host keeps the
+                                // RFC 3986 brackets for IPv6 ("[::1]"), and the string overload
+                                // hands that straight to the resolver, which then fails to look up
+                                // a literal that was never a name.
+                                IPAddress literal = IPAddress.Parse(address.Host.Trim('[', ']'));
                                 await _tcpClient.ConnectAsync(
-                                    address.Host,
+                                    literal,
                                     address.Port
 #if NET5_0_OR_GREATER
                                     , cancellationToken

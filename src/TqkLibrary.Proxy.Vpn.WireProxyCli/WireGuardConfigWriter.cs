@@ -11,7 +11,13 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
     /// </summary>
     internal static class WireGuardConfigWriter
     {
-        public static string Build(WireGuardConfig config, IPEndPoint socks5Bind, string? socks5User, string? socks5Pass)
+        /// <param name="defaultPersistentKeepalive">
+        /// Written for peers that carry no PersistentKeepalive of their own; null writes none.
+        /// See <see cref="WireGuardOptions.DefaultPersistentKeepalive"/> for why it matters.
+        /// </param>
+        public static string Build(
+            WireGuardConfig config, IPEndPoint socks5Bind, string? socks5User, string? socks5Pass,
+            int? defaultPersistentKeepalive = null)
         {
             if (config is null) throw new ArgumentNullException(nameof(config));
             if (config.Interface is null) throw new WireGuardException("WireGuardConfig.Interface is required.");
@@ -48,8 +54,9 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                     sb.Append("PresharedKey = ").AppendLine(peer.PresharedKey);
                 sb.Append("Endpoint = ").AppendLine(peer.Endpoint);
                 sb.Append("AllowedIPs = ").AppendLine(string.Join(", ", peer.AllowedIPs));
-                if (peer.PersistentKeepalive.HasValue)
-                    sb.Append("PersistentKeepalive = ").AppendLine(peer.PersistentKeepalive.Value.ToString(CultureInfo.InvariantCulture));
+                int? keepalive = peer.PersistentKeepalive ?? defaultPersistentKeepalive;
+                if (keepalive.HasValue)
+                    sb.Append("PersistentKeepalive = ").AppendLine(keepalive.Value.ToString(CultureInfo.InvariantCulture));
                 sb.AppendLine();
             }
 

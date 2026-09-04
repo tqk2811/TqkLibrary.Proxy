@@ -67,6 +67,23 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         public bool AutoRestart { get; set; } = true;
 
         /// <summary>
+        /// PersistentKeepalive, in seconds, written for peers that do not carry one of their own.
+        /// Null writes nothing, leaving the peer exactly as configured.
+        /// </summary>
+        /// <remarks>
+        /// A WireGuard session that carries no traffic for a while stops being usable without
+        /// saying so: the far side drops it, and the next packet pays for a fresh handshake — one
+        /// round trip to the VPN server, on the connection that happened to be first. Keepalive is
+        /// the mechanism WireGuard provides for exactly that, and 25 s is its own recommended
+        /// value, chosen to sit under the shortest NAT mappings in the wild.
+        ///
+        /// The files VPN providers hand out often omit it, because for the official client an idle
+        /// tunnel costs nothing. Here it does, so the default is to add it; a config that sets its
+        /// own value is left alone.
+        /// </remarks>
+        public int? DefaultPersistentKeepalive { get; set; } = 25;
+
+        /// <summary>
         /// Extra args appended to the wireproxy invocation.
         /// </summary>
         public IList<string> ExtraArgs { get; } = new List<string>();

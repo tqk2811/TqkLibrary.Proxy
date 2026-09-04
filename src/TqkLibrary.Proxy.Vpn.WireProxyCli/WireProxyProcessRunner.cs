@@ -80,7 +80,8 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 if (_options.Config != null)
                 {
                     var content = WireGuardConfigWriter.Build(
-                        _options.Config, Socks5Endpoint, _options.Socks5Username, _options.Socks5Password);
+                        _options.Config, Socks5Endpoint, _options.Socks5Username, _options.Socks5Password,
+                        _options.DefaultPersistentKeepalive);
                     configPath = Path.Combine(Path.GetTempPath(), $"tqk-wg-{Guid.NewGuid():N}.conf");
                     File.WriteAllText(configPath, content);
                     try

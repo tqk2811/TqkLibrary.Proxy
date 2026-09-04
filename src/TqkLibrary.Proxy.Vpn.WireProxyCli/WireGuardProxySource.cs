@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.Logging;
 using TqkLibrary.Proxy.Authentications;
 using TqkLibrary.Proxy.Interfaces;
@@ -41,6 +42,45 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         public bool IsSupportUdp => _socks5.IsSupportUdp;
         public bool IsSupportIpv6 => _socks5.IsSupportIpv6;
         public bool IsSupportBind => false;
+
+        /// <summary>
+        /// True while the wireproxy subprocess is running. It says the tunnel is available, not
+        /// that the far end is answering — nothing short of sending traffic can tell you that.
+        /// </summary>
+        public bool IsRunning => _runner.IsAlive;
+
+        /// <summary>
+        /// The local SOCKS5 listener the tunnel is exposed on. Loopback, and — for a generated
+        /// config — on a random port behind a random credential.
+        /// </summary>
+        public IPEndPoint Socks5Endpoint => _runner.Socks5Endpoint;
+
+        /// <summary>
+        /// Raised when the subprocess dies of its own accord, so a host that wants the tunnel
+        /// permanently up can rebuild it immediately rather than at the next connection.
+        /// Disposing this source does not raise it.
+        /// </summary>
+        public event EventHandler<WireProxyExitedEventArgs>? Exited
+        {
+            add => _runner.Exited += value;
+            remove => _runner.Exited -= value;
+        }
+
+        /// <summary>
+        /// Brings the tunnel up without asking for a connection, and returns once its SOCKS5
+        /// listener is accepting.
+        /// </summary>
+        /// <remarks>
+        /// Starting is otherwise lazy, which means the first connection through the VPN pays for
+        /// the subprocess launch and the WireGuard handshake — seconds, on the request that
+        /// happened to be first. A host that knows it will use this tunnel calls this at startup
+        /// instead, and every request afterwards finds it already up.
+        /// </remarks>
+        public Task StartAsync(CancellationToken cancellationToken = default)
+        {
+            CheckDisposed();
+            return _runner.EnsureStartedAsync(cancellationToken);
+        }
 
         public async Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {

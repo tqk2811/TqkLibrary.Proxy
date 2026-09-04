@@ -21,6 +21,24 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
         public IPEndPoint Socks5Endpoint { get; }
 
+        /// <summary>
+        /// Raised when the subprocess exits on its own. Not raised by <see cref="Dispose"/>: a
+        /// supervisor listening for this wants to know about failures, not about being shut down.
+        /// </summary>
+        public event EventHandler<WireProxyExitedEventArgs>? Exited;
+
+        /// <summary>True while the subprocess is running. Says nothing about the tunnel's health.</summary>
+        public bool IsAlive
+        {
+            get
+            {
+                Process? p = _process;
+                if (p is null) return false;
+                try { return !p.HasExited; }
+                catch { return false; }
+            }
+        }
+
         public WireProxyProcessRunner(WireGuardOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -66,6 +84,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
                 if (_process != null)
                 {
+                    try { _process.Exited -= OnProcessExited; } catch { }
                     try { _process.Dispose(); } catch { }
                     _process = null;
                 }
@@ -108,6 +127,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
                 process.ErrorDataReceived += OnStdErr;
                 process.OutputDataReceived += OnStdErr;
+                process.Exited += OnProcessExited;
                 if (!process.Start())
                     throw new WireGuardException("Failed to start wireproxy process.");
                 process.BeginErrorReadLine();
@@ -166,6 +186,23 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             {
                 return false;
             }
+        }
+
+        private void OnProcessExited(object? sender, EventArgs e)
+        {
+            // Ignore the process we have already replaced or shut down: only the current one
+            // exiting is news. Reading Exited off a disposed runner would also be a lie.
+            if (_disposed != 0 || !ReferenceEquals(sender, _process)) return;
+
+            var p = (Process)sender!;
+            string err;
+            lock (_stderrBuffer) err = _stderrBuffer.ToString();
+
+            int exitCode;
+            try { exitCode = p.ExitCode; } catch { exitCode = -1; }
+
+            try { Exited?.Invoke(this, new WireProxyExitedEventArgs(exitCode, err.Trim())); }
+            catch { /* a broken subscriber must not take down the process-exit callback */ }
         }
 
         private void OnStdErr(object sender, DataReceivedEventArgs e)
@@ -273,6 +310,9 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             _process = null;
             if (p != null)
             {
+                // Unsubscribe first: killing it below would otherwise tell every supervisor that
+                // the tunnel failed, seconds before we tear the whole thing down anyway.
+                try { p.Exited -= OnProcessExited; } catch { }
                 try { if (!p.HasExited) p.Kill(); } catch { }
                 try { p.Dispose(); } catch { }
             }

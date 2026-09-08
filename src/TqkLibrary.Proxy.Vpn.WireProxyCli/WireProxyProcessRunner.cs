@@ -9,9 +9,25 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 {
     internal sealed class WireProxyProcessRunner : IDisposable
     {
+        private const string GeneratedConfigPrefix = "tqk-wg-";
+        private const string GeneratedConfigSuffix = ".conf";
+
+        /// <summary>
+        /// Age past which a leftover generated config belongs to nobody: wireproxy reads the file
+        /// within seconds of it being written, so anything this old is from a run that died.
+        /// </summary>
+        private static readonly TimeSpan OrphanedConfigAge = TimeSpan.FromHours(1);
+
         private readonly WireGuardOptions _options;
         private readonly string _binaryPath;
         private readonly bool _isWindows;
+
+        /// <summary>
+        /// Ties the subprocess to this process's lifetime, so an abrupt end here is an end there
+        /// too. <see cref="Dispose"/> still kills explicitly; this only covers the paths where
+        /// Dispose never runs.
+        /// </summary>
+        private readonly KillOnCloseJobObject _job = new KillOnCloseJobObject();
 
         private readonly object _lock = new object();
         private Process? _process;
@@ -55,6 +71,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             if (inlineConfig)
             {
                 Socks5Endpoint = options.Socks5BindAddress ?? new IPEndPoint(IPAddress.Loopback, GetFreeTcpPort());
+                DeleteOrphanedConfigs();
             }
             else
             {
@@ -101,7 +118,8 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                     var content = WireGuardConfigWriter.Build(
                         _options.Config, Socks5Endpoint, _options.Socks5Username, _options.Socks5Password,
                         _options.DefaultPersistentKeepalive);
-                    configPath = Path.Combine(Path.GetTempPath(), $"tqk-wg-{Guid.NewGuid():N}.conf");
+                    configPath = Path.Combine(
+                        Path.GetTempPath(), $"{GeneratedConfigPrefix}{Guid.NewGuid():N}{GeneratedConfigSuffix}");
                     File.WriteAllText(configPath, content);
                     try
                     {
@@ -130,6 +148,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 process.Exited += OnProcessExited;
                 if (!process.Start())
                     throw new WireGuardException("Failed to start wireproxy process.");
+                _job.Assign(process);
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
                 _process = process;
@@ -256,6 +275,32 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         }
 #endif
 
+        /// <summary>
+        /// Removes generated configs left behind by runs that never got to clean up after
+        /// themselves. They carry a PrivateKey, so leaving them in the temp directory forever is
+        /// the part that matters; the disk space is incidental.
+        /// </summary>
+        private static void DeleteOrphanedConfigs()
+        {
+            try
+            {
+                var cutoff = DateTime.UtcNow - OrphanedConfigAge;
+                foreach (var path in Directory.EnumerateFiles(
+                    Path.GetTempPath(), $"{GeneratedConfigPrefix}*{GeneratedConfigSuffix}"))
+                {
+                    try
+                    {
+                        // Anything younger may belong to a runner that is starting right now,
+                        // here or in another process.
+                        if (File.GetLastWriteTimeUtc(path) > cutoff) continue;
+                        File.Delete(path);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
         private static int GetFreeTcpPort()
         {
             var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -320,6 +365,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             {
                 try { File.Delete(_generatedConfigPath); } catch { }
             }
+            _job.Dispose();
         }
     }
 }

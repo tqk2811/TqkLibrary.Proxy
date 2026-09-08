@@ -21,6 +21,9 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         /// <summary>Budget for one liveness probe, retried until the startup deadline.</summary>
         private const int ProbeTimeoutMs = 500;
 
+        /// <summary>How many of wireproxy's most recent output lines are kept for diagnostics.</summary>
+        private const int StderrLineCapacity = 200;
+
         private readonly WireGuardOptions _options;
         private readonly string _binaryPath;
         private readonly bool _isWindows;
@@ -49,7 +52,15 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         private Task? _startTask;
 
         private string? _generatedConfigPath;
-        private readonly StringBuilder _stderrBuffer = new StringBuilder();
+        /// <summary>
+        /// The last <see cref="StderrLineCapacity"/> lines wireproxy wrote, newest last.
+        /// </summary>
+        /// <remarks>
+        /// Keeping the first N bytes instead kept the banner and threw away the reason: whatever
+        /// killed the process is by definition the last thing it said, and that is the line a
+        /// supervisor puts in front of the user.
+        /// </remarks>
+        private readonly Queue<string> _stderrLines = new Queue<string>();
         private int _disposed;
 
         /// <summary>
@@ -188,7 +199,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             if (isRestart && !_options.AutoRestart)
             {
                 string err;
-                lock (_stderrBuffer) err = _stderrBuffer.ToString();
+                err = ReadStderr();
                 int code;
                 try { code = _process!.ExitCode; } catch { code = -1; }
                 // Nobody is going to restart it, so let the corpse go rather than re-reading it
@@ -208,7 +219,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 if (_options.Config != null && _options.Socks5BindAddress is null)
                     Socks5Endpoint = new IPEndPoint(IPAddress.Loopback, GetFreeTcpPort());
             }
-            lock (_stderrBuffer) _stderrBuffer.Clear();
+            lock (_stderrLines) _stderrLines.Clear();
 
             string configPath;
             if (_options.Config != null)
@@ -320,7 +331,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 if (p == null || p.HasExited)
                 {
                     string err;
-                    lock (_stderrBuffer) err = _stderrBuffer.ToString();
+                    err = ReadStderr();
                     throw new WireGuardException(
                         $"wireproxy exited early (code={p?.ExitCode}): {err.Trim()}",
                         p?.ExitCode ?? -1, err);
@@ -396,7 +407,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
             var p = (Process)sender!;
             string err;
-            lock (_stderrBuffer) err = _stderrBuffer.ToString();
+            err = ReadStderr();
 
             int exitCode;
             try { exitCode = p.ExitCode; } catch { exitCode = -1; }
@@ -408,10 +419,22 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         private void OnStdErr(object sender, DataReceivedEventArgs e)
         {
             if (e.Data == null) return;
-            lock (_stderrBuffer)
+            lock (_stderrLines)
             {
-                if (_stderrBuffer.Length < 8192)
-                    _stderrBuffer.AppendLine(e.Data);
+                _stderrLines.Enqueue(e.Data);
+                while (_stderrLines.Count > StderrLineCapacity) _stderrLines.Dequeue();
+            }
+        }
+
+        /// <summary>Everything currently retained from wireproxy's output, oldest line first.</summary>
+        private string ReadStderr()
+        {
+            lock (_stderrLines)
+            {
+                if (_stderrLines.Count == 0) return string.Empty;
+                var sb = new StringBuilder();
+                foreach (var line in _stderrLines) sb.AppendLine(line);
+                return sb.ToString();
             }
         }
 

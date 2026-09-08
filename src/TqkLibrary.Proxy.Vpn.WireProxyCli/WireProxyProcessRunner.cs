@@ -229,17 +229,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                     _options.DefaultPersistentKeepalive);
                 configPath = Path.Combine(
                     Path.GetTempPath(), $"{GeneratedConfigPrefix}{Guid.NewGuid():N}{GeneratedConfigSuffix}");
-                File.WriteAllText(configPath, content);
-                try
-                {
-                    if (!_isWindows)
-                    {
-                        using var chmod = Process.Start(new ProcessStartInfo("chmod", $"600 {configPath}")
-                        { UseShellExecute = false, CreateNoWindow = true });
-                        chmod?.WaitForExit(2000);
-                    }
-                }
-                catch { }
+                WritePrivateFile(configPath, content, _isWindows);
                 _generatedConfigPath = configPath;
             }
             else
@@ -478,6 +468,73 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             return sb.ToString();
         }
 #endif
+
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// Creates the file with an explicit owner-only ACL already on it. False if the platform
+        /// or the filesystem will not take one, leaving the caller to fall back.
+        /// </summary>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private static bool TryWriteOwnerOnlyFile(string path, string content)
+        {
+            try
+            {
+                var security = new System.Security.AccessControl.FileSecurity();
+                // Inheritance off: the account running us ends up the only entry on the file.
+                security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+                security.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
+                    System.Security.Principal.WindowsIdentity.GetCurrent().User!,
+                    System.Security.AccessControl.FileSystemRights.FullControl,
+                    System.Security.AccessControl.AccessControlType.Allow));
+
+                using var stream = System.IO.FileSystemAclExtensions.Create(
+                    new FileInfo(path), FileMode.CreateNew, System.Security.AccessControl.FileSystemRights.Write,
+                    FileShare.None, 4096, FileOptions.None, security);
+                using var writer = new StreamWriter(stream);
+                writer.Write(content);
+                return true;
+            }
+            catch (PlatformNotSupportedException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
+            catch (NotSupportedException) { return false; }
+        }
+#endif
+
+        /// <summary>
+        /// Writes <paramref name="content"/> to a new file readable only by the current user.
+        /// </summary>
+        /// <remarks>
+        /// The file carries the WireGuard PrivateKey, so it should never be created wide open and
+        /// narrowed afterwards: between the two there is a window in which anyone can read it.
+        /// On Windows the permissions go on before a byte is written; elsewhere the file is created
+        /// with 0600 and only then filled in.
+        /// </remarks>
+        private static void WritePrivateFile(string path, string content, bool isWindows)
+        {
+            if (isWindows)
+            {
+#if NET6_0_OR_GREATER
+                if (OperatingSystem.IsWindows() && TryWriteOwnerOnlyFile(path, content)) return;
+#endif
+                // Falling back leaves the file on the temp directory's own permissions, which on
+                // Windows already exclude other users. Worth having, not worth failing over.
+                File.WriteAllText(path, content);
+                return;
+            }
+
+            using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                using var writer = new StreamWriter(stream);
+                writer.Write(content);
+            }
+            try
+            {
+                using var chmod = Process.Start(new ProcessStartInfo("chmod", $"600 {path}")
+                { UseShellExecute = false, CreateNoWindow = true });
+                chmod?.WaitForExit(2000);
+            }
+            catch { }
+        }
 
         /// <summary>
         /// Removes generated configs left behind by runs that never got to clean up after

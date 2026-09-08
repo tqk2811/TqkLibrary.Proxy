@@ -245,6 +245,15 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 throw;
             }
             _process = process;
+
+            if (_disposed != 0)
+            {
+                // Dispose was called while we held the lock spawning. It waits on the lock, so it
+                // would find this process anyway — but saying so here keeps the invariant local:
+                // nothing survives Spawn once disposal has begun.
+                KillCurrentProcessLocked();
+                throw new ObjectDisposedException(nameof(WireProxyProcessRunner));
+            }
         }
 
         /// <summary>Lets go of the current process handle without killing it. Caller holds the lock.</summary>
@@ -266,18 +275,23 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
         private void KillCurrentProcess()
         {
-            lock (_lock)
+            lock (_lock) KillCurrentProcessLocked();
+        }
+
+        /// <summary>Kills and forgets the current process. Caller holds <see cref="_lock"/>.</summary>
+        private void KillCurrentProcessLocked()
+        {
+            var p = _process;
+            _process = null;
+            if (p != null)
             {
-                var p = _process;
-                _process = null;
-                if (p != null)
-                {
-                    try { p.Exited -= OnProcessExited; } catch { }
-                    try { if (!p.HasExited) p.Kill(); } catch { }
-                    try { p.Dispose(); } catch { }
-                }
-                DeleteGeneratedConfig();
+                // Unsubscribe first: killing it would otherwise tell every supervisor the tunnel
+                // failed, when in fact we are the ones taking it down.
+                try { p.Exited -= OnProcessExited; } catch { }
+                try { if (!p.HasExited) p.Kill(); } catch { }
+                try { p.Dispose(); } catch { }
             }
+            DeleteGeneratedConfig();
         }
 
         private async Task WaitForListenerAsync(CancellationToken cancellationToken)
@@ -478,20 +492,11 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             // and disposing it under that attempt only trades a clean cancel for an
             // ObjectDisposedException nothing is there to catch.
             try { _lifetimeCts.Cancel(); } catch { }
-            var p = _process;
-            _process = null;
-            if (p != null)
-            {
-                // Unsubscribe first: killing it below would otherwise tell every supervisor that
-                // the tunnel failed, seconds before we tear the whole thing down anyway.
-                try { p.Exited -= OnProcessExited; } catch { }
-                try { if (!p.HasExited) p.Kill(); } catch { }
-                try { p.Dispose(); } catch { }
-            }
-            if (_generatedConfigPath != null)
-            {
-                try { File.Delete(_generatedConfigPath); } catch { }
-            }
+
+            // Under the lock: a spawn in flight holds it, and disposing around one would read
+            // _process before that spawn assigns it and leave the child running forever.
+            lock (_lock) KillCurrentProcessLocked();
+
             _job.Dispose();
         }
     }

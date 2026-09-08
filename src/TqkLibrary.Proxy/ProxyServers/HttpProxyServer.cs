@@ -146,7 +146,10 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             //send header to target
             List<string> headerLines = new List<string>();
-            headerLines.Add($"{_client_HeaderParse!.Method} {_client_HeaderParse.Uri!.AbsolutePath} HTTP/{_client_HeaderParse!.Version}");
+            // PathAndQuery, not AbsolutePath: the query string is part of what was asked for, and
+            // dropping it turned every search, every paged list and every signed URL into a request
+            // for the bare path.
+            headerLines.Add($"{_client_HeaderParse!.Method} {_client_HeaderParse.Uri!.PathAndQuery} HTTP/{_client_HeaderParse!.Version}");
             if (!_client_HeaderLines!.Any(x => x.StartsWith("host: ", StringComparison.OrdinalIgnoreCase)))
             {
                 headerLines.Add($"Host: {_client_HeaderParse.Uri.Host}");
@@ -162,31 +165,89 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             await source_stream.WriteLineAsync(_cancellationToken);
 
-            using Stream clientStream = await _proxyServerHandler!.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
+            // NOT disposed unless the handler actually built something. The default one hands back
+            // the very stream it was given, and disposing that closed the connection to the client
+            // at the end of the first request — so keep-alive was dead from the second request
+            // onwards on every deployment that had not overridden the handler.
+            Stream clientStream = await _proxyServerHandler!.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
+            bool ownsClientStream = !ReferenceEquals(clientStream, _clientStream);
+            try
+            {
+                //Transfer content from client to target if have
+                await clientStream.TransferAsync(source_stream, _client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
+                _logger?.LogInformation("Sent {Bytes} bytes -> {TargetHost}", _client_HeaderParse.ContentLength, _client_HeaderParse.Uri.Host);
 
-            //Transfer content from client to target if have
-            await clientStream.TransferAsync(source_stream, _client_HeaderParse.ContentLength, cancellationToken: _cancellationToken);
-            _logger?.LogInformation("Sent {Bytes} bytes -> {TargetHost}", _client_HeaderParse.ContentLength, _client_HeaderParse.Uri.Host);
+                await source_stream.FlushAsync(_cancellationToken);
 
-            await source_stream.FlushAsync(_cancellationToken);
+                //-----------------------------------------------------
+                //read header from target, and send back to client
+                IReadOnlyList<string> target_response_HeaderLines = await source_stream.ReadHeadersAsync(_cancellationToken);
 
-            //-----------------------------------------------------
-            //read header from target, and send back to client
-            IReadOnlyList<string> target_response_HeaderLines = await source_stream.ReadHeadersAsync(_cancellationToken);
-            int ContentLength = target_response_HeaderLines.GetContentLength();
+                await clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
+                _logger?.LogInformation("Received headers from {TargetHost}\r\n{Headers}", _client_HeaderParse.Uri.Host, string.Join("\r\n", target_response_HeaderLines));
 
-            await clientStream.WriteLineAsync(string.Join("\r\n", target_response_HeaderLines), _cancellationToken);
-            _logger?.LogInformation("Received headers from {TargetHost}\r\n{Headers}", _client_HeaderParse.Uri.Host, string.Join("\r\n", target_response_HeaderLines));
+                await clientStream.WriteLineAsync(_cancellationToken);
 
-            await clientStream.WriteLineAsync(_cancellationToken);
+                // Through the handler's stream, not straight down _clientStream: a handler that
+                // counts bytes or shapes traffic was being bypassed for the whole response body.
+                bool reusable = await _TransferResponseBodyAsync(source_stream, clientStream, target_response_HeaderLines);
 
-            //Transfer content from target to client if have
-            await source_stream.TransferAsync(_clientStream!, ContentLength, cancellationToken: _cancellationToken);
-            _logger?.LogInformation("Received {Bytes} bytes <- {TargetHost}", ContentLength, _client_HeaderParse.Uri.Host);
+                await clientStream.FlushAsync(_cancellationToken);
 
-            await clientStream.FlushAsync(_cancellationToken);
+                return reusable;
+            }
+            finally
+            {
+                if (ownsClientStream) clientStream.Dispose();
+            }
+        }
 
-            return true;
+        /// <summary>
+        /// Forwards a response body in whichever of the three shapes HTTP/1.1 allows, and answers
+        /// whether this connection can carry another request afterwards.
+        /// </summary>
+        /// <remarks>
+        /// Only the first shape used to be handled — a Content-Length. A chunked response has none,
+        /// and GetContentLength answered zero for it, so the body was never forwarded at all: the
+        /// client received the headers and then nothing, which is what any streamed page looks like
+        /// through this proxy. A response delimited by the connection closing fared the same.
+        /// </remarks>
+        async Task<bool> _TransferResponseBodyAsync(Stream from, Stream to, IReadOnlyList<string> responseHeaderLines)
+        {
+            if (!_ResponseCanHaveBody(responseHeaderLines)) return true;
+
+            if (responseHeaderLines.IsChunked())
+            {
+                await from.TransferChunkedAsync(to, _cancellationToken);
+                return true;
+            }
+
+            if (responseHeaderLines.HasContentLength())
+            {
+                int contentLength = responseHeaderLines.GetContentLength();
+                await from.TransferAsync(to, contentLength, cancellationToken: _cancellationToken);
+                _logger?.LogInformation("Received {Bytes} bytes <- {TargetHost}", contentLength, _client_HeaderParse!.Uri!.Host);
+                return true;
+            }
+
+            // Neither a length nor chunks: the body IS the rest of the connection, and the only
+            // thing that ends it is the server closing. Nothing more can be sent over this one.
+            await from.CopyToAsync(to, 81920, _cancellationToken);
+            return false;
+        }
+
+        /// <summary>Whether a response of this shape carries a body at all.</summary>
+        /// <remarks>
+        /// Without this a 204 or a 304 — neither of which may have one — would be read as
+        /// close-delimited and the proxy would sit waiting for a body the server is never going to
+        /// send, holding the client's request open until something timed out.
+        /// </remarks>
+        bool _ResponseCanHaveBody(IReadOnlyList<string> responseHeaderLines)
+        {
+            if ("HEAD".Equals(_client_HeaderParse?.Method, StringComparison.OrdinalIgnoreCase)) return false;
+
+            int status = responseHeaderLines.GetStatusCode();
+            return status != 204 && status != 304 && !(status >= 100 && status < 200);
         }
 
         async Task<bool> _WriteResponse407()

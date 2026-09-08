@@ -23,6 +23,15 @@ namespace TqkLibrary.Proxy.StreamHelpers
             do
             {
                 int byte_read = await from.ReadAsync(buffer, 0, (int)Math.Min(bufferSize, size - totalRead), cancellationToken);
+
+                // Zero means the source is finished, and it can happen well before `size` bytes have
+                // arrived: a peer that announces a Content-Length and then closes. Writing zero
+                // bytes and looping again spun this method at one core until the connection was
+                // torn down from outside — the caller cannot tell that from a slow transfer.
+                if (byte_read <= 0)
+                    throw new EndOfStreamException(
+                        $"The source ended after {totalRead} of {size} byte(s).");
+
                 await to.WriteAsync(buffer, 0, byte_read, cancellationToken);
                 totalRead += byte_read;
             }

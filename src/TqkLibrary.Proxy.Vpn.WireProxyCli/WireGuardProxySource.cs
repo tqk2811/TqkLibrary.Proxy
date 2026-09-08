@@ -16,8 +16,10 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
     {
         private readonly WireGuardOptions _options;
         private readonly WireProxyProcessRunner _runner;
-        private readonly Socks5ProxySource _socks5;
         private readonly ILoggerFactory? _loggerFactory;
+        private readonly object _socks5Lock = new object();
+        private Socks5ProxySource _socks5;
+        private IPEndPoint _socks5Endpoint;
         private int _disposed;
 
         public WireGuardProxySource(WireGuardOptions options, ILoggerFactory? loggerFactory = null)
@@ -26,21 +28,47 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             _runner = new WireProxyProcessRunner(options);
             _loggerFactory = loggerFactory;
 
-            ProxyCredential? auth = null;
-            if (!string.IsNullOrEmpty(options.Socks5Username) && !string.IsNullOrEmpty(options.Socks5Password))
-                auth = new ProxyCredential(options.Socks5Username!, options.Socks5Password!);
-
-            _socks5 = auth != null
-                ? new Socks5ProxySource(_runner.Socks5Endpoint, auth, loggerFactory)
-                : new Socks5ProxySource(_runner.Socks5Endpoint, loggerFactory);
-
-            _socks5.IsSupportUdp = options.IsSupportUdp;
-            _socks5.IsSupportIpv6 = options.IsSupportIpv6;
-            _socks5.IsSupportBind = false;
+            _socks5Endpoint = _runner.Socks5Endpoint;
+            _socks5 = BuildSocks5(_socks5Endpoint);
         }
 
-        public bool IsSupportUdp => _socks5.IsSupportUdp;
-        public bool IsSupportIpv6 => _socks5.IsSupportIpv6;
+        private Socks5ProxySource BuildSocks5(IPEndPoint endpoint)
+        {
+            ProxyCredential? auth = null;
+            if (!string.IsNullOrEmpty(_options.Socks5Username) && !string.IsNullOrEmpty(_options.Socks5Password))
+                auth = new ProxyCredential(_options.Socks5Username!, _options.Socks5Password!);
+
+            var socks5 = auth != null
+                ? new Socks5ProxySource(endpoint, auth, _loggerFactory)
+                : new Socks5ProxySource(endpoint, _loggerFactory);
+
+            socks5.IsSupportUdp = _options.IsSupportUdp;
+            socks5.IsSupportIpv6 = _options.IsSupportIpv6;
+            socks5.IsSupportBind = false;
+            return socks5;
+        }
+
+        /// <summary>
+        /// The SOCKS5 client pointed at wherever the tunnel currently listens. A restart picks a
+        /// new port, and <see cref="Socks5ProxySource"/> fixes its address at construction, so the
+        /// client is rebuilt when the runner moves rather than dialling the old port.
+        /// </summary>
+        private Socks5ProxySource CurrentSocks5()
+        {
+            IPEndPoint endpoint = _runner.Socks5Endpoint;
+            lock (_socks5Lock)
+            {
+                if (!endpoint.Equals(_socks5Endpoint))
+                {
+                    _socks5 = BuildSocks5(endpoint);
+                    _socks5Endpoint = endpoint;
+                }
+                return _socks5;
+            }
+        }
+
+        public bool IsSupportUdp => _options.IsSupportUdp;
+        public bool IsSupportIpv6 => _options.IsSupportIpv6;
         public bool IsSupportBind => false;
 
         /// <summary>
@@ -86,7 +114,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         {
             CheckDisposed();
             await _runner.EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
-            return await _socks5.GetConnectSourceAsync(tunnelId, cancellationToken).ConfigureAwait(false);
+            return await CurrentSocks5().GetConnectSourceAsync(tunnelId, cancellationToken).ConfigureAwait(false);
         }
 
         public Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
@@ -98,7 +126,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             if (!IsSupportUdp)
                 throw new NotSupportedException("UDP support is disabled. Set WireGuardOptions.IsSupportUdp = true if your wireproxy build supports SOCKS5 UDP ASSOCIATE.");
             await _runner.EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
-            return await _socks5.GetUdpAssociateSourceAsync(tunnelId, cancellationToken).ConfigureAwait(false);
+            return await CurrentSocks5().GetUdpAssociateSourceAsync(tunnelId, cancellationToken).ConfigureAwait(false);
         }
 
         private void CheckDisposed()

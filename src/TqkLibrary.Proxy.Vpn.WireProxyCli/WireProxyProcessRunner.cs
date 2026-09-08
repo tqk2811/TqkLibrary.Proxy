@@ -18,6 +18,9 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         /// </summary>
         private static readonly TimeSpan OrphanedConfigAge = TimeSpan.FromHours(1);
 
+        /// <summary>Budget for one liveness probe, retried until the startup deadline.</summary>
+        private const int ProbeTimeoutMs = 500;
+
         private readonly WireGuardOptions _options;
         private readonly string _binaryPath;
         private readonly bool _isWindows;
@@ -49,7 +52,11 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         private readonly StringBuilder _stderrBuffer = new StringBuilder();
         private int _disposed;
 
-        public IPEndPoint Socks5Endpoint { get; }
+        /// <summary>
+        /// Where the tunnel's SOCKS5 listener is. For a generated config with no bind address of
+        /// its own this moves on every restart, so read it rather than caching it.
+        /// </summary>
+        public IPEndPoint Socks5Endpoint { get; private set; }
 
         /// <summary>
         /// Raised when the subprocess exits on its own. Not raised by <see cref="Dispose"/>: a
@@ -192,7 +199,15 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             }
 
             DiscardProcess();
-            if (isRestart) DeleteGeneratedConfig();
+            if (isRestart)
+            {
+                DeleteGeneratedConfig();
+                // A fresh port every time. While wireproxy was down anything could have taken the
+                // old one, and a probe that lands on a stranger's listener reads as a healthy
+                // tunnel — after which every request through it goes somewhere nobody chose.
+                if (_options.Config != null && _options.Socks5BindAddress is null)
+                    Socks5Endpoint = new IPEndPoint(IPAddress.Loopback, GetFreeTcpPort());
+            }
             lock (_stderrBuffer) _stderrBuffer.Clear();
 
             string configPath;
@@ -323,25 +338,54 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
         private async Task<bool> TryProbeAsync(CancellationToken cancellationToken)
         {
+            IPEndPoint endpoint = Socks5Endpoint;
             try
             {
-                using var client = new TcpClient(Socks5Endpoint.AddressFamily);
-#if NET6_0_OR_GREATER
+                using var client = new TcpClient(endpoint.AddressFamily);
                 using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                linked.CancelAfter(500);
-                await client.ConnectAsync(Socks5Endpoint.Address, Socks5Endpoint.Port, linked.Token).ConfigureAwait(false);
-#else
-                var connect = client.ConnectAsync(Socks5Endpoint.Address, Socks5Endpoint.Port);
-                var done = await Task.WhenAny(connect, Task.Delay(500, cancellationToken)).ConfigureAwait(false);
-                if (done != connect) return false;
-                await connect.ConfigureAwait(false);
-#endif
-                return client.Connected;
+                linked.CancelAfter(ProbeTimeoutMs);
+                // Closing the socket is what actually unblocks a connect or a read in flight;
+                // on netstandard2.0 the token alone does nothing to either.
+                using var abort = linked.Token.Register(
+                    static s => { try { ((TcpClient)s!).Close(); } catch { } }, client);
+
+                await client.ConnectAsync(endpoint.Address, endpoint.Port).ConfigureAwait(false);
+                if (!client.Connected) return false;
+
+                return await SpeaksSocks5Async(client.GetStream(), linked.Token).ConfigureAwait(false);
             }
             catch
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Opens a SOCKS5 method negotiation and checks the answer carries the protocol version.
+        /// </summary>
+        /// <remarks>
+        /// A bare TCP connect only proves that something is listening. Since the port is reused
+        /// across restarts, that something may be a program that grabbed it while wireproxy was
+        /// down — and to a connect-only probe a stranger looks exactly like a healthy tunnel.
+        /// Two bytes of protocol tell them apart.
+        /// </remarks>
+        private static async Task<bool> SpeaksSocks5Async(NetworkStream stream, CancellationToken cancellationToken)
+        {
+            // VER=5, offering both no-auth and username/password. Whether the listener accepts one
+            // or rejects both, a SOCKS5 server answers with its version in the first byte.
+            byte[] greeting = { 0x05, 0x02, 0x00, 0x02 };
+            await stream.WriteAsync(greeting, 0, greeting.Length, cancellationToken).ConfigureAwait(false);
+            await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+            var reply = new byte[2];
+            int read = 0;
+            while (read < reply.Length)
+            {
+                int n = await stream.ReadAsync(reply, read, reply.Length - read, cancellationToken).ConfigureAwait(false);
+                if (n <= 0) return false;
+                read += n;
+            }
+            return reply[0] == 0x05;
         }
 
         private void OnProcessExited(object? sender, EventArgs e)

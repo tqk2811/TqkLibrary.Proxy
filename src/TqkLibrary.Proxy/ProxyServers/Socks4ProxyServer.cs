@@ -110,8 +110,16 @@ namespace TqkLibrary.Proxy.ProxyServers
                 uri = new Uri($"tcp://{socks4_Request.DOMAIN}:{socks4_Request.DSTPORT}");
                 if (await _proxyServerHandler!.IsAcceptDomainAsync(uri, userInfo!, _cancellationToken))
                 {
-                    //ipv4 only because need to response
-                    target_ip = Dns.GetHostAddresses(socks4_Request.DOMAIN).FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
+                    // ipv4 only, because the reply carries an address and SOCKS4 has room for
+                    // exactly four bytes of one.
+                    //
+                    // Asynchronously: this used to block the thread for the whole lookup, and a
+                    // resolver that is not answering holds it for seconds. The lookup still happens
+                    // HERE, on this machine, which is a DNS leak for a client that sent a name
+                    // precisely so the proxy would resolve it at the other end — but SOCKS4a has no
+                    // way to answer without an address, so it is the protocol's, not this method's.
+                    IPAddress[] resolved = await Dns.GetHostAddressesAsync(socks4_Request.DOMAIN).ConfigureAwait(false);
+                    target_ip = resolved.FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork);
                     if (target_ip is null)
                     {
                         await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
@@ -142,18 +150,34 @@ namespace TqkLibrary.Proxy.ProxyServers
 
             Uri uri_connect = new Uri($"http://{target_ip}:{socks4_Request.DSTPORT}");
             using IConnectSource connectSource = await proxySource.GetConnectSourceAsync(_tunnelId);
-            await connectSource.ConnectAsync(uri_connect, _cancellationToken);
 
-            using Stream session_stream = await connectSource.GetStreamAsync();
+            Stream session_stream;
+            try
+            {
+                await connectSource.ConnectAsync(uri_connect, _cancellationToken);
+                session_stream = await connectSource.GetStreamAsync();
+            }
+            catch (Exception ex)
+            {
+                // SOCKS4 has one failure reply and this is what it is for. Without it the client
+                // was left holding a connection that simply ended, which it cannot tell apart from
+                // the proxy being broken.
+                _logger?.LogInformation(ex, "connecting upstream to {Uri} failed", uri_connect);
+                await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
+                return;
+            }
 
-            //send response to client
-            await _WriteReplyAsync(Socks4_REP.RequestGranted);
+            using (session_stream)
+            {
+                //send response to client
+                await _WriteReplyAsync(Socks4_REP.RequestGranted);
 
-            using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
-            //transfer until disconnect
-            await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
-                .DebugName(_clientEndPoint, uri_connect)
-                .WaitUntilDisconnect(_cancellationToken);
+                using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
+                //transfer until disconnect
+                await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
+                    .DebugName(_clientEndPoint, uri_connect)
+                    .WaitUntilDisconnect(_cancellationToken);
+            }
         }
 
         async Task _HandleBindAsync()

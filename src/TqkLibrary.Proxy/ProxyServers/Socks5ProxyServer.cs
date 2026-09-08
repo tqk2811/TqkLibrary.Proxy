@@ -159,16 +159,50 @@ namespace TqkLibrary.Proxy.ProxyServers
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(uri, userInfo!, _cancellationToken);
             using IConnectSource connectSource = await proxySource.GetConnectSourceAsync(_tunnelId);
-            await connectSource.ConnectAsync(uri, _cancellationToken);
-            using Stream session_stream = await connectSource.GetStreamAsync();
-            //send response to client
-            await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
 
-            using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
+            Stream session_stream;
+            try
+            {
+                await connectSource.ConnectAsync(uri, _cancellationToken);
+                session_stream = await connectSource.GetStreamAsync();
+            }
+            catch (Exception ex)
+            {
+                // The protocol has a reply for this, and a client that gets one can say what went
+                // wrong. Dropping the connection instead left it waiting on a socket that simply
+                // ended — indistinguishable from the proxy itself being broken.
+                _logger?.LogInformation(ex, "connecting upstream to {Uri} failed", uri);
+                await _WriteReplyConnectionRequestAsync(StatusFor(ex));
+                return;
+            }
 
-            await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
-                .DebugName(_clientEndPoint, uri)
-                .WaitUntilDisconnect(_cancellationToken);
+            using (session_stream)
+            {
+                //send response to client
+                await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted);
+
+                using Stream clientStream = await _proxyServerHandler.StreamHandlerAsync(_clientStream!, userInfo!, _cancellationToken);
+
+                await new StreamTransferHelper(clientStream, session_stream, _tunnelId, _loggerFactory)
+                    .DebugName(_clientEndPoint, uri)
+                    .WaitUntilDisconnect(_cancellationToken);
+            }
+        }
+
+        /// <summary>Which SOCKS5 reply describes this failure to the client.</summary>
+        static Socks5_STATUS StatusFor(Exception ex)
+        {
+            if (ex is SocketException socket)
+            {
+                switch (socket.SocketErrorCode)
+                {
+                    case SocketError.ConnectionRefused: return Socks5_STATUS.ConnectionRefusedByDestinationHost;
+                    case SocketError.HostUnreachable: return Socks5_STATUS.HostUnreachable;
+                    case SocketError.NetworkUnreachable: return Socks5_STATUS.NetworkUnreachable;
+                    case SocketError.TimedOut: return Socks5_STATUS.TTL_expired;
+                }
+            }
+            return Socks5_STATUS.GeneralFailure;
         }
 
         // SOCKS5 UDP ASSOCIATE relay (RFC 1928 §6, §7):

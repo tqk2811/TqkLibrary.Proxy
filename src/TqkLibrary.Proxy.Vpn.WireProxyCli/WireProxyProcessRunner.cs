@@ -29,8 +29,22 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         /// </summary>
         private readonly KillOnCloseJobObject _job = new KillOnCloseJobObject();
 
+        /// <summary>
+        /// Cancelled by <see cref="Dispose"/>. The shared startup attempt runs on this rather than
+        /// on any one caller's token, so the caller that happened to be first walking away does
+        /// not cancel the tunnel out from under everybody waiting behind it.
+        /// </summary>
+        private readonly CancellationTokenSource _lifetimeCts = new CancellationTokenSource();
+
         private readonly object _lock = new object();
         private Process? _process;
+
+        /// <summary>
+        /// The one startup in flight, shared by every caller in a burst. Null until the first
+        /// <see cref="EnsureStartedAsync"/>; faulted or cancelled means the next caller retries.
+        /// </summary>
+        private Task? _startTask;
+
         private string? _generatedConfigPath;
         private readonly StringBuilder _stderrBuffer = new StringBuilder();
         private int _disposed;
@@ -80,69 +94,140 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             }
         }
 
+        /// <summary>
+        /// Brings wireproxy up and returns once its SOCKS5 listener answers. Concurrent callers
+        /// share one attempt and all return together.
+        /// </summary>
+        /// <remarks>
+        /// The shape matters more than it looks. A browser opening six sockets at once through a
+        /// freshly selected VPN outbound calls this six times within a millisecond; a cheaper
+        /// "is the process alive" check would let five of them straight through to a port nothing
+        /// is listening on yet, and they would come back refused. Waiting on one shared task is
+        /// what makes the burst behave like the single connection it logically is.
+        /// </remarks>
         public async Task EnsureStartedAsync(CancellationToken cancellationToken)
         {
-            if (_process != null && !_process.HasExited) return;
-
+            Task start;
             lock (_lock)
             {
                 if (_disposed != 0) throw new ObjectDisposedException(nameof(WireProxyProcessRunner));
-                if (_process != null && !_process.HasExited) return;
 
-                bool isRestart = _process != null;
-                if (isRestart && !_options.AutoRestart)
+                Task? pending = _startTask;
+                if (pending != null && !pending.IsCompleted)
                 {
-                    string err;
-                    lock (_stderrBuffer) err = _stderrBuffer.ToString();
-                    throw new WireGuardException(
-                        $"wireproxy has exited (code={_process!.ExitCode}) and AutoRestart is disabled: {err.Trim()}",
-                        _process.ExitCode, err);
+                    start = pending;
                 }
-
-                if (_process != null)
+                else if (pending != null && pending.Status == TaskStatus.RanToCompletion && IsAlive)
                 {
-                    try { _process.Exited -= OnProcessExited; } catch { }
-                    try { _process.Dispose(); } catch { }
-                    _process = null;
-                }
-                if (isRestart && _generatedConfigPath != null)
-                {
-                    try { File.Delete(_generatedConfigPath); } catch { }
-                    _generatedConfigPath = null;
-                }
-                lock (_stderrBuffer) _stderrBuffer.Clear();
-
-                string configPath;
-                if (_options.Config != null)
-                {
-                    var content = WireGuardConfigWriter.Build(
-                        _options.Config, Socks5Endpoint, _options.Socks5Username, _options.Socks5Password,
-                        _options.DefaultPersistentKeepalive);
-                    configPath = Path.Combine(
-                        Path.GetTempPath(), $"{GeneratedConfigPrefix}{Guid.NewGuid():N}{GeneratedConfigSuffix}");
-                    File.WriteAllText(configPath, content);
-                    try
-                    {
-                        if (!_isWindows)
-                        {
-                            using var chmod = Process.Start(new ProcessStartInfo("chmod", $"600 {configPath}")
-                            { UseShellExecute = false, CreateNoWindow = true });
-                            chmod?.WaitForExit(2000);
-                        }
-                    }
-                    catch { }
-                    _generatedConfigPath = configPath;
+                    return;
                 }
                 else
                 {
-                    configPath = _options.ConfigFilePath!;
+                    Spawn();
+                    start = _startTask = WaitForListenerOrTearDownAsync(_lifetimeCts.Token);
+                    // Every caller may walk away on its own token; without this the shared
+                    // failure would come back as an unobserved task exception.
+                    _ = start.ContinueWith(
+                        static t => _ = t.Exception, CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
                 }
+            }
 
-                var args = new List<string> { "-c", configPath };
-                foreach (var extra in _options.ExtraArgs) args.Add(extra);
+            await AwaitSharedStartAsync(start, cancellationToken).ConfigureAwait(false);
+        }
 
-                var psi = BuildPsi(_binaryPath, args);
-                var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        /// <summary>
+        /// Waits on a start attempt somebody else may have begun, honouring this caller's token
+        /// without cancelling the shared attempt.
+        /// </summary>
+        private static async Task AwaitSharedStartAsync(Task start, CancellationToken cancellationToken)
+        {
+            if (start.IsCompleted || !cancellationToken.CanBeCanceled)
+            {
+                await start.ConfigureAwait(false);
+                return;
+            }
+
+            var abandoned = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using (cancellationToken.Register(static s => ((TaskCompletionSource<bool>)s!).TrySetResult(true), abandoned))
+            {
+                if (await Task.WhenAny(start, abandoned.Task).ConfigureAwait(false) != start)
+                    cancellationToken.ThrowIfCancellationRequested();
+            }
+            await start.ConfigureAwait(false);
+        }
+
+        private async Task WaitForListenerOrTearDownAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await WaitForListenerAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // A listener that never came up leaves a process that will never serve anyone.
+                // Left running it would keep answering "alive" while the tunnel stays dead, and
+                // nothing short of disposing the whole source would clear it.
+                KillCurrentProcess();
+                throw;
+            }
+        }
+
+        /// <summary>Launches wireproxy. The caller holds <see cref="_lock"/>.</summary>
+        private void Spawn()
+        {
+            bool isRestart = _process != null;
+            if (isRestart && !_options.AutoRestart)
+            {
+                string err;
+                lock (_stderrBuffer) err = _stderrBuffer.ToString();
+                int code;
+                try { code = _process!.ExitCode; } catch { code = -1; }
+                // Nobody is going to restart it, so let the corpse go rather than re-reading it
+                // on every later call.
+                DiscardProcess();
+                throw new WireGuardException(
+                    $"wireproxy has exited (code={code}) and AutoRestart is disabled: {err.Trim()}", code, err);
+            }
+
+            DiscardProcess();
+            if (isRestart) DeleteGeneratedConfig();
+            lock (_stderrBuffer) _stderrBuffer.Clear();
+
+            string configPath;
+            if (_options.Config != null)
+            {
+                var content = WireGuardConfigWriter.Build(
+                    _options.Config, Socks5Endpoint, _options.Socks5Username, _options.Socks5Password,
+                    _options.DefaultPersistentKeepalive);
+                configPath = Path.Combine(
+                    Path.GetTempPath(), $"{GeneratedConfigPrefix}{Guid.NewGuid():N}{GeneratedConfigSuffix}");
+                File.WriteAllText(configPath, content);
+                try
+                {
+                    if (!_isWindows)
+                    {
+                        using var chmod = Process.Start(new ProcessStartInfo("chmod", $"600 {configPath}")
+                        { UseShellExecute = false, CreateNoWindow = true });
+                        chmod?.WaitForExit(2000);
+                    }
+                }
+                catch { }
+                _generatedConfigPath = configPath;
+            }
+            else
+            {
+                configPath = _options.ConfigFilePath!;
+            }
+
+            var args = new List<string> { "-c", configPath };
+            foreach (var extra in _options.ExtraArgs) args.Add(extra);
+
+            var psi = BuildPsi(_binaryPath, args);
+            var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+            try
+            {
                 process.ErrorDataReceived += OnStdErr;
                 process.OutputDataReceived += OnStdErr;
                 process.Exited += OnProcessExited;
@@ -151,10 +236,48 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 _job.Assign(process);
                 process.BeginErrorReadLine();
                 process.BeginOutputReadLine();
-                _process = process;
             }
+            catch
+            {
+                try { process.Exited -= OnProcessExited; } catch { }
+                try { if (!process.HasExited) process.Kill(); } catch { }
+                try { process.Dispose(); } catch { }
+                throw;
+            }
+            _process = process;
+        }
 
-            await WaitForListenerAsync(cancellationToken).ConfigureAwait(false);
+        /// <summary>Lets go of the current process handle without killing it. Caller holds the lock.</summary>
+        private void DiscardProcess()
+        {
+            var p = _process;
+            _process = null;
+            if (p == null) return;
+            try { p.Exited -= OnProcessExited; } catch { }
+            try { p.Dispose(); } catch { }
+        }
+
+        private void DeleteGeneratedConfig()
+        {
+            if (_generatedConfigPath == null) return;
+            try { File.Delete(_generatedConfigPath); } catch { }
+            _generatedConfigPath = null;
+        }
+
+        private void KillCurrentProcess()
+        {
+            lock (_lock)
+            {
+                var p = _process;
+                _process = null;
+                if (p != null)
+                {
+                    try { p.Exited -= OnProcessExited; } catch { }
+                    try { if (!p.HasExited) p.Kill(); } catch { }
+                    try { p.Dispose(); } catch { }
+                }
+                DeleteGeneratedConfig();
+            }
         }
 
         private async Task WaitForListenerAsync(CancellationToken cancellationToken)
@@ -351,6 +474,10 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            // Cancelled, never disposed: a startup attempt may still be sitting on this token,
+            // and disposing it under that attempt only trades a clean cancel for an
+            // ObjectDisposedException nothing is there to catch.
+            try { _lifetimeCts.Cancel(); } catch { }
             var p = _process;
             _process = null;
             if (p != null)

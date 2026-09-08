@@ -21,6 +21,11 @@ namespace TqkLibrary.Proxy.StreamHelpers
             {
                 int needRead = count - buffered;
                 byte[] newData = new byte[needRead];
+
+                // Deliberately ONE read. Looping until the buffer is full would hang on the
+                // ordinary case: a client sends its request line and then waits for an answer, so
+                // the bytes it has not sent are never coming. Callers are expected to ask again
+                // rather than to read a short result as the end of the stream.
                 int bytesRead = await _baseStream.ReadAsync(newData, 0, needRead, cancellationToken);
 
                 byte[] merged = new byte[buffered + bytesRead];
@@ -49,6 +54,7 @@ namespace TqkLibrary.Proxy.StreamHelpers
         {
             int searchFrom = 0;
             int count = Math.Min(64, maxLength);
+            int previousLength = -1;
             while (true)
             {
                 byte[] buffer = await PreReadAsync(count, cancellationToken).ConfigureAwait(false);
@@ -60,15 +66,26 @@ namespace TqkLibrary.Proxy.StreamHelpers
                         return Encoding.ASCII.GetString(buffer, 0, i + 2);
                 }
 
-                if (buffer.Length < count)
+                // Getting back fewer bytes than asked for used to be read as the end of the stream.
+                // It is not: PreReadAsync does one read, and one read returns whatever a single
+                // segment carried. A request line split across two segments — perfectly ordinary —
+                // was rejected as truncated. Only a pass that adds nothing at all means the peer
+                // has finished and the line is never coming.
+                if (buffer.Length == previousLength)
                     throw new InvalidOperationException("Stream ended without CRLF");
+                previousLength = buffer.Length;
 
-                if (count >= maxLength)
-                    throw new InvalidOperationException("Stream not contain crlf");
+                // The window is only widened once it is actually full; otherwise the next pass asks
+                // for the same amount again and simply waits for more of it.
+                if (buffer.Length >= count)
+                {
+                    if (count >= maxLength)
+                        throw new InvalidOperationException("Stream not contain crlf");
+                    count = Math.Min(count * 2, maxLength);
+                }
 
                 // keep last byte in next search window to handle \r\n split across chunks
                 searchFrom = Math.Max(0, buffer.Length - 1);
-                count = Math.Min(count * 2, maxLength);
             }
         }
 

@@ -572,13 +572,25 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
 
         private static string? ResolveBinary(string? explicitPath, bool isWindows)
         {
-            string fileName = isWindows ? "wireproxy.exe" : "wireproxy";
-
             if (!string.IsNullOrEmpty(explicitPath))
             {
                 if (File.Exists(explicitPath)) return explicitPath;
                 throw new WireGuardException($"wireproxy executable not found at: {explicitPath}");
             }
+
+            // Whatever PATH says stays true for the life of the process, so pay for the lookup
+            // once instead of on every runner: it spawns `where`, and it does it in a constructor
+            // a UI thread may well be standing on.
+            return _binaryOnPath.Value;
+        }
+
+        private static readonly Lazy<string?> _binaryOnPath = new Lazy<string?>(
+            () => ProbeForBinary(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)),
+            LazyThreadSafetyMode.ExecutionAndPublication);
+
+        private static string? ProbeForBinary(bool isWindows)
+        {
+            string fileName = isWindows ? "wireproxy.exe" : "wireproxy";
 
             // Probe alongside the host app.
             string localProbe = Path.Combine(AppContext.BaseDirectory, fileName);

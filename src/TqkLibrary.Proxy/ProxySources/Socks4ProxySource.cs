@@ -48,6 +48,9 @@ namespace TqkLibrary.Proxy.ProxySources
         public bool IsSupportIpv6 => false;
         public bool IsSupportBind { get; set; } = true;
 
+        /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
+        public ValueTask DisposeAsync() => default;
+
         public virtual Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IConnectSource>(new ConnectTunnel(this, tunnelId));

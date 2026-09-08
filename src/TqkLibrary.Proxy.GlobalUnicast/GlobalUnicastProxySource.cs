@@ -34,6 +34,17 @@ namespace TqkLibrary.Proxy.GlobalUnicast
         {
             Dispose(false);
         }
+        /// <remarks>
+        /// The work itself is still synchronous — releasing the bound addresses is a local operation — so this hands back a completed
+        /// task rather than pretending otherwise. It exists because the owner releases a way out
+        /// through <see cref="IProxySource"/> and should not have to know which shape of disposal a
+        /// particular source happens to offer.
+        /// </remarks>
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return default;
+        }
         public void Dispose()
         {
             Dispose(true);

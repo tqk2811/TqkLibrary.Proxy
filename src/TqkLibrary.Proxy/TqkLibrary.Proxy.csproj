@@ -12,4 +12,9 @@
 		<PackageReference Include="TqkLibrary.Streams" />
 	</ItemGroup>
 
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<!-- IAsyncDisposable is not in the netstandard2.0 surface, and IProxySource needs it. -->
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+	</ItemGroup>
+
 </Project>

@@ -150,6 +150,17 @@ namespace TqkLibrary.Proxy.SshNet
             if (_disposed != 0) throw new ObjectDisposedException(nameof(SshNetProxySource));
         }
 
+        /// <remarks>
+        /// The work itself is still synchronous — SSH.NET only offers a blocking Disconnect — so this hands back a completed
+        /// task rather than pretending otherwise. It exists because the owner releases a way out
+        /// through <see cref="IProxySource"/> and should not have to know which shape of disposal a
+        /// particular source happens to offer.
+        /// </remarks>
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return default;
+        }
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;

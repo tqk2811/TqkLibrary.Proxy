@@ -12,7 +12,7 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
     /// forwards <see cref="GetConnectSourceAsync"/> calls through its local SOCKS5 listener.
     /// No OS-level TUN device is created — the WireGuard tunnel lives entirely in wireproxy's user space.
     /// </summary>
-    public class WireGuardProxySource : IManagedProxySource, ISocks5Proxy, IDisposable
+    public class WireGuardProxySource : IManagedProxySource, IUdpCapable, ISocks5Proxy, IDisposable
     {
         // The exit event is the fast path for noticing the subprocess is gone; this is the backstop
         // for one that stops being ours without the event arriving.
@@ -47,7 +47,6 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
                 : new Socks5ProxySource(endpoint, _loggerFactory);
 
             socks5.IsSupportUdp = _options.IsSupportUdp;
-            socks5.IsSupportIpv6 = _options.IsSupportIpv6;
             socks5.IsSupportBind = false;
             return socks5;
         }
@@ -72,8 +71,8 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         }
 
         public bool IsSupportUdp => _options.IsSupportUdp;
-        public bool IsSupportIpv6 => _options.IsSupportIpv6;
-        public bool IsSupportBind => false;
+        // Not IBindCapable: wireproxy's SOCKS5 has no BIND. No address family setting either — the
+        // destination goes over SOCKS5 as a name and is resolved inside the tunnel.
 
         /// <summary>
         /// True while the wireproxy subprocess is running. It says the tunnel is available, not
@@ -174,9 +173,6 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
             await _runner.EnsureStartedAsync(cancellationToken).ConfigureAwait(false);
             return await CurrentSocks5().GetConnectSourceAsync(tunnelId, cancellationToken).ConfigureAwait(false);
         }
-
-        public Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException("wireproxy SOCKS5 does not support BIND.");
 
         public async Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {

@@ -55,10 +55,10 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         /// </summary>
         public bool IsSupportUdp { get; set; } = false;
 
-        /// <summary>
-        /// Whether the proxy source should report IPv6 support. WireGuard itself is dual-stack capable.
-        /// </summary>
-        public bool IsSupportIpv6 { get; set; } = true;
+        // There is deliberately no IPv6 option. It used to be here and it did nothing: wireproxy is
+        // handed the destination as a name over SOCKS5 and resolves it inside the tunnel, so nothing
+        // on this side could keep an AAAA out of the answer. A host that wants IPv6 kept off this
+        // route has to refuse the connection before it gets here.
 
         /// <summary>
         /// When true (default), <see cref="WireGuardProxySource"/> transparently respawns

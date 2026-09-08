@@ -65,7 +65,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     case UriHostNameType.Dns://http://host/abc/def
                         {
                             var ips = await Dns.GetHostAddressesAsync(address.Host);
-                            if (!_proxySource.IsSupportIpv6)
+                            if (!_proxySource.AllowIpv6)
                             {
                                 ips = ips.Where(x => x.AddressFamily == AddressFamily.InterNetwork).ToArray();//ipv4 only
                             }
@@ -89,7 +89,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     case UriHostNameType.IPv4:
                     case UriHostNameType.IPv6:
                         {
-                            if (!_proxySource.IsSupportIpv6 && address.HostNameType == UriHostNameType.IPv6)
+                            if (!_proxySource.AllowIpv6 && address.HostNameType == UriHostNameType.IPv6)
                                 throw new NotSupportedException($"IpV6 are not support");
 
                             if (_SupportUriSchemes.Any(x => x.Equals(address.Scheme, StringComparison.InvariantCulture)))

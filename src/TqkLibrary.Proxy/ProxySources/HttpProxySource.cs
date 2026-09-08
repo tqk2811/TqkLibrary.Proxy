@@ -31,9 +31,11 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
             }
         }
-        public virtual bool IsSupportUdp => false;
-        public virtual bool IsSupportIpv6 { get; set; } = true;
-        public virtual bool IsSupportBind => false;
+        // Neither IUdpCapable nor IBindCapable: the HTTP proxy protocol has no datagram and no
+        // listen, so there is nothing to configure and nothing to ask for. There is no address
+        // family setting either — CONNECT hands the upstream a name and the upstream resolves it,
+        // so the IsSupportIpv6 that used to sit here had nothing to filter and no reader; a host
+        // that set it believed it had turned something off.
 
         /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
         public ValueTask DisposeAsync() => default;
@@ -41,16 +43,6 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IConnectSource>(new ConnectTunnel(this, tunnelId));
-        }
-
-        public virtual Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-        {
-            throw new NotSupportedException();
-        }
-
-        public virtual Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-        {
-            throw new NotSupportedException();
         }
     }
 }

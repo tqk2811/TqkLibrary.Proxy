@@ -27,9 +27,9 @@ namespace TqkLibrary.Proxy.SshNet
             _logger = loggerFactory?.CreateLogger<SshNetProxySource>();
         }
 
-        public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 => true;
-        public bool IsSupportBind => false;
+        // Neither IUdpCapable nor IBindCapable: a direct-tcpip channel forwards one stream and
+        // nothing else. No address family setting either — the destination is handed to the far end
+        // as a name and resolved there.
 
         /// <summary>
         /// True while an authenticated session is open. Every tunnel is a channel on that one
@@ -77,11 +77,6 @@ namespace TqkLibrary.Proxy.SshNet
             return new SshNetConnectSource(client, _options, _loggerFactory);
         }
 
-        public Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException("SSH does not support BIND.");
-
-        public Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException("SSH does not support UDP.");
 
         private async Task<SshClient> EnsureConnectedAsync(CancellationToken cancellationToken)
         {

@@ -222,14 +222,16 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task _EstablishUdpAssociateAsync(Socks5_Request request)
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(null, userInfo!, _cancellationToken);
-            if (!proxySource.IsSupportUdp)
+            // Two questions, and both have to pass: whether this kind of way out carries datagrams
+            // at all, and whether this particular upstream will.
+            if (proxySource is not IUdpCapable udpCapable || !udpCapable.IsSupportUdp)
             {
                 _logger?.LogWarning("UDP ASSOCIATE rejected: source does not support UDP");
                 await _WriteReplyConnectionRequestAsync(Socks5_STATUS.CommandNotSupportedOrProtocolError);
                 return;
             }
 
-            using IUdpAssociateSource egress = await proxySource.GetUdpAssociateSourceAsync(_tunnelId);
+            using IUdpAssociateSource egress = await udpCapable.GetUdpAssociateSourceAsync(_tunnelId);
             try
             {
                 await egress.AssociateAsync(_cancellationToken);
@@ -433,13 +435,13 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task _EstablishPortBinding()
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(null, userInfo!, _cancellationToken);
-            if (!proxySource.IsSupportBind)
+            if (proxySource is not IBindCapable bindCapable || !bindCapable.IsSupportBind)
             {
                 await _WriteReplyConnectionRequestAsync(Socks5_STATUS.GeneralFailure);
                 return;
             }
 
-            using IBindSource bindSource = await proxySource.GetBindSourceAsync(_tunnelId);
+            using IBindSource bindSource = await bindCapable.GetBindSourceAsync(_tunnelId);
             IPEndPoint listen_endpoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyConnectionRequestAsync(Socks5_STATUS.RequestGranted, listen_endpoint);

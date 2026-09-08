@@ -10,7 +10,11 @@ namespace TqkLibrary.Proxy.Reverse.Server
     /// All proxy requests routed to this instance are forwarded to the remote client over its control channel,
     /// and outbound traffic flows over data channels the client opens back to the server.
     /// </summary>
-    public sealed class ReverseClientSession : IProxySource, IAsyncDisposable
+    // The three capabilities come off the client's Hello rather than from what this class can do, so
+    // it implements both capability interfaces and answers false when the client did not advertise
+    // one. IsSupportIpv6 is neither: it is a fact about the far end that the server records, not a
+    // policy anything on this side can set.
+    public sealed class ReverseClientSession : IProxySource, IUdpCapable, IBindCapable, IAsyncDisposable
     {
         private readonly IControlChannel _control;
         private readonly ConcurrentDictionary<Guid, PendingTunnel> _pending = new();

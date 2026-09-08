@@ -5,7 +5,7 @@ using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public partial class Socks5ProxySource : IProxySource, ISocks5Proxy
+    public partial class Socks5ProxySource : IProxySource, IUdpCapable, IBindCapable, ISocks5Proxy
     {
         private readonly ILoggerFactory? _loggerFactory;
         public Uri Uri { get; }
@@ -48,9 +48,14 @@ namespace TqkLibrary.Proxy.ProxySources
             _loggerFactory = loggerFactory;
         }
 
+        // Both default to true and are settable, because the protocol has them but a particular
+        // upstream may not: a SOCKS5 server built without UDP, or wireproxy's listener, which is
+        // TCP-only. Whoever knows which server this points at turns them off.
         public virtual bool IsSupportUdp { get; set; } = true;
-        public virtual bool IsSupportIpv6 { get; set; } = true;
         public virtual bool IsSupportBind { get; set; } = true;
+
+        // No address family setting: the destination goes to the upstream as a name and the upstream
+        // resolves it, so there is nothing here to keep AAAA records out of.
 
         /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
         public ValueTask DisposeAsync() => default;

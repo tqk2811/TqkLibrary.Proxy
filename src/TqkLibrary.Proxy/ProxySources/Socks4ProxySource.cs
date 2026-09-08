@@ -4,7 +4,7 @@ using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public partial class Socks4ProxySource : IProxySource, ISocks4Proxy
+    public partial class Socks4ProxySource : IProxySource, IBindCapable, ISocks4Proxy
     {
         private readonly ILoggerFactory? _loggerFactory;
         public Uri Uri { get; }
@@ -44,8 +44,10 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         public bool IsUseSocks4A { get; set; } = true;
-        public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 => false;
+
+        // Not IUdpCapable: SOCKS4 has no UDP ASSOCIATE. Nor is there an address family setting —
+        // the protocol has no address type for IPv6 at all, so this way out cannot carry it however
+        // anything is configured, and a setting saying otherwise would be a lie rather than a knob.
         public bool IsSupportBind { get; set; } = true;
 
         /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
@@ -59,11 +61,6 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IBindSource>(new BindTunnel(this, tunnelId));
-        }
-
-        public virtual Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-        {
-            throw new NotSupportedException();
         }
     }
 }

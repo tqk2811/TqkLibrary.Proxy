@@ -50,7 +50,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 if (_udp is null)
                     throw new InvalidOperationException($"Mustbe run {nameof(UdpTunnel)}.{nameof(AssociateAsync)} first");
 
-                if (!_proxySource.IsSupportIpv6 && destination.AddressFamily == AddressFamily.InterNetworkV6)
+                if (!_proxySource.AllowIpv6 && destination.AddressFamily == AddressFamily.InterNetworkV6)
                     throw new NotSupportedException("IpV6 are not support");
 
                 // UdpClient.SendAsync(byte[], int, IPEndPoint) sends the first <count> bytes from the buffer —

@@ -20,11 +20,9 @@ namespace TqkLibrary.Proxy.GlobalUnicast
         public TimeSpan LifeTime { get; set; } = TimeSpan.Zero;
 
 
-        public bool IsSupportUdp => false;
-
-        public bool IsSupportIpv6 => true;
-
-        public bool IsSupportBind => false;
+        // Neither IUdpCapable nor IBindCapable, and no address family setting: this source exists to
+        // pick which of the machine's global unicast IPv6 addresses a connection leaves from, so
+        // IPv6 is not something it could be told to leave out.
 
         public GlobalUnicastProxySource(ILoggerFactory? loggerFactory = null)
         {
@@ -65,15 +63,6 @@ namespace TqkLibrary.Proxy.GlobalUnicast
             return new ConnectTunnel(this, tunnelId);
         }
 
-        public Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-        {
-            throw new NotSupportedException();
-        }
-
-        public Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-        {
-            throw new NotSupportedException();
-        }
         async Task InitAsync()
         {
             if (AssignAddress is not null)

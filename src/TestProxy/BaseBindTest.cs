@@ -7,10 +7,10 @@ namespace TestProxy
 {
     public abstract class BaseBindTest : BaseConnectTest
     {
-        readonly IProxySource _sockProxySource;
+        readonly IBindCapable _sockProxySource;
         public BaseBindTest() : base()
         {
-            _sockProxySource = GetSocksProxySource(_proxyServer);
+            _sockProxySource = (IBindCapable)GetSocksProxySource(_proxyServer);
         }
         protected abstract IProxySource GetSocksProxySource(ProxyServer baseProxyServer);
 

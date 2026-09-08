@@ -5,7 +5,7 @@ using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
-    public partial class LocalProxySource : IProxySource, IHttpProxy
+    public partial class LocalProxySource : IProxySource, IUdpCapable, IBindCapable, IAddressFamilyPolicy, IHttpProxy
     {
         private readonly ILoggerFactory? _loggerFactory;
 
@@ -15,11 +15,17 @@ namespace TqkLibrary.Proxy.ProxySources
         }
 
         public virtual bool IsSupportUdp { get; set; } = true;
-        public virtual bool IsSupportIpv6 { get; set; } = true;
+
+        /// <summary>
+        /// This source resolves names itself, so turning IPv6 off here really does keep AAAA records
+        /// out of the answer — for a proxy the upstream resolves and there is nothing on this side
+        /// to filter, which is why only this and a tunnel with its own stack offer the setting.
+        /// </summary>
+        public virtual bool AllowIpv6 { get; set; } = true;
         /// <summary>
         /// use for connect to target host dns -> ip address<br/>
         /// null is default by <see cref="Dns.GetHostAddressesAsync"/><br/>
-        /// True for Prioritize Ipv4, false for Prioritize Ipv6 (must enable <see cref="IsSupportIpv6"/>)
+        /// True for Prioritize Ipv4, false for Prioritize Ipv6 (must enable <see cref="AllowIpv6"/>)
         /// </summary>
         public virtual bool? IsPrioritizeIpv4 { get; set; } = null;
         public virtual bool IsSupportBind { get; set; } = true;

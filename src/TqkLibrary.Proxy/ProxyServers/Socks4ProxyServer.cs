@@ -183,13 +183,15 @@ namespace TqkLibrary.Proxy.ProxyServers
         async Task _HandleBindAsync()
         {
             IProxySource proxySource = await _proxyServerHandler!.GetProxySourceAsync(null, userInfo!, _cancellationToken);
-            if (!proxySource.IsSupportBind)
+            // Two questions, and both have to pass: whether this kind of way out has BIND at all,
+            // and whether this particular upstream will do it.
+            if (proxySource is not IBindCapable bindCapable || !bindCapable.IsSupportBind)
             {
                 await _WriteReplyAsync(Socks4_REP.RequestRejectedOrFailed);
                 return;
             }
 
-            using IBindSource bindSource = await proxySource.GetBindSourceAsync(_tunnelId);
+            using IBindSource bindSource = await bindCapable.GetBindSourceAsync(_tunnelId);
             IPEndPoint iPEndPoint = await bindSource.BindAsync(_cancellationToken);
 
             await _WriteReplyAsync(Socks4_REP.RequestGranted, iPEndPoint.Address, (UInt16)iPEndPoint.Port);

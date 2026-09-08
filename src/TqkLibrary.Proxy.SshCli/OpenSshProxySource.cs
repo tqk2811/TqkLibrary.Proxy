@@ -27,9 +27,9 @@ namespace TqkLibrary.Proxy.SshCli
             _loggerFactory = loggerFactory;
         }
 
-        public bool IsSupportUdp => false;
-        public bool IsSupportIpv6 => true;
-        public bool IsSupportBind => false;
+        // Neither IUdpCapable nor IBindCapable: `ssh -W` forwards one stream and nothing else. No
+        // address family setting either — the destination is handed to the far end as a name and
+        // resolved there.
 
         public async Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {
@@ -40,11 +40,6 @@ namespace TqkLibrary.Proxy.SshCli
             return new OpenSshConnectSource(_runner, _options.ConnectProbeTimeoutMs);
         }
 
-        public Task<IBindSource> GetBindSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException("ssh -W does not support BIND.");
-
-        public Task<IUdpAssociateSource> GetUdpAssociateSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException("ssh -W does not support UDP.");
 
         private async Task EnsureMasterAsync(CancellationToken cancellationToken)
         {

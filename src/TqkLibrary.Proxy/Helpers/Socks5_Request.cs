@@ -61,7 +61,15 @@ namespace TqkLibrary.Proxy.Helpers
                     Socks5_ATYP.DomainName => "http",
                     _ => throw new NotSupportedException($"{DSTADDR.ATYP}"),
                 };
-                string host = DSTADDR.ATYP == Socks5_ATYP.DomainName ? DSTADDR.Domain : DSTADDR.IPAddress.ToString();
+                // An IPv6 literal has to be bracketed in a URI, or the colons in the address read as
+                // the port separator: every ATYP=0x04 request threw here, which is to say the server
+                // could not carry an IPv6 CONNECT at all.
+                string host = DSTADDR.ATYP switch
+                {
+                    Socks5_ATYP.DomainName => DSTADDR.Domain,
+                    Socks5_ATYP.IpV6 => $"[{DSTADDR.IPAddress}]",
+                    _ => DSTADDR.IPAddress.ToString(),
+                };
                 return new Uri($"{scheme}://{host}:{DSTPORT}");
             }
         }

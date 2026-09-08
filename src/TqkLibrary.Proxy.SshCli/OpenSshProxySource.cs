@@ -5,6 +5,12 @@ using TqkLibrary.Proxy.SshCli.Exceptions;
 
 namespace TqkLibrary.Proxy.SshCli
 {
+    // Deliberately NOT an IManagedProxySource, even though the ControlMaster process looks like one.
+    // ControlMaster is off whenever it is unavailable — every Windows host, and any configuration
+    // that leaves UseControlMaster unset — and then each tunnel is its own `ssh -W` process, with
+    // nothing held open between requests. A source that answers "yes, I am up" because there is
+    // nothing that could be down would have a host starting and supervising a thing that does not
+    // exist, and reporting it as connected in the UI.
     public class OpenSshProxySource : IProxySource, ISsh, IDisposable
     {
         private readonly OpenSshConnectionOptions _options;

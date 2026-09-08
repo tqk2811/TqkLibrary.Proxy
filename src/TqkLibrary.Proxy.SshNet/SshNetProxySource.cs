@@ -6,8 +6,13 @@ using TqkLibrary.Proxy.SshNet.Exceptions;
 
 namespace TqkLibrary.Proxy.SshNet
 {
-    public class SshNetProxySource : IProxySource, ISsh, IDisposable
+    public class SshNetProxySource : IManagedProxySource, ISsh, IDisposable
     {
+        // SSH.NET raises nothing useful when a session simply stops answering, so the state is read
+        // rather than waited for. Fifteen seconds is a status refresh, not a failure detector — the
+        // connection itself is what notices a dead peer, through KeepAliveInterval when one is set.
+        private static readonly TimeSpan HealthPollInterval = TimeSpan.FromSeconds(15);
+
         private readonly SshNetConnectionOptions _options;
         private readonly ILoggerFactory? _loggerFactory;
         private readonly ILogger? _logger;
@@ -25,6 +30,45 @@ namespace TqkLibrary.Proxy.SshNet
         public bool IsSupportUdp => false;
         public bool IsSupportIpv6 => true;
         public bool IsSupportBind => false;
+
+        /// <summary>
+        /// True while an authenticated session is open. Every tunnel is a channel on that one
+        /// session, so this is what says whether any of them can be opened at all.
+        /// </summary>
+        public bool IsRunning => _client?.IsConnected == true;
+
+        public string Endpoint => $"{_options.User}@{_options.Host}:{_options.Port}";
+
+        /// <summary>
+        /// Authenticates the session now instead of on the first tunnel, so the cost of the
+        /// handshake does not land on a request.
+        /// </summary>
+        public async Task StartAsync(CancellationToken cancellationToken = default)
+        {
+            CheckDisposed();
+            await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Completes once the session is down, which for SSH.NET means finished: the client does not
+        /// re-authenticate on its own, so there is no self-repair to sit out.
+        /// </summary>
+        /// <remarks>
+        /// The state is what is watched, not one particular <see cref="SshClient"/>. A request
+        /// arriving in the meantime reconnects through <c>EnsureConnectedAsync</c>, and a host that
+        /// was told the way out had failed because of an object it never knew about would be
+        /// rebuilding a source that had already mended itself.
+        /// </remarks>
+        public async Task<string> WaitUntilDownAsync(CancellationToken cancellationToken = default)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (!IsRunning) return $"the SSH session to {_options.Host} is closed";
+                try { await Task.Delay(HealthPollInterval, cancellationToken).ConfigureAwait(false); }
+                catch (OperationCanceledException) { break; }
+            }
+            return "cancelled";
+        }
 
         public async Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)
         {

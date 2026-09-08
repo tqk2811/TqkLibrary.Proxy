@@ -12,8 +12,12 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
     /// forwards <see cref="GetConnectSourceAsync"/> calls through its local SOCKS5 listener.
     /// No OS-level TUN device is created — the WireGuard tunnel lives entirely in wireproxy's user space.
     /// </summary>
-    public class WireGuardProxySource : IProxySource, ISocks5Proxy, IDisposable
+    public class WireGuardProxySource : IManagedProxySource, ISocks5Proxy, IDisposable
     {
+        // The exit event is the fast path for noticing the subprocess is gone; this is the backstop
+        // for one that stops being ours without the event arriving.
+        private static readonly TimeSpan HealthPollInterval = TimeSpan.FromSeconds(15);
+
         private readonly WireGuardOptions _options;
         private readonly WireProxyProcessRunner _runner;
         private readonly ILoggerFactory? _loggerFactory;
@@ -84,6 +88,13 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         public IPEndPoint Socks5Endpoint => _runner.Socks5Endpoint;
 
         /// <summary>
+        /// The same listener as <see cref="Socks5Endpoint"/>, as the one line a host puts in a log
+        /// or a status row. It is known before the subprocess is started — the port is chosen when
+        /// this source is constructed — so it reads as an address even while nothing is listening.
+        /// </summary>
+        public string Endpoint => _runner.Socks5Endpoint.ToString();
+
+        /// <summary>
         /// Raised when the subprocess dies of its own accord, so a host that wants the tunnel
         /// permanently up can rebuild it immediately rather than at the next connection.
         /// Disposing this source does not raise it.
@@ -108,6 +119,53 @@ namespace TqkLibrary.Proxy.Vpn.WireProxyCli
         {
             CheckDisposed();
             return _runner.EnsureStartedAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Completes once the subprocess is gone, with the exit code and the last line of its
+        /// stderr — which is the line that says what broke.
+        /// </summary>
+        /// <remarks>
+        /// wireproxy does not mend itself: an exited process is finished, so unlike a driver with
+        /// its own reconnect this completes at the first sign of trouble. Every subscription lives
+        /// and dies inside one call, so a host may abandon a wait and start another.
+        /// </remarks>
+        public async Task<string> WaitUntilDownAsync(CancellationToken cancellationToken = default)
+        {
+            var down = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OnExited(object? sender, WireProxyExitedEventArgs e) => down.TrySetResult(Describe(e));
+
+            _runner.Exited += OnExited;
+            try
+            {
+                // Subscribing cannot catch an exit that already happened, so check once before
+                // waiting — otherwise a process that died during the subscription is waited on
+                // forever.
+                if (!_runner.IsAlive) return "the wireproxy process is gone";
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    Task delay = Task.Delay(HealthPollInterval, cancellationToken);
+                    Task first = await Task.WhenAny(down.Task, delay).ConfigureAwait(false);
+
+                    if (ReferenceEquals(first, down.Task)) return await down.Task.ConfigureAwait(false);
+                    if (delay.IsCanceled) break;
+                    if (!_runner.IsAlive) return "the wireproxy process is gone";
+                }
+                return "cancelled";
+            }
+            finally
+            {
+                _runner.Exited -= OnExited;
+            }
+        }
+
+        private static string Describe(WireProxyExitedEventArgs e)
+        {
+            string message = $"wireproxy exited with code {e.ExitCode}";
+            // stderr can be a whole startup transcript; the last line is the one that says what broke.
+            string[] lines = e.StandardError.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            return lines.Length == 0 ? message : $"{message}: {lines[lines.Length - 1].Trim()}";
         }
 
         public async Task<IConnectSource> GetConnectSourceAsync(Guid tunnelId, CancellationToken cancellationToken = default)

@@ -26,6 +26,31 @@ namespace TqkLibrary.Proxy.StreamHelpers
 
         string _firstName = "first";
         string _secondName = "second";
+
+        Action? _shutdownFirstSend;
+        Action? _shutdownSecondSend;
+
+        /// <summary>
+        /// How to half-close each side when this helper cannot work it out on its own.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="HalfClose"/> can shut the send direction of a <see cref="NetworkStream"/> down
+        /// because it can reach the socket underneath it. A stream that only DECORATES a socket —
+        /// one that counts bytes, or buffers a peeked header — hides that socket, so the half-close
+        /// silently did nothing and the far end was never told the near end had finished speaking.
+        /// A protocol that answers only once the request is complete then waits for a request it
+        /// has already been sent in full, and both ends sit there until something times out.
+        /// <para>
+        /// The caller that wrapped the socket is the one thing that still knows where it is, so it
+        /// supplies the shutdown here. Either action may be null, which keeps the default.
+        /// </para>
+        /// </remarks>
+        public StreamTransferHelper ShutdownSendWith(Action? first, Action? second)
+        {
+            _shutdownFirstSend = first;
+            _shutdownSecondSend = second;
+            return this;
+        }
         public StreamTransferHelper DebugName(object? first, object? second)
         {
             return DebugName(first?.ToString(), second?.ToString());
@@ -115,11 +140,17 @@ namespace TqkLibrary.Proxy.StreamHelpers
         /// us. Streams that cannot express a half-close are left alone rather than closed, since
         /// closing one here would cut off data the other direction is still carrying.
         /// </summary>
-        static void HalfClose(Stream stream)
+        void HalfClose(Stream stream)
         {
+            Action? supplied =
+                ReferenceEquals(stream, _first) ? _shutdownFirstSend
+                : ReferenceEquals(stream, _second) ? _shutdownSecondSend
+                : null;
+
             try
             {
-                if (stream is NetworkStream networkStream)
+                if (supplied != null) supplied();
+                else if (stream is NetworkStream networkStream)
                     SocketOf(networkStream)?.Shutdown(SocketShutdown.Send);
             }
             catch { /* already gone: the far end learns of it either way */ }

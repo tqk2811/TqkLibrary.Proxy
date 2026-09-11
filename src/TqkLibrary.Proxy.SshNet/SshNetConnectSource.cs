@@ -38,6 +38,7 @@ namespace TqkLibrary.Proxy.SshNet
         private NetworkStream? _stream;
         private int _ownPort;
         private int _accepted;
+        private int _threadHeld;
         private int _disposed;
 
         internal SshNetConnectSource(
@@ -97,6 +98,9 @@ namespace TqkLibrary.Proxy.SshNet
                 throw new InitConnectSourceFailedException($"Failed to start ssh local forwarder: {ex.Message}");
             }
 
+            // Taken before the connect, because the accept it triggers is what occupies the thread —
+            // see BlockedThreadReservation — and given back in Dispose or on the way out below.
+            HoldThread();
             try
             {
                 using (var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
@@ -133,8 +137,19 @@ namespace TqkLibrary.Proxy.SshNet
             {
                 try { tcp.Dispose(); } catch { }
                 ReleasePort(port);
+                ReleaseThread();
                 throw;
             }
+        }
+
+        private void HoldThread()
+        {
+            if (Interlocked.Exchange(ref _threadHeld, 1) == 0) BlockedThreadReservation.Acquire();
+        }
+
+        private void ReleaseThread()
+        {
+            if (Interlocked.Exchange(ref _threadHeld, 0) == 1) BlockedThreadReservation.Release();
         }
 
         public Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
@@ -205,6 +220,9 @@ namespace TqkLibrary.Proxy.SshNet
             try { _tcp?.Close(); } catch { }
             try { _tcp?.Dispose(); } catch { }
             if (_port != null) ReleasePort(_port);
+            // After the port has stopped, which waits for the channel's read loop to end: that loop
+            // is the thread this was holding.
+            ReleaseThread();
         }
     }
 }

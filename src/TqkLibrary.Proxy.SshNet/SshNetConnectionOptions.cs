@@ -1,3 +1,5 @@
+using TqkLibrary.Proxy.SshNet.Interfaces;
+
 namespace TqkLibrary.Proxy.SshNet
 {
     public class SshNetConnectionOptions
@@ -38,11 +40,24 @@ namespace TqkLibrary.Proxy.SshNet
         public TimeSpan KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
-        /// Optional SHA-256 host key fingerprints (Base64 of raw 32-byte digest, no "SHA256:" prefix).
-        /// When non-empty, the server host key must match one of the listed values or the
-        /// connection is aborted. When empty, the host key is accepted on first use.
+        /// Optional SHA-256 host key fingerprints (Base64 of the raw 32-byte digest; a "SHA256:"
+        /// prefix and padding are tolerated). When non-empty, the server's host key must match one of
+        /// them or the session is refused, and <see cref="HostKeyVerifier"/> is not asked.
         /// </summary>
         public IList<string> HostKeyFingerprintsSha256 { get; } = new List<string>();
+
+        /// <summary>
+        /// Decides about the server's host key when no fingerprint is pinned — typically a
+        /// known_hosts or trust-on-first-use store owned by the application.
+        /// </summary>
+        public ISshHostKeyVerifier? HostKeyVerifier { get; set; }
+
+        /// <summary>
+        /// Accept whatever host key the server presents when neither a fingerprint nor a verifier is
+        /// configured. Off by default: an unchecked key lets anyone in the middle impersonate the
+        /// server and collect the password. Meant for a lab, never for a server across the internet.
+        /// </summary>
+        public bool AcceptAnyHostKey { get; set; }
 
         /// <summary>
         /// Timeout (ms) waiting for the per-target forwarded port to come up before
@@ -51,7 +66,9 @@ namespace TqkLibrary.Proxy.SshNet
         public int ConnectProbeTimeoutMs { get; set; } = 5000;
 
         /// <summary>
-        /// Loopback bind host used for the per-target local forwarder. Default 127.0.0.1.
+        /// Loopback bind host used for the per-target local forwarder. Default 127.0.0.1. Only the
+        /// connection this library makes to it is forwarded; any other process that finds the port
+        /// is refused before a channel is opened.
         /// </summary>
         public string LocalBindHost { get; set; } = "127.0.0.1";
 

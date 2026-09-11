@@ -17,6 +17,11 @@ namespace TqkLibrary.Proxy.SshNet
         private readonly ILoggerFactory? _loggerFactory;
         private readonly ILogger? _logger;
         private readonly SemaphoreSlim _connectLock = new SemaphoreSlim(1, 1);
+        // SshClient keeps its forwarded ports in a plain List<T>: AddForwardedPort and
+        // RemoveForwardedPort from tunnels opening and closing on different threads, and Disconnect
+        // walking the same list, would otherwise corrupt it. Every tunnel of this source goes
+        // through one client at a time, so one lock covers them all.
+        private readonly object _portsLock = new object();
         private SshClient? _client;
         private int _disposed;
 
@@ -74,7 +79,7 @@ namespace TqkLibrary.Proxy.SshNet
         {
             CheckDisposed();
             var client = await EnsureConnectedAsync(cancellationToken).ConfigureAwait(false);
-            return new SshNetConnectSource(client, _options, _loggerFactory);
+            return new SshNetConnectSource(client, _portsLock, _options, _loggerFactory);
         }
 
 
@@ -90,12 +95,12 @@ namespace TqkLibrary.Proxy.SshNet
 
                 if (_client != null)
                 {
-                    try { _client.Disconnect(); } catch { }
-                    try { _client.Dispose(); } catch { }
+                    ReleaseClient(_client);
                     _client = null;
                 }
 
-                var client = BuildClient();
+                var hostKeys = new SshNetHostKeyGate(_options, _logger);
+                var client = BuildClient(hostKeys);
                 try
                 {
 #if NET6_0_OR_GREATER
@@ -107,6 +112,10 @@ namespace TqkLibrary.Proxy.SshNet
                 catch (Exception ex)
                 {
                     try { client.Dispose(); } catch { }
+                    // A refused key fails the handshake as "key exchange negotiation failed", which
+                    // says nothing about why. The gate knows, so the reason is put back.
+                    if (hostKeys.RejectedKey != null)
+                        throw new SshNetHostKeyRejectedException(hostKeys.RejectedKey, hostKeys.RejectedReason!, ex);
                     throw new SshNetException($"SSH connect failed: {ex.Message}", ex);
                 }
 
@@ -120,7 +129,7 @@ namespace TqkLibrary.Proxy.SshNet
             }
         }
 
-        private SshClient BuildClient()
+        private SshClient BuildClient(SshNetHostKeyGate hostKeys)
         {
             var methods = new List<AuthenticationMethod>();
             if (!string.IsNullOrEmpty(_options.Password))
@@ -157,31 +166,19 @@ namespace TqkLibrary.Proxy.SshNet
             if (_options.KeepAliveInterval > TimeSpan.Zero)
                 client.KeepAliveInterval = _options.KeepAliveInterval;
 
-            if (_options.HostKeyFingerprintsSha256.Count > 0)
-            {
-                var allowed = new HashSet<string>(_options.HostKeyFingerprintsSha256, StringComparer.OrdinalIgnoreCase);
-                client.HostKeyReceived += (s, e) =>
-                {
-                    var fp = NormalizeFingerprint(e.FingerPrintSHA256);
-                    e.CanTrust = allowed.Contains(fp);
-                    if (!e.CanTrust)
-                    {
-                        _logger?.LogWarning("Rejecting host key {Fingerprint} (not in allow-list)", fp);
-                    }
-                };
-            }
-
+            client.HostKeyReceived += hostKeys.OnHostKeyReceived;
             return client;
         }
 
-        private static string NormalizeFingerprint(string? sha256)
+        // Under the ports lock: Disconnect stops every forwarded port by walking the client's list,
+        // and a tunnel adding or removing its own port at that moment would change it underneath.
+        private void ReleaseClient(SshClient client)
         {
-            if (sha256 is null || sha256.Length == 0) return string.Empty;
-            // SSH.NET returns base64 without "SHA256:" prefix; trim any padding for stable compare.
-            var v = sha256.Trim();
-            if (v.StartsWith("SHA256:", StringComparison.OrdinalIgnoreCase))
-                v = v.Substring("SHA256:".Length);
-            return v.TrimEnd('=');
+            lock (_portsLock)
+            {
+                try { client.Disconnect(); } catch { }
+                try { client.Dispose(); } catch { }
+            }
         }
 
         private void CheckDisposed()
@@ -205,8 +202,7 @@ namespace TqkLibrary.Proxy.SshNet
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
             if (_client != null)
             {
-                try { _client.Disconnect(); } catch { }
-                try { _client.Dispose(); } catch { }
+                ReleaseClient(_client);
                 _client = null;
             }
             _connectLock.Dispose();

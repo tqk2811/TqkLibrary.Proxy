@@ -17,6 +17,8 @@ namespace TestProxy.Local
                 )
             {
                 Password = "khanhmaple",
+                // A server on the local network, set up for this test: nothing here would know its key.
+                AcceptAnyHostKey = true,
             };
             _sshProxySource = new SshNetProxySource(options);
             return _sshProxySource;

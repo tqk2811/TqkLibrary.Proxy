@@ -11,7 +11,10 @@ namespace TqkLibrary.Proxy.Helpers
     /// </summary>
     public class Socks4_Request : IPacketData
     {
-        const long socks4aDomain = 0x00000001; //0.0.0.x with x non-zero
+        // 0.0.0.x with x non-zero. Given as bytes: new IPAddress(1L) reads the long in host order and
+        // comes out as 1.0.0.0 on little-endian machines, which is an ordinary address, so the name
+        // was never sent and SOCKS4a quietly fell back to SOCKS4.
+        static readonly byte[] socks4aDomain = { 0, 0, 0, 1 };
         private Socks4_Request()
         {
 

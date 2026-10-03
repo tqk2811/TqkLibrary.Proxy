@@ -54,6 +54,13 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsSupportUdp { get; set; } = true;
         public virtual bool IsSupportBind { get; set; } = true;
 
+        /// <summary>
+        /// Sends the CONNECT request (which carries the target name) one byte per TCP segment, so a
+        /// DPI box reading single segments never sees the whole name. Greeting and auth go out as
+        /// usual. Off by default.
+        /// </summary>
+        public bool SplitConnectRequest { get; set; }
+
         // No address family setting: the destination goes to the upstream as a name and the upstream
         // resolves it, so there is nothing here to keep AAAA records out of.
 

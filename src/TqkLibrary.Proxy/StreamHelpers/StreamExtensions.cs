@@ -95,6 +95,29 @@ namespace TqkLibrary.Proxy.StreamHelpers
             return stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
         }
 
+        /// <summary>
+        /// Writes <paramref name="count"/> bytes one at a time, flushing after each. On a socket with
+        /// <c>NoDelay</c> set every byte then leaves as its own TCP segment, so a middlebox that only
+        /// looks at single segments never sees the whole run in one piece.
+        /// </summary>
+        public static async Task WriteByteByByteAsync(
+            this Stream stream,
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken = default
+            )
+        {
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+            for (int i = 0; i < count; i++)
+            {
+                await stream.WriteAsync(buffer, offset + i, 1, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+            }
+        }
+
         public static byte[] LineBreak => new byte[] { 13, 10 };
         public static async Task WriteLineAsync(
             this Stream stream, 

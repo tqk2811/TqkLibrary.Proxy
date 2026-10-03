@@ -28,8 +28,27 @@ namespace TqkLibrary.Proxy.ProxySources
 
                 Socks5_Request socks5_Connection = Socks5_Request.CreateConnect(address);
                 _logger?.LogInformation("CONNECT request");
-                await _stream!.WriteAsync(socks5_Connection.GetByteArray(), cancellationToken);
-                await _stream!.FlushAsync(cancellationToken);
+                byte[] request = socks5_Connection.GetByteArray();
+                if (_proxySource.SplitConnectRequest)
+                {
+                    // NoDelay keeps the stack from coalescing the single bytes; restored so the
+                    // tunnelled data is sent the way it always was.
+                    bool noDelay = _tcpClient.NoDelay;
+                    _tcpClient.NoDelay = true;
+                    try
+                    {
+                        await _stream!.WriteByteByByteAsync(request, 0, request.Length, cancellationToken);
+                    }
+                    finally
+                    {
+                        _tcpClient.NoDelay = noDelay;
+                    }
+                }
+                else
+                {
+                    await _stream!.WriteAsync(request, cancellationToken);
+                    await _stream!.FlushAsync(cancellationToken);
+                }
                 Socks5_RequestResponse socks5_RequestResponse = await _stream!.Read_Socks5_RequestResponse_Async(cancellationToken);
                 if (socks5_RequestResponse.STATUS != Socks5_STATUS.RequestGranted)
                 {

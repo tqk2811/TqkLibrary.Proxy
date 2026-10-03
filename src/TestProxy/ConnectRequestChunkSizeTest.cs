@@ -9,33 +9,46 @@ using TqkLibrary.Proxy.StreamHelpers;
 namespace TestProxy
 {
     /// <summary>
-    /// SplitConnectRequest must change how the CONNECT request is written, never what is written:
-    /// the upstream has to receive exactly the bytes it gets with the flag off. These run against a
+    /// ConnectRequestChunkSize must change how the CONNECT request is written, never what is written:
+    /// the upstream has to receive exactly the bytes it gets with it at 0. These run against a
     /// fake upstream on loopback, so they need no network. Loopback can merge segments on the receive
-    /// side, so the byte-per-write part is checked on a recording stream instead.
+    /// side, so the chunk sizes are checked on a recording stream instead.
     /// </summary>
     [TestClass]
-    public class SplitConnectRequestTest
+    public class ConnectRequestChunkSizeTest
     {
         static readonly Uri Target = new Uri("tcp://example.com:443");
 
         [TestMethod]
-        public async Task WriteByteByByte_IssuesOneWritePerByte()
+        [DataRow(1)]
+        [DataRow(2)]
+        [DataRow(5)]
+        public async Task WriteInChunks_SplitsIntoChunksOfTheGivenSize(int chunkSize)
         {
+            // 32 bytes: with 5 the last chunk is a short one (2 bytes).
             byte[] data = Encoding.ASCII.GetBytes("CONNECT example.com:443 HTTP/1.1");
             using RecordingStream stream = new RecordingStream();
 
-            await stream.WriteByteByByteAsync(data, 0, data.Length);
+            await stream.WriteInChunksAsync(data, 0, data.Length, chunkSize);
 
-            Assert.AreEqual(data.Length, stream.Writes.Count);
-            Assert.IsTrue(stream.Writes.All(x => x.Length == 1));
+            int[] expectedSizes = Enumerable.Range(0, (data.Length + chunkSize - 1) / chunkSize)
+                .Select(i => Math.Min(chunkSize, data.Length - i * chunkSize)).ToArray();
+            CollectionAssert.AreEqual(expectedSizes, stream.Writes.Select(x => x.Length).ToArray());
             CollectionAssert.AreEqual(data, stream.Writes.SelectMany(x => x).ToArray());
         }
 
         [TestMethod]
-        [DataRow(false)]
-        [DataRow(true)]
-        public async Task HttpConnect_SendsTheSameBytes(bool split)
+        public void ChunkSize_RejectsNegative()
+        {
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new HttpProxySource(new Uri("http://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Socks5ProxySource(new Uri("socks5://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });
+        }
+
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        public async Task HttpConnect_SendsTheSameBytes(int chunkSize)
         {
             using TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
             listener.Start();
@@ -44,7 +57,7 @@ namespace TestProxy
             HttpProxySource source = new HttpProxySource(new Uri($"http://{listener.LocalEndpoint}"))
             {
                 Credential = new ProxyCredential("user", "pass"),
-                SplitConnectRequest = split,
+                ConnectRequestChunkSize = chunkSize,
             };
             using IConnectSource tunnel = await source.GetConnectSourceAsync(Guid.NewGuid());
             await tunnel.ConnectAsync(Target);
@@ -55,9 +68,10 @@ namespace TestProxy
         }
 
         [TestMethod]
-        [DataRow(false)]
-        [DataRow(true)]
-        public async Task Socks5Connect_SendsTheSameBytes(bool split)
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        public async Task Socks5Connect_SendsTheSameBytes(int chunkSize)
         {
             using TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
             listener.Start();
@@ -65,7 +79,7 @@ namespace TestProxy
 
             Socks5ProxySource source = new Socks5ProxySource((IPEndPoint)listener.LocalEndpoint)
             {
-                SplitConnectRequest = split,
+                ConnectRequestChunkSize = chunkSize,
             };
             using IConnectSource tunnel = await source.GetConnectSourceAsync(Guid.NewGuid());
             await tunnel.ConnectAsync(Target);

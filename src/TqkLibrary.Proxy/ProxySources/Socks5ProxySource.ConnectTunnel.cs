@@ -29,15 +29,15 @@ namespace TqkLibrary.Proxy.ProxySources
                 Socks5_Request socks5_Connection = Socks5_Request.CreateConnect(address);
                 _logger?.LogInformation("CONNECT request");
                 byte[] request = socks5_Connection.GetByteArray();
-                if (_proxySource.SplitConnectRequest)
+                if (_proxySource.ConnectRequestChunkSize > 0)
                 {
-                    // NoDelay keeps the stack from coalescing the single bytes; restored so the
+                    // NoDelay keeps the stack from coalescing the small chunks; restored so the
                     // tunnelled data is sent the way it always was.
                     bool noDelay = _tcpClient.NoDelay;
                     _tcpClient.NoDelay = true;
                     try
                     {
-                        await _stream!.WriteByteByByteAsync(request, 0, request.Length, cancellationToken);
+                        await _stream!.WriteInChunksAsync(request, 0, request.Length, _proxySource.ConnectRequestChunkSize, cancellationToken);
                     }
                     finally
                     {

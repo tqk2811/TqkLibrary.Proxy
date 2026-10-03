@@ -10,11 +10,16 @@ namespace TqkLibrary.Proxy.ProxySources
         readonly Uri _proxy;
         public ProxyCredential? Credential { get; set; }
         /// <summary>
-        /// Sends the <c>CONNECT host:port HTTP/1.1</c> line one byte per TCP segment, and everything
-        /// from its line break on in one write, so a DPI box reading single segments never sees the
-        /// whole target name. Off by default: it costs one segment per byte of that line.
+        /// When above 0, sends the <c>CONNECT host:port HTTP/1.1</c> line this many bytes per TCP
+        /// segment, and everything from its line break on in one write, so a DPI box reading single
+        /// segments never sees the whole target name. 0 (the default) sends it in one piece.
         /// </summary>
-        public bool SplitConnectRequest { get; set; }
+        public int ConnectRequestChunkSize
+        {
+            get => _connectRequestChunkSize;
+            set => _connectRequestChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _connectRequestChunkSize;
         /// <summary>
         /// Construct from a <c>http(s)://[user:pass@]host:port</c> URI. <paramref name="proxy"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
         /// </summary>

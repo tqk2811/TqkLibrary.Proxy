@@ -70,7 +70,7 @@ namespace TqkLibrary.Proxy.ProxySources
                     headers.Add($"Proxy-Authorization: Basic {data}");
                 }
 
-                if (_proxySource.SplitConnectRequest)
+                if (_proxySource.ConnectRequestChunkSize > 0)
                     await _WriteSplitHeadersAsync(headers, cancellationToken);
                 else
                     await _stream.WriteHeadersAsync(headers, cancellationToken);
@@ -88,9 +88,9 @@ namespace TqkLibrary.Proxy.ProxySources
                 return headerResponseParse.HttpStatusCode == HttpStatusCode.OK;
             }
 
-            // Same bytes WriteHeadersAsync puts on the wire, but the request line goes out a byte per
-            // segment and the rest, from its CRLF on, in one write. NoDelay is what keeps the stack
-            // from holding the single bytes back to coalesce them; it goes back afterwards so the
+            // Same bytes WriteHeadersAsync puts on the wire, but the request line goes out in small chunks,
+            // a segment each, and the rest, from its CRLF on, in one write. NoDelay is what keeps the stack
+            // from holding the small chunks back to coalesce them; it goes back afterwards so the
             // tunnelled data is sent the way it always was.
             protected virtual async Task _WriteSplitHeadersAsync(IReadOnlyList<string> headers, CancellationToken cancellationToken)
             {
@@ -100,7 +100,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 _tcpClient.NoDelay = true;
                 try
                 {
-                    await _stream!.WriteByteByByteAsync(buffer, 0, requestLineLength, cancellationToken);
+                    await _stream!.WriteInChunksAsync(buffer, 0, requestLineLength, _proxySource.ConnectRequestChunkSize, cancellationToken);
                     await _stream!.WriteAsync(buffer, requestLineLength, buffer.Length - requestLineLength, cancellationToken);
                     await _stream!.FlushAsync(cancellationToken);
                 }

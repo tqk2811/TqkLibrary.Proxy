@@ -96,24 +96,27 @@ namespace TqkLibrary.Proxy.StreamHelpers
         }
 
         /// <summary>
-        /// Writes <paramref name="count"/> bytes one at a time, flushing after each. On a socket with
-        /// <c>NoDelay</c> set every byte then leaves as its own TCP segment, so a middlebox that only
-        /// looks at single segments never sees the whole run in one piece.
+        /// Writes <paramref name="count"/> bytes <paramref name="chunkSize"/> at a time (the last
+        /// chunk may be shorter), flushing after each. On a socket with <c>NoDelay</c> set every
+        /// chunk then leaves as its own TCP segment, so a middlebox that only looks at single
+        /// segments never sees the whole run in one piece.
         /// </summary>
-        public static async Task WriteByteByByteAsync(
+        public static async Task WriteInChunksAsync(
             this Stream stream,
             byte[] buffer,
             int offset,
             int count,
+            int chunkSize,
             CancellationToken cancellationToken = default
             )
         {
             if (stream is null) throw new ArgumentNullException(nameof(stream));
             if (buffer is null) throw new ArgumentNullException(nameof(buffer));
             if (offset < 0 || count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
-            for (int i = 0; i < count; i++)
+            if (chunkSize <= 0) throw new ArgumentOutOfRangeException(nameof(chunkSize));
+            for (int i = 0; i < count; i += chunkSize)
             {
-                await stream.WriteAsync(buffer, offset + i, 1, cancellationToken);
+                await stream.WriteAsync(buffer, offset + i, Math.Min(chunkSize, count - i), cancellationToken);
                 await stream.FlushAsync(cancellationToken);
             }
         }

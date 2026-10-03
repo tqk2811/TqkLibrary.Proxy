@@ -55,11 +55,16 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsSupportBind { get; set; } = true;
 
         /// <summary>
-        /// Sends the CONNECT request (which carries the target name) one byte per TCP segment, so a
-        /// DPI box reading single segments never sees the whole name. Greeting and auth go out as
-        /// usual. Off by default.
+        /// When above 0, sends the CONNECT request (which carries the target name) this many bytes
+        /// per TCP segment, so a DPI box reading single segments never sees the whole name. Greeting
+        /// and auth go out as usual. 0 (the default) sends it in one piece.
         /// </summary>
-        public bool SplitConnectRequest { get; set; }
+        public int ConnectRequestChunkSize
+        {
+            get => _connectRequestChunkSize;
+            set => _connectRequestChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _connectRequestChunkSize;
 
         // No address family setting: the destination goes to the upstream as a name and the upstream
         // resolves it, so there is nothing here to keep AAAA records out of.

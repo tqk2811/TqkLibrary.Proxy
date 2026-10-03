@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -118,6 +119,9 @@ namespace TqkLibrary.Proxy.ProxySources
                     default:
                         throw new NotSupportedException(address.HostNameType.ToString());
                 }
+
+                if (_proxySource.TlsHandshakeChunkSize > 0)
+                    _stream = new TlsHandshakeChunkingStream(_stream, _proxySource.TlsHandshakeChunkSize, _tcpClient.Client);
             }
 
             public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)

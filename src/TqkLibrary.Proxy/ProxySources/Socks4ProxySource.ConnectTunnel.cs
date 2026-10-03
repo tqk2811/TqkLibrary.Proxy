@@ -32,7 +32,20 @@ namespace TqkLibrary.Proxy.ProxySources
                     _tcpClient.NoDelay = true;
                     try
                     {
-                        await base._stream!.WriteInChunksAsync(buffer, 0, buffer.Length, _proxySource.ConnectRequestChunkSize, cancellationToken);
+                        // Only the destination is trickled out: the domain of SOCKS4a (after
+                        // USERID\0, up to its own \0), or the IPv4 address of plain SOCKS4.
+                        int addressStart, addressLength;
+                        if (socks4_Request.IsDomain)
+                        {
+                            addressStart = Array.IndexOf(buffer, (byte)0, 8) + 1;
+                            addressLength = buffer.Length - addressStart - 1;
+                        }
+                        else
+                        {
+                            addressStart = 4;
+                            addressLength = 4;
+                        }
+                        await base._stream!.WriteSplitAroundAsync(buffer, 0, buffer.Length, addressStart, addressLength, _proxySource.ConnectRequestChunkSize, cancellationToken);
                     }
                     finally
                     {

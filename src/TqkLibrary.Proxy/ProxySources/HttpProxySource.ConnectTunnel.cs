@@ -76,7 +76,7 @@ namespace TqkLibrary.Proxy.ProxySources
                 }
 
                 if (_proxySource.ConnectRequestChunkSize > 0)
-                    await _WriteSplitHeadersAsync(headers, cancellationToken);
+                    await _WriteSplitHeadersAsync(headers, address.Host, cancellationToken);
                 else
                     await _stream.WriteHeadersAsync(headers, cancellationToken);
                 _logger?.LogInformation("Sending CONNECT to upstream\r\n{Headers}", string.Join("\r\n", headers));
@@ -93,21 +93,20 @@ namespace TqkLibrary.Proxy.ProxySources
                 return headerResponseParse.HttpStatusCode == HttpStatusCode.OK;
             }
 
-            // Same bytes WriteHeadersAsync puts on the wire, but the request line goes out in small chunks,
-            // a segment each, and the rest, from its CRLF on, in one write. NoDelay is what keeps the stack
-            // from holding the small chunks back to coalesce them; it goes back afterwards so the
-            // tunnelled data is sent the way it always was.
-            protected virtual async Task _WriteSplitHeadersAsync(IReadOnlyList<string> headers, CancellationToken cancellationToken)
+            // Same bytes WriteHeadersAsync puts on the wire, but only the host in the request line goes
+            // out in small chunks, a segment each: "CONNECT " in one write, the host chunked, and the
+            // rest, from ":port" on, in one write. NoDelay is what keeps the stack from holding the
+            // small chunks back to coalesce them; it goes back afterwards so the tunnelled data is
+            // sent the way it always was.
+            protected virtual async Task _WriteSplitHeadersAsync(IReadOnlyList<string> headers, string host, CancellationToken cancellationToken)
             {
                 byte[] buffer = Encoding.ASCII.GetBytes(string.Join("\r\n", headers) + "\r\n\r\n");
-                int requestLineLength = headers[0].Length;
+                const int hostStart = 8; // "CONNECT "
                 bool noDelay = _tcpClient.NoDelay;
                 _tcpClient.NoDelay = true;
                 try
                 {
-                    await _stream!.WriteInChunksAsync(buffer, 0, requestLineLength, _proxySource.ConnectRequestChunkSize, cancellationToken);
-                    await _stream!.WriteAsync(buffer, requestLineLength, buffer.Length - requestLineLength, cancellationToken);
-                    await _stream!.FlushAsync(cancellationToken);
+                    await _stream!.WriteSplitAroundAsync(buffer, 0, buffer.Length, hostStart, host.Length, _proxySource.ConnectRequestChunkSize, cancellationToken);
                 }
                 finally
                 {

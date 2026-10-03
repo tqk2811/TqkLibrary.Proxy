@@ -10,8 +10,9 @@ namespace TqkLibrary.Proxy.ProxySources
         readonly Uri _proxy;
         public ProxyCredential? Credential { get; set; }
         /// <summary>
-        /// When above 0, sends the <c>CONNECT host:port HTTP/1.1</c> line this many bytes per TCP
-        /// segment, and everything from its line break on in one write, so a DPI box reading single
+        /// When above 0, sends the host of the
+        /// <c>CONNECT host:port HTTP/1.1</c> line this many bytes per TCP segment, and the rest of the
+        /// request around it in one write each, so a DPI box reading single
         /// segments never sees the whole target name. 0 (the default) sends it in one piece.
         /// </summary>
         public int ConnectRequestChunkSize
@@ -22,9 +23,9 @@ namespace TqkLibrary.Proxy.ProxySources
         int _connectRequestChunkSize;
 
         /// <summary>
-        /// When above 0, the TLS handshake records written into the tunnel (the ClientHello with its
-        /// SNI first of all) go out this many bytes per TCP segment, and everything from the first
-        /// non-handshake record on is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
+        /// When above 0, the ClientHello written into the tunnel is re-framed into several TLS records
+        /// around its SNI host name, the name itself this many bytes per record, each record in its own
+        /// segment; everything after the ClientHello is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
         /// 0 (the default) leaves the tunnel alone.
         /// </summary>
         public int TlsHandshakeChunkSize

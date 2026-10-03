@@ -121,6 +121,43 @@ namespace TqkLibrary.Proxy.StreamHelpers
             }
         }
 
+        /// <summary>
+        /// Writes <c>count</c> bytes with only the span <c>[splitStart, splitStart + splitLength)</c>
+        /// (relative to <c>offset</c>) sent <c>chunkSize</c> bytes at a time: what comes before it
+        /// goes in one write, what comes after it in another, each followed by a flush. Used to
+        /// trickle out just the destination name of a CONNECT request.
+        /// </summary>
+        public static async Task WriteSplitAroundAsync(
+            this Stream stream,
+            byte[] buffer,
+            int offset,
+            int count,
+            int splitStart,
+            int splitLength,
+            int chunkSize,
+            CancellationToken cancellationToken = default
+            )
+        {
+            if (stream is null) throw new ArgumentNullException(nameof(stream));
+            if (buffer is null) throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0 || count < 0 || offset + count > buffer.Length) throw new ArgumentOutOfRangeException(nameof(count));
+            if (splitStart < 0 || splitLength < 0 || splitStart + splitLength > count) throw new ArgumentOutOfRangeException(nameof(splitLength));
+            if (chunkSize <= 0) throw new ArgumentOutOfRangeException(nameof(chunkSize));
+
+            if (splitStart > 0)
+            {
+                await stream.WriteAsync(buffer, offset, splitStart, cancellationToken).ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+            await stream.WriteInChunksAsync(buffer, offset + splitStart, splitLength, chunkSize, cancellationToken).ConfigureAwait(false);
+            int tail = splitStart + splitLength;
+            if (tail < count)
+            {
+                await stream.WriteAsync(buffer, offset + tail, count - tail, cancellationToken).ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         public static byte[] LineBreak => new byte[] { 13, 10 };
         public static async Task WriteLineAsync(
             this Stream stream, 

@@ -37,7 +37,10 @@ namespace TqkLibrary.Proxy.ProxySources
                     _tcpClient.NoDelay = true;
                     try
                     {
-                        await _stream!.WriteInChunksAsync(request, 0, request.Length, _proxySource.ConnectRequestChunkSize, cancellationToken);
+                        // Only the address is trickled out: VER CMD RSV ATYP (and the name's length
+                        // byte) in one write, the address chunked, the port in one write.
+                        int addressStart = request[3] == 0x03 ? 5 : 4;
+                        await _stream!.WriteSplitAroundAsync(request, 0, request.Length, addressStart, request.Length - addressStart - 2, _proxySource.ConnectRequestChunkSize, cancellationToken);
                     }
                     finally
                     {

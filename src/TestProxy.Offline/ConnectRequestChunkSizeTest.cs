@@ -38,6 +38,20 @@ namespace TestProxy.Offline
         }
 
         [TestMethod]
+        public async Task WriteSplitAround_ChunksOnlyTheGivenSpan()
+        {
+            byte[] data = Encoding.ASCII.GetBytes("CONNECT example.com:443 HTTP/1.1\r\n\r\n");
+            using RecordingStream stream = new RecordingStream();
+
+            await stream.WriteSplitAroundAsync(data, 0, data.Length, 8, "example.com".Length, 2);
+
+            string[] writes = stream.Writes.Select(x => Encoding.ASCII.GetString(x)).ToArray();
+            CollectionAssert.AreEqual(
+                new[] { "CONNECT ", "ex", "am", "pl", "e.", "co", "m", ":443 HTTP/1.1\r\n\r\n" },
+                writes);
+        }
+
+        [TestMethod]
         public void ChunkSize_RejectsNegative()
         {
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new HttpProxySource(new Uri("http://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });

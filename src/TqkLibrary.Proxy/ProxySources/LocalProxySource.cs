@@ -30,6 +30,24 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool? IsPrioritizeIpv4 { get; set; } = null;
         public virtual bool IsSupportBind { get; set; } = true;
 
+        /// <summary>
+        /// When above 0, the ClientHello sent on a connection is re-framed into several TLS records
+        /// around its SNI host name, the name itself this many bytes per record, each record in its
+        /// own segment; everything after the ClientHello goes out as usual. See
+        /// <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>. 0 (the default) leaves the
+        /// connection alone.
+        /// </summary>
+        public int TlsHandshakeChunkSize
+        {
+            get => _tlsHandshakeChunkSize;
+            set
+            {
+                if (value < 0) throw new ArgumentOutOfRangeException(nameof(value));
+                _tlsHandshakeChunkSize = value;
+            }
+        }
+        int _tlsHandshakeChunkSize = 0;
+
         /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
         public ValueTask DisposeAsync() => default;
         /// <summary>

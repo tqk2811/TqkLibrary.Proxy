@@ -55,8 +55,8 @@ namespace TqkLibrary.Proxy.ProxySources
         public virtual bool IsSupportBind { get; set; } = true;
 
         /// <summary>
-        /// When above 0, sends the CONNECT request (which carries the target name) this many bytes
-        /// per TCP segment, so a DPI box reading single segments never sees the whole name. Greeting
+        /// When above 0, sends the destination address in the CONNECT request this
+        /// many bytes per TCP segment, the rest of the request in one write each, so a DPI box reading single segments never sees the whole name. Greeting
         /// and auth go out as usual. 0 (the default) sends it in one piece.
         /// </summary>
         public int ConnectRequestChunkSize
@@ -67,9 +67,9 @@ namespace TqkLibrary.Proxy.ProxySources
         int _connectRequestChunkSize;
 
         /// <summary>
-        /// When above 0, the TLS handshake records written into the tunnel (the ClientHello with its
-        /// SNI first of all) go out this many bytes per TCP segment, and everything from the first
-        /// non-handshake record on is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
+        /// When above 0, the ClientHello written into the tunnel is re-framed into several TLS records
+        /// around its SNI host name, the name itself this many bytes per record, each record in its own
+        /// segment; everything after the ClientHello is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
         /// 0 (the default) leaves the tunnel alone.
         /// </summary>
         public int TlsHandshakeChunkSize

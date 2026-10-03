@@ -7,7 +7,7 @@ using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
 
-namespace TestProxy.ServerTest
+namespace TestProxy.Offline
 {
     /// <summary>
     /// What a SOCKS5 client is told when the connection it asked for cannot be made, and what an

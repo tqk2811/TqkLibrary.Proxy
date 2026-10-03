@@ -12,15 +12,10 @@
 		<PackageReference Include="MSTest.TestAdapter" />
 		<PackageReference Include="MSTest.TestFramework" />
 		<PackageReference Include="coverlet.collector" />
-		<PackageReference Include="Newtonsoft.Json" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\TqkLibrary.Proxy\TqkLibrary.Proxy.csproj" />
-		<ProjectReference Include="..\TqkLibrary.Proxy.SshCli\TqkLibrary.Proxy.SshCli.csproj" />
-		<ProjectReference Include="..\TqkLibrary.Proxy.SshNet\TqkLibrary.Proxy.SshNet.csproj" />
-		<ProjectReference Include="..\TqkLibrary.Proxy.Vpn.WireProxyCli\TqkLibrary.Proxy.Vpn.WireProxyCli.csproj" />
-		<ProjectReference Include="..\TestProxy.Online\TestProxy.Online.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -6,7 +6,7 @@ using TqkLibrary.Proxy.Handlers;
 using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
 
-namespace TestProxy.ServerTest
+namespace TestProxy.Offline
 {
     /// <summary>
     /// What the HTTP proxy server passes on, checked against an origin server of our own on

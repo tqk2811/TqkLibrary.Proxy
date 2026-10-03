@@ -6,7 +6,7 @@ using TqkLibrary.Proxy.Interfaces;
 using TqkLibrary.Proxy.ProxySources;
 using TqkLibrary.Proxy.StreamHelpers;
 
-namespace TestProxy
+namespace TestProxy.Offline
 {
     /// <summary>
     /// ConnectRequestChunkSize must change how the CONNECT request is written, never what is written:

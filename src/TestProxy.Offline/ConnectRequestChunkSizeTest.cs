@@ -42,6 +42,7 @@ namespace TestProxy.Offline
         {
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new HttpProxySource(new Uri("http://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });
             Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Socks5ProxySource(new Uri("socks5://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => new Socks4ProxySource(new Uri("socks4://127.0.0.1:1")) { ConnectRequestChunkSize = -1 });
         }
 
         [TestMethod]
@@ -88,6 +89,48 @@ namespace TestProxy.Offline
             byte[] expected = new byte[] { 0x05, 0x01, 0x00, 0x03, (byte)name.Length }
                 .Concat(name).Concat(new byte[] { 0x01, 0xBB }).ToArray();
             CollectionAssert.AreEqual(expected, await upstream);
+        }
+
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        public async Task Socks4aConnect_SendsTheSameBytes(int chunkSize)
+        {
+            using TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            Task<byte[]> upstream = FakeSocks4UpstreamAsync(listener);
+
+            Socks4ProxySource source = new Socks4ProxySource((IPEndPoint)listener.LocalEndpoint, "id")
+            {
+                ConnectRequestChunkSize = chunkSize,
+            };
+            using IConnectSource tunnel = await source.GetConnectSourceAsync(Guid.NewGuid());
+            await tunnel.ConnectAsync(Target);
+
+            // VER CMD PORT, the 0.0.0.x marker that says a name follows, USERID\0, DOMAIN\0.
+            byte[] expected = new byte[] { 0x04, 0x01, 0x01, 0xBB, 0, 0, 0, 1 }
+                .Concat(Encoding.ASCII.GetBytes("id\0example.com\0")).ToArray();
+            CollectionAssert.AreEqual(expected, await upstream);
+        }
+
+        // Reads one SOCKS4a CONNECT (header, then the two NUL-terminated strings), grants it, and
+        // returns the request bytes.
+        static async Task<byte[]> FakeSocks4UpstreamAsync(TcpListener listener)
+        {
+            using TcpClient client = await listener.AcceptTcpClientAsync();
+            NetworkStream stream = client.GetStream();
+            List<byte> request = new List<byte>();
+            for (int i = 0; i < 8; i++) request.Add(await ReadByteAsync(stream));
+            for (int nulls = 0; nulls < 2;)
+            {
+                byte b = await ReadByteAsync(stream);
+                request.Add(b);
+                if (b == 0) nulls++;
+            }
+            await stream.WriteAsync(new byte[] { 0x00, 0x5A, 0, 0, 0, 0, 0, 0 });
+            await stream.FlushAsync();
+            return request.ToArray();
         }
 
         // Reads one request up to its blank line, answers 200, returns what was read.

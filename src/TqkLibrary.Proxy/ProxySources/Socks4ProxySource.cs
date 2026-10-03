@@ -50,6 +50,31 @@ namespace TqkLibrary.Proxy.ProxySources
         // anything is configured, and a setting saying otherwise would be a lie rather than a knob.
         public bool IsSupportBind { get; set; } = true;
 
+        /// <summary>
+        /// When above 0, sends the CONNECT request (which carries the target name under SOCKS4a)
+        /// this many bytes per TCP segment, so a DPI box reading single segments never sees the
+        /// whole name. 0 (the default) sends it in one piece.
+        /// </summary>
+        public int ConnectRequestChunkSize
+        {
+            get => _connectRequestChunkSize;
+            set => _connectRequestChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _connectRequestChunkSize;
+
+        /// <summary>
+        /// When above 0, the TLS handshake records written into the tunnel (the ClientHello with its
+        /// SNI first of all) go out this many bytes per TCP segment, and everything from the first
+        /// non-handshake record on is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
+        /// 0 (the default) leaves the tunnel alone.
+        /// </summary>
+        public int TlsHandshakeChunkSize
+        {
+            get => _tlsHandshakeChunkSize;
+            set => _tlsHandshakeChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _tlsHandshakeChunkSize;
+
         /// <summary>Nothing to release: this source holds no session, only the address of one.</summary>
         public ValueTask DisposeAsync() => default;
 

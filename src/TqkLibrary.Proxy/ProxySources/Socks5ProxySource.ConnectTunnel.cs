@@ -56,6 +56,11 @@ namespace TqkLibrary.Proxy.ProxySources
                     throw new InitConnectSourceFailedException($"{nameof(Socks5_STATUS)}: {socks5_RequestResponse.STATUS}");
                 }
                 _logger?.LogInformation("CONNECT OK bnd={BndAddress}:{BndPort}", socks5_RequestResponse.BNDADDR.IPAddress, socks5_RequestResponse.BNDPORT);
+
+                // Wrapped only once CONNECT is through: the request above is the proxy's business,
+                // the bytes from here on are the tunnel's.
+                if (_proxySource.TlsHandshakeChunkSize > 0)
+                    _stream = new TlsHandshakeChunkingStream(_stream!, _proxySource.TlsHandshakeChunkSize, _tcpClient.Client);
             }
             public virtual Task<Stream> GetStreamAsync(CancellationToken cancellationToken = default)
             {

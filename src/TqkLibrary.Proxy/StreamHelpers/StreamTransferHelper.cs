@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using TqkLibrary.Proxy.Interfaces;
 
 namespace TqkLibrary.Proxy.StreamHelpers
 {
@@ -152,6 +153,8 @@ namespace TqkLibrary.Proxy.StreamHelpers
                 if (supplied != null) supplied();
                 else if (stream is NetworkStream networkStream)
                     SocketOf(networkStream)?.Shutdown(SocketShutdown.Send);
+                else if (stream is IHalfClosableStream halfClosable)
+                    halfClosable.ShutdownSend();
             }
             catch { /* already gone: the far end learns of it either way */ }
         }

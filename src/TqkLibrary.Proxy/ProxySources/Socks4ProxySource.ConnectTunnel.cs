@@ -2,6 +2,7 @@
 using TqkLibrary.Proxy.Exceptions;
 using TqkLibrary.Proxy.Helpers;
 using TqkLibrary.Proxy.Interfaces;
+using TqkLibrary.Proxy.StreamHelpers;
 
 namespace TqkLibrary.Proxy.ProxySources
 {
@@ -23,13 +24,36 @@ namespace TqkLibrary.Proxy.ProxySources
                 Socks4_Request socks4_Request = Socks4_Request.CreateConnect(address, _proxySource.userId);
                 byte[] buffer = socks4_Request.GetByteArray();
 
-                await base._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+                if (_proxySource.ConnectRequestChunkSize > 0)
+                {
+                    // NoDelay keeps the stack from coalescing the small chunks; restored so the
+                    // tunnelled data is sent the way it always was.
+                    bool noDelay = _tcpClient.NoDelay;
+                    _tcpClient.NoDelay = true;
+                    try
+                    {
+                        await base._stream!.WriteInChunksAsync(buffer, 0, buffer.Length, _proxySource.ConnectRequestChunkSize, cancellationToken);
+                    }
+                    finally
+                    {
+                        _tcpClient.NoDelay = noDelay;
+                    }
+                }
+                else
+                {
+                    await base._stream!.WriteAsync(buffer, 0, buffer.Length, cancellationToken);
+                }
 
                 Socks4_RequestResponse socks4_RequestResponse = await base._stream!.Read_Socks4_RequestResponse_Async(cancellationToken);
                 if (socks4_RequestResponse.REP != Socks4_REP.RequestGranted)
                 {
                     throw new InitConnectSourceFailedException($"{nameof(Socks4_REP)}: {socks4_RequestResponse.REP}");
                 }
+
+                // Wrapped only once CONNECT is through: the request above is the proxy's business,
+                // the bytes from here on are the tunnel's.
+                if (_proxySource.TlsHandshakeChunkSize > 0)
+                    _stream = new TlsHandshakeChunkingStream(_stream!, _proxySource.TlsHandshakeChunkSize, _tcpClient.Client);
             }
 
 

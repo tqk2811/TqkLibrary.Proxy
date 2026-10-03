@@ -20,6 +20,19 @@ namespace TqkLibrary.Proxy.ProxySources
             set => _connectRequestChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
         }
         int _connectRequestChunkSize;
+
+        /// <summary>
+        /// When above 0, the TLS handshake records written into the tunnel (the ClientHello with its
+        /// SNI first of all) go out this many bytes per TCP segment, and everything from the first
+        /// non-handshake record on is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
+        /// 0 (the default) leaves the tunnel alone.
+        /// </summary>
+        public int TlsHandshakeChunkSize
+        {
+            get => _tlsHandshakeChunkSize;
+            set => _tlsHandshakeChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _tlsHandshakeChunkSize;
         /// <summary>
         /// Construct from a <c>http(s)://[user:pass@]host:port</c> URI. <paramref name="proxy"/> host may be a domain, IPv4, or IPv6 literal (in brackets).
         /// </summary>

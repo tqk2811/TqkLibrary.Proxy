@@ -66,6 +66,19 @@ namespace TqkLibrary.Proxy.ProxySources
         }
         int _connectRequestChunkSize;
 
+        /// <summary>
+        /// When above 0, the TLS handshake records written into the tunnel (the ClientHello with its
+        /// SNI first of all) go out this many bytes per TCP segment, and everything from the first
+        /// non-handshake record on is relayed as usual. See <see cref="StreamHelpers.TlsHandshakeChunkingStream"/>.
+        /// 0 (the default) leaves the tunnel alone.
+        /// </summary>
+        public int TlsHandshakeChunkSize
+        {
+            get => _tlsHandshakeChunkSize;
+            set => _tlsHandshakeChunkSize = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        int _tlsHandshakeChunkSize;
+
         // No address family setting: the destination goes to the upstream as a name and the upstream
         // resolves it, so there is nothing here to keep AAAA records out of.
 

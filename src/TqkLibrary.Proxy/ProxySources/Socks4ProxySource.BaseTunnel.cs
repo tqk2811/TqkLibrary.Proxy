@@ -6,7 +6,8 @@ namespace TqkLibrary.Proxy.ProxySources
     {
         public class BaseTunnel : BaseProxySourceTunnel<Socks4ProxySource>
         {
-            protected readonly TcpClient _tcpClient = new TcpClient();
+            // Nagle would hold a game's small writes for up to a delayed-ACK; relay as soon as written.
+            protected readonly TcpClient _tcpClient = new TcpClient { NoDelay = true };
             protected Stream? _stream;
 
             internal protected BaseTunnel(Socks4ProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)

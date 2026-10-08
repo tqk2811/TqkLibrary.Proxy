@@ -8,7 +8,8 @@ namespace TqkLibrary.Proxy.GlobalUnicast
     {
         class ConnectTunnel : BaseTunnel, IConnectSource
         {
-            protected readonly TcpClient _tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
+            // Nagle would hold a game's small writes for up to a delayed-ACK; relay as soon as written.
+            protected readonly TcpClient _tcpClient = new TcpClient(AddressFamily.InterNetworkV6) { NoDelay = true };
             protected Stream? _stream = null;
             public ConnectTunnel(GlobalUnicastProxySource proxySource, Guid tunnelId) : base(proxySource, tunnelId)
             {

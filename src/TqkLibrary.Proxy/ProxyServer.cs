@@ -170,6 +170,8 @@ namespace TqkLibrary.Proxy
                 try
                 {
                     TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                    // Nagle would hold a game's small writes for up to a delayed-ACK; relay as soon as written.
+                    tcpClient.NoDelay = true;
                     _ = _PreProxyWorkAsync(tcpClient);//run in task
                 }
                 catch (SocketException ex) when (ex.SocketErrorCode == SocketError.OperationAborted)

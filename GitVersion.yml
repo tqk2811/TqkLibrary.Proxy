@@ -1,8 +1,5 @@
-mode: ManualDeployment
+deployment-mode: ManualDeployment
 tag-prefix: 'v'
-assembly-versioning-format: '{Major}.{Minor}.{CommitsSinceVersionSource}'
-assembly-file-versioning-format: '{Major}.{Minor}.{CommitsSinceVersionSource}'
-assembly-informational-format: '{Major}.{Minor}.{CommitsSinceVersionSource}'
 branches:
   master:
     regex: ^master$
@@ -10,3 +7,8 @@ branches:
   main:
     regex: ^main$
     increment: None
+  unknown:
+    regex: ^(?!master$|main$).+
+    increment: None
+    source-branches: [master, main]
+    label: dev

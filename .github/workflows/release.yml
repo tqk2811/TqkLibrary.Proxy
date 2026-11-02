@@ -1,174 +1,106 @@
 name: Release
 
-# CI build + publish. Does NOT run by default: only builds when the head commit of the push
-# contains the marker '[release]'. Also runnable manually (workflow_dispatch).
-# Notes-only mode: marker '[release_notes_only]' (or dispatch with input release_notes_only)
-# only regenerates GitHub Release notes (no build/pack/upload/nuget); HEAD is not a build point.
-#
-# /releases model: each minor line M.N has one GitHub Release named by the tag 'vM.N.0'.
-# Each run -> pack every lib with a .nuspec as version 'M.N.<commits>' -> upload all nupkg as
-# assets to Release 'vM.N.0' + update the notes (ascending, numbered) for changes since 'vM.N.0'.
-#
-# Precondition: tag 'vM.N.0' must already exist on origin (GitVersion source + Release name).
-# Push to nuget.org only when the 'nugetKey' secret is present.
+# Push a tag vM.N.P (on a commit of master) -> test, pack M.N.P, GitHub Release with git-cliff notes,
+# push nuget.org with NuGet Trusted Publishing (OIDC, no API key secret).
+#   git tag v1.2.0 && git push origin v1.2.0
 
 on:
   push:
-    branches:
-      - master
-  workflow_dispatch:
-    inputs:
-      release_notes_only:
-        description: 'Only regenerate GitHub Release notes (skip build/pack/upload/nuget)'
-        type: boolean
-        default: false
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:          # rerun a release: pick the TAG as ref, not a branch
 
 permissions:
   contents: write
+  id-token: write             # NuGet/login exchanges the OIDC token for a short-lived API key
 
 jobs:
+  test:
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/test.yml
+
   release:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') || contains(github.event.head_commit.message, '[release_notes_only]')
+    needs: test
+    if: github.ref_type == 'tag'
     runs-on: windows-latest
     env:
-      # 'true' for notes-only: dispatch chose release_notes_only, or head commit contains '[release_notes_only]'
-      NOTES_ONLY: ${{ inputs.release_notes_only || contains(github.event.head_commit.message, '[release_notes_only]') }}
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
     steps:
-      - name: Checkout (full history + tags)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0      # GitVersion and release notes need history + tags
 
-      # Highest TFM is net8.0, and a newer SDK builds older TFMs via reference packs. So major >= 8
-      # is enough; only run setup-dotnet when none is present (windows-latest usually ships >= 8).
-      - name: Check installed .NET SDKs
-        if: env.NOTES_ONLY != 'true'
-        id: dotnet_check
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: Check tag is on master
         shell: pwsh
         run: |
-          $sdks = if (Get-Command dotnet -ErrorAction SilentlyContinue) { @(dotnet --list-sdks 2>$null) } else { @() }
-          $haveSdk = [bool]($sdks | Where-Object { if ($_ -match '^(\d+)\.') { [int]$Matches[1] -ge 8 } })
-          $install = -not $haveSdk
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "install=$($install.ToString().ToLower())"
-          Write-Host "Installed SDKs:`n$($sdks -join "`n")"
-          Write-Host "Have .NET SDK >= 8: $haveSdk  -> install=$install"
+          git fetch origin master
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/master
+          if ($LASTEXITCODE -ne 0) { Write-Error "Tag $env:TAG is not on master"; exit 1 }
+          # GitVersion fails on a detached HEAD ("No base versions determined"), even on a tagged commit.
+          # Put a local 'master' on the tagged commit so the master branch config applies.
+          git checkout -B master $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: Setup .NET
-        if: ${{ env.NOTES_ONLY != 'true' && steps.dotnet_check.outputs.install == 'true' }}
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Install git-cliff
+      - name: Pack
         shell: pwsh
         run: |
-          $ver = "2.13.1"
-          $url = "https://github.com/orhun/git-cliff/releases/download/v$ver/git-cliff-$ver-x86_64-pc-windows-msvc.zip"
-          $zip = Join-Path $env:RUNNER_TEMP "git-cliff.zip"
-          Invoke-WebRequest $url -OutFile $zip
-          $dst = Join-Path $env:RUNNER_TEMP "git-cliff"
-          Expand-Archive $zip -DestinationPath $dst -Force
-          $exe = Get-ChildItem $dst -Recurse -Filter git-cliff.exe | Select-Object -First 1
-          Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
+          $expected = $env:TAG.TrimStart('v')
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          # One package per csproj that has a sibling <name>.nuspec.
+          $specs = @(Get-ChildItem -Recurse -Filter *.nuspec | Where-Object { $_.FullName -notmatch '[\/](obj|bin)[\/]' })
+          if ($specs.Count -eq 0) { Write-Error "No nuspec found"; exit 1 }
+          foreach ($s in $specs) {
+            dotnet pack (Join-Path $s.DirectoryName "$($s.BaseName).csproj") -c Release -o artifacts
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            $name = "$($s.BaseName).$expected.nupkg"
+            if (-not (Test-Path (Join-Path artifacts $name))) {
+              Write-Error "Expected $name was not produced (version does not match tag $env:TAG)"; exit 1
+            }
+          }
 
-      - name: "Build + pack (publishable TqkLibrary.Proxy libraries)"
-        if: env.NOTES_ONLY != 'true'
+      - name: Release notes
         shell: pwsh
-        run: ./.github/workflows/BuildCI.ps1   # pack only; nuget push handled below
+        run: |
+          $prev = git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*.[0-9]*" "$env:TAG^"
+          # First release has no previous tag: no range = whole history up to HEAD (the tagged commit).
+          # A bare tag is not a valid git-cliff range ("unable to parse OID").
+          $range = if ($LASTEXITCODE -eq 0 -and $prev) { @("$prev..$env:TAG") } else { @() }
+          npx -y git-cliff@2 --config cliff.toml --tag $env:TAG @range -o RELEASE_NOTES.md
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: Create/update Release, upload nupkg, push nuget
+      - name: GitHub Release
+        shell: pwsh
+        run: |
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $env:TAG --notes-file RELEASE_NOTES.md
+          } else {
+            gh release create $env:TAG --title $env:TAG --notes-file RELEASE_NOTES.md --verify-tag
+          }
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          gh release upload $env:TAG (Get-ChildItem artifacts -Filter *.nupkg).FullName --clobber
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      # NuGet Trusted Publishing: needs a trusted publishing policy on nuget.org (owner tqk2811,
+      # repo TqkLibrary.Proxy, workflow release.yml). 'user' is the nuget.org profile name, not an email.
+      - name: NuGet login (OIDC)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: tqk2811
+
+      - name: Push nuget.org
         shell: pwsh
         env:
-          GH_TOKEN: ${{ github.token }}
-          NUGET_KEY: ${{ secrets.nugetKey }}
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $notesOnly = $env:NOTES_ONLY -eq 'true'
-          if ($notesOnly) {
-            # Notes-only: no nupkg -> derive M.N from the branch name (if it is a version-branch M.N);
-            # otherwise (e.g. master) take the nearest tag in history.
-            $bn = $env:GITHUB_REF_NAME
-            if ($bn -match '^(\d+)\.(\d+)$') { $major = $Matches[1]; $minor = $Matches[2] }
-            else {
-              $near = "$(git describe --tags --abbrev=0 --match "v[0-9]*")".Trim()
-              if ($near -notmatch '^v(\d+)\.(\d+)\.') { throw "Cannot derive minor line from branch '$bn' / tag '$near'" }
-              $major = $Matches[1]; $minor = $Matches[2]
-            }
-            $nupkgs = @()
-          } else {
-            $nupkgs = @(Get-ChildItem ./artifacts/*.nupkg)
-            if ($nupkgs.Count -eq 0) { throw "No .nupkg produced by BuildCI.ps1" }
-            # M.N comes from the core 'TqkLibrary.Proxy' package (name = TqkLibrary.Proxy.<M>.<N>.<build>.nupkg).
-            $core = $nupkgs | Where-Object { $_.Name -match '^TqkLibrary\.Proxy\.(\d+)\.(\d+)\.(\d+)\.nupkg$' } | Select-Object -First 1
-            if (-not $core) { throw "Cannot find core TqkLibrary.Proxy nupkg to parse version" }
-            $null = $core.Name -match '^TqkLibrary\.Proxy\.(\d+)\.(\d+)\.(\d+)\.nupkg$'
-            $major = $Matches[1]; $minor = $Matches[2]
-          }
-          $tag = "v$major.$minor.0"   # tags carry the 'v' prefix (v1.0.0)
-          $mn  = "$major.$minor"
-          if ($notesOnly) { Write-Host "notes-only  release-tag=$tag" }
-          else { Write-Host "$($nupkgs.Count) nupkg  release-tag=$tag" }
-
-          # Release notes: each BUILD is one header '- M.N.<zzz>' with zzz = rev-list --count tag..R
-          # (matches the nupkg version since GitVersion counts ALL commits). Build point R = commits
-          # (first-parent) carrying the '[release]' marker + current HEAD (this run's build, not
-          # duplicated if HEAD itself is [release]). Sub-item '  + ...' = every new commit reachable in
-          # (R_prev..R], naturally including commits merged in from other branches.
-          # git-cliff only formats each commit, prefixing every line with '__SHA_<sha>__' for lookup.
-          $lineOf = @{}
-          foreach ($l in @(git-cliff --config cliff-release.toml "$tag..HEAD")) {
-            if ($l -match '^__SHA_([0-9a-f]+)__ (.*)$') { $lineOf[$Matches[1]] = $Matches[2] }
-          }
-          $fps = @(git rev-list --first-parent --reverse "$tag..HEAD")
-          $points = @($fps | Where-Object { (git log -1 --format=%B $_) -match '\[release\]' })
-          if (-not $notesOnly -and $fps.Count -gt 0 -and ($points.Count -eq 0 -or $points[-1] -ne $fps[-1])) {
-            $points += $fps[-1]   # HEAD = the build being released by this run (skipped when notes-only)
-          }
-          $out = New-Object System.Collections.Generic.List[string]
-          $prev = $tag
-          foreach ($r in $points) {
-            $n = [int](git rev-list --count "$tag..$r")
-            # Always emit the header, even for an empty group (a build with no displayed change types)
-            $out.Add("- $mn.$n")
-            foreach ($c in @(git rev-list --reverse $r --not $prev)) {
-              if ($lineOf.ContainsKey($c)) { $out.Add("  + $($lineOf[$c])") }
-            }
-            $prev = $r
-          }
-          $notes = ($out -join "`n").Trim()
-          # Per-item commit link: the template emits '__REPO__' -> current repo URL
-          $notes = $notes -replace '__REPO__', "$($env:GITHUB_SERVER_URL)/$($env:GITHUB_REPOSITORY)"
-          if ([string]::IsNullOrWhiteSpace($notes)) { $notes = "Release $tag" }
-          Set-Content -Path RELEASE_NOTES.md -Value $notes -Encoding utf8
-
-          # Create Release 'vM.N.0' if missing (on the already-existing tag), else update its notes.
-          # Guard: gh/git are native commands -> a non-zero exit does NOT throw under 'Stop', so check
-          # manually; otherwise the job would falsely "succeed" while publishing nothing (e.g. the tag
-          # was never pushed -> vM.N.0 does not exist).
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release edit $tag --notes-file RELEASE_NOTES.md
-            if ($LASTEXITCODE -ne 0) { throw "gh release edit '$tag' failed" }
-          } else {
-            gh release create $tag --title $tag --notes-file RELEASE_NOTES.md --verify-tag
-            if ($LASTEXITCODE -ne 0) { throw "gh release create '$tag' failed (is tag '$tag' pushed to origin?)" }
-          }
-
-          if ($notesOnly) {
-            Write-Host "notes-only mode -> skip nupkg upload & nuget push"
-          } else {
-            # Attach every nupkg from this build (clobber if rebuilding the same version).
-            gh release upload $tag ($nupkgs.FullName) --clobber
-            if ($LASTEXITCODE -ne 0) { throw "gh release upload '$tag' failed" }
-
-            # Push to nuget.org only when the nugetKey secret exists. Push core first (others depend on it).
-            if (-not [string]::IsNullOrWhiteSpace($env:NUGET_KEY)) {
-              $ordered = @($nupkgs | Sort-Object { $_.Name.Length })
-              foreach ($pkg in $ordered) {
-                dotnet nuget push $pkg.FullName -k $env:NUGET_KEY -s https://api.nuget.org/v3/index.json --skip-duplicate
-                if ($LASTEXITCODE -ne 0) { throw "nuget push failed for $($pkg.Name)" }
-              }
-            } else {
-              Write-Host "No 'nugetKey' secret -> skip nuget.org push"
-            }
+          foreach ($p in Get-ChildItem artifacts -Filter *.nupkg) {
+            dotnet nuget push $p.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { Write-Error "Push failed: $($p.Name)"; exit 1 }
           }
